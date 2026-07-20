@@ -1,0 +1,270 @@
+# Backend Development To-Do List — Phase 1
+
+## Milestone 0: Environment & Scaffolding
+
+- [ ] Create FastAPI project structure (app/, alembic/, tests/, requirements.txt)
+- [ ] Set up Python virtual environment
+- [ ] Install core dependencies (fastapi, uvicorn, sqlalchemy, psycopg2, alembic, pydantic, pytest, etc.)
+- [ ] Create .env.example with all required variables
+- [ ] Set up environment variable loading (pydantic-settings)
+- [ ] Configure PostgreSQL database connection
+- [ ] Initialize Alembic for migrations
+- [ ] Create app/main.py with FastAPI app initialization
+- [ ] Add CORS middleware for frontend (localhost:5173)
+- [ ] Verify backend runs on localhost:8000
+- [ ] Test /docs endpoint shows OpenAPI interface
+
+## Milestone 1: Authentication (Login & Session Management)
+
+### Database Setup
+- [ ] Create users table migration (id, full_name, email, password_hash, role, created_at)
+- [ ] Run migration to create users table
+- [ ] Add unique constraint on email
+- [ ] Create index on email for fast login lookups
+
+### Core Authentication Services
+- [ ] Implement password hashing with bcrypt/argon2 (app/core/security.py)
+- [ ] Create hash_password() function
+- [ ] Create verify_password() function
+- [ ] Generate JWT_SECRET_KEY (document in .env.example)
+- [ ] Implement create_access_token() function with expiration
+- [ ] Implement verify_token() function for JWT validation
+- [ ] Create oauth2_scheme using FastAPI security
+
+### Login Endpoint (POST /auth/login)
+- [ ] Create AuthService class in app/services/auth_service.py
+- [ ] Implement login() method (query user by email, verify password, generate JWT)
+- [ ] Create Pydantic schemas for request/response (LoginRequest, LoginResponse, UserRead)
+- [ ] Create route handler in app/api/auth.py
+- [ ] Handle error cases (INVALID_CREDENTIALS)
+- [ ] Return JWT token + user profile on success
+- [ ] Test with admin user (seeded manually)
+- [ ] Test with member user (seeded manually)
+- [ ] Verify response matches API_contract.md
+
+### Get Current User Endpoint (GET /me)
+- [ ] Create get_current_user dependency (validates JWT, fetches user from DB)
+- [ ] Create route handler in app/api/auth.py
+- [ ] Return current user profile
+- [ ] Handle 401 error (invalid/expired token)
+- [ ] Test with valid and expired tokens
+
+### Seed Data
+- [ ] Create app/scripts/seed_dev_users.py script
+- [ ] Generate one admin user (email: admin@innotech-hub.com, password: AdminPass123!)
+- [ ] Generate one member user (email: member@innotech-hub.com, password: MemberPass123!)
+- [ ] Document how to run seed script
+
+## Milestone 2: Session Management
+
+### Database Setup
+- [ ] Create sessions table migration (id, title, purpose, date, start_time, end_time, grace_period_minutes, venue_lat, venue_lng, radius_meters, status, created_by, created_at)
+- [ ] Add foreign key constraint on created_by (references users.id)
+- [ ] Add unique constraint on (session_id, member_id) for attendance_records (placeholder for Milestone 3)
+- [ ] Create indexes on created_by, status
+- [ ] Run migrations
+
+### Session Service (app/services/sessions_service.py)
+- [ ] Implement SessionsService class with dependency injection (AsyncSession db)
+- [ ] Create create() method (validate time range, create record, return)
+- [ ] Create get_by_id() method (with ownership check for admin)
+- [ ] Create list_for_user() method (admin gets all their sessions, member gets only open)
+- [ ] Create get_detail() method (fetch session + nested attendance_records)
+- [ ] Create close() method (verify not already closed, update status)
+- [ ] Add validation: end_time must be after start_time
+- [ ] Raise HTTPException with proper error codes
+
+### Session API Routes (app/api/sessions.py)
+- [ ] Create Pydantic schemas (SessionCreate, SessionRead, SessionDetail)
+- [ ] POST /sessions endpoint (admin only)
+  - [ ] Verify admin role
+  - [ ] Call service.create()
+  - [ ] Return 201 with session object
+- [ ] GET /sessions endpoint (role-scoped list)
+  - [ ] Admin gets all their sessions
+  - [ ] Member gets only open sessions
+  - [ ] Return list of session summaries
+- [ ] GET /sessions/{id} endpoint (admin only)
+  - [ ] Verify admin role
+  - [ ] Call service.get_detail()
+  - [ ] Return session with nested attendance records
+  - [ ] Handle 404 (not found or not owned)
+- [ ] PATCH /sessions/{id}/close endpoint (admin only)
+  - [ ] Verify admin role
+  - [ ] Call service.close()
+  - [ ] Return 200 with updated session
+  - [ ] Handle 409 (already closed)
+  - [ ] Handle 404 (not found or not owned)
+
+### Testing
+- [ ] Unit test session service (create, get, close, list)
+- [ ] Integration test all session endpoints
+- [ ] Test admin can only see their own sessions
+- [ ] Test member sees only open sessions
+- [ ] Test duplicate session creation (allowed, different admins can have same title)
+
+## Milestone 3: Attendance & Check-in
+
+### Database Setup
+- [ ] Create attendance_records table migration (id, session_id, member_id, check_in_time, check_in_lat, check_in_lng, distance_meters, gps_accuracy_meters, photo_reference, final_status, rejection_reason, created_at)
+- [ ] Add foreign keys on session_id and member_id (cascade delete)
+- [ ] Add unique constraint on (session_id, member_id) to prevent duplicates
+- [ ] Create indexes on session_id, member_id, final_status
+- [ ] Run migrations
+
+### Geo Service (app/services/geo_service.py)
+- [ ] Implement GeoService class
+- [ ] Create haversine() method (calculate distance between two lat/lng points)
+- [ ] Test with known coordinate pairs (distance calculation accuracy)
+
+### Attendance Service (app/services/attendance_service.py)
+- [ ] Implement AttendanceService class with dependency injection
+- [ ] Create check_in() method with full validation:
+  - [ ] Verify session exists and status is open
+  - [ ] Check for duplicate check-in (same member, same session)
+  - [ ] Verify time window (check-in time is during session window)
+  - [ ] Calculate distance using Haversine
+  - [ ] Determine final_status based on distance and time:
+    - [ ] Inside radius + on-time = "present"
+    - [ ] Inside radius + late (after grace period) = "late"
+    - [ ] Outside radius + acceptable accuracy = reject with OUTSIDE_RADIUS error
+    - [ ] Poor GPS accuracy (>30m) = "pending_verification" (not an error)
+  - [ ] Create AttendanceRecord in DB
+  - [ ] Return record
+- [ ] Create get_member_history() method (fetch all check-ins for member, ordered by recent first)
+- [ ] Add proper error handling with HTTPException
+
+### File Storage (Photo Evidence)
+- [ ] Create media directory structure (media/YYYY/MM/DD/)
+- [ ] Implement photo file saving (save to disk with UUID filename)
+- [ ] Store photo_reference path in database (not binary)
+- [ ] Ensure photo_reference is returned in API response
+
+### Check-in API Routes (app/api/attendance.py)
+- [ ] Create Pydantic schemas (CheckInRequest, AttendanceRecordRead, etc.)
+- [ ] POST /attendance/check-in endpoint (member only)
+  - [ ] Parse multipart form-data (session_id, lat, lng, gps_accuracy_meters, photo)
+  - [ ] Verify member role
+  - [ ] Validate photo (JPEG/PNG only, max 5MB)
+  - [ ] Save photo to disk
+  - [ ] Call service.check_in()
+  - [ ] Return 201 with record
+  - [ ] Handle error cases:
+    - [ ] 422 OUTSIDE_RADIUS (distance > radius + tolerance)
+    - [ ] 422 SESSION_NOT_OPEN (session not in open status or time window)
+    - [ ] 409 DUPLICATE_CHECK_IN (member already checked in to this session)
+    - [ ] 400 INVALID_PHOTO_TYPE (not JPEG/PNG)
+    - [ ] 400 PHOTO_TOO_LARGE (>5MB)
+    - [ ] 201 with pending_verification (GPS accuracy too low)
+- [ ] GET /attendance/history endpoint (member only)
+  - [ ] Fetch all check-ins for current member
+  - [ ] Enrich with session titles
+  - [ ] Return list ordered by recent first
+
+### Testing
+- [ ] Unit test geo service (Haversine distance)
+- [ ] Unit test attendance service (all validation paths)
+- [ ] Integration test check-in endpoint (success, outside radius, duplicate, poor accuracy)
+- [ ] Test photo file handling (save, verify size limits, mime type)
+- [ ] Test member can only access their own history
+
+## Milestone 4: Reporting
+
+### Database Setup
+- [ ] Ensure attendance_records table is set up (from Milestone 3)
+
+### Reports Service (app/services/reports_service.py)
+- [ ] Implement ReportsService class
+- [ ] Create generate_attendance_xlsx() method:
+  - [ ] Fetch session (verify admin ownership)
+  - [ ] Fetch all attendance records for session
+  - [ ] Create workbook with openpyxl
+  - [ ] Sheet 1 (Attendance Summary): columns = Member ID, Name, Session, Date, Check-in Time, Distance (m), Final Status
+  - [ ] Sheet 2 (Photo Evidence): columns = Member ID, Session ID, Photo Reference, Capture Time
+  - [ ] Return workbook object
+
+### Reports API Routes (app/api/reports.py)
+- [ ] Create GET /reports/attendance.xlsx endpoint (admin only)
+  - [ ] Parse query parameter session_id
+  - [ ] Verify admin role
+  - [ ] Call service.generate_attendance_xlsx()
+  - [ ] Return binary file response with correct content-type
+  - [ ] Handle 404 (session not found or not owned by admin)
+  - [ ] Handle 403 (non-admin attempted export)
+
+### Testing
+- [ ] Test report generation (verify sheet names, columns, data)
+- [ ] Test file download (verify content-type, filename)
+- [ ] Test admin can only export their own session's reports
+
+## Milestone 5: Error Handling & Polish
+
+### Global Error Handling
+- [ ] Implement global exception handler in app/main.py
+- [ ] Return standard error envelope (error object with code, message, details)
+- [ ] Handle all error codes from API_contract.md (INVALID_CREDENTIALS, OUTSIDE_RADIUS, etc.)
+- [ ] Log errors appropriately (no sensitive data in logs)
+- [ ] Return generic error messages (don't leak internal details)
+
+### Input Validation
+- [ ] Ensure all routes validate input with Pydantic schemas
+- [ ] Server-side validation of business rules (not trusting client)
+- [ ] Validate radius > 0
+- [ ] Validate end_time > start_time
+- [ ] Validate email format
+- [ ] Validate password strength (if enforced)
+
+### Database Constraints
+- [ ] Verify unique constraint on (session_id, member_id) prevents duplicates at DB level
+- [ ] Verify foreign key constraints cascade correctly
+- [ ] Verify indexes are created (email, session created_by, etc.)
+
+### Logging & Monitoring
+- [ ] Configure logging to file and console
+- [ ] Log authentication events (login success/failure)
+- [ ] Log business-critical events (check-in success, session close)
+- [ ] Log errors with appropriate severity
+
+### Documentation
+- [ ] Verify all endpoints match API_contract.md exactly
+- [ ] Document how to run migrations
+- [ ] Document how to seed test users
+- [ ] Document environment variables required
+- [ ] Update progress.md with completion status
+- [ ] Add entry to changelog.md for Phase 1 completion
+
+## Integration Testing (Before Merge)
+
+- [ ] Test full login flow (valid credentials, invalid credentials)
+- [ ] Test session creation (admin only, validate time range)
+- [ ] Test session list (admin sees theirs, member sees open)
+- [ ] Test session detail (admin can view, member cannot)
+- [ ] Test check-in flow end-to-end (inside radius, outside radius, duplicate, poor accuracy)
+- [ ] Test attendance history (member sees their records)
+- [ ] Test Excel export (admin only, correct sheet structure)
+- [ ] Test 401 unauthorized (invalid/expired token on protected endpoints)
+- [ ] Test 403 forbidden (member trying to access admin endpoint)
+- [ ] Test 404 not found (accessing non-existent session)
+- [ ] Test 422 validation errors (bad input)
+- [ ] Test concurrent check-ins (verify duplicate constraint catches race conditions)
+- [ ] Test database transactions (verify rollback on errors)
+
+## Performance & Security
+
+- [ ] Verify passwords are never logged or returned
+- [ ] Verify JWT_SECRET_KEY is loaded from environment
+- [ ] Verify passwords are hashed (bcrypt/argon2)
+- [ ] Verify all timestamps use server time (not client time)
+- [ ] Verify database connection pooling is configured
+- [ ] Verify rate limiting is considered (for future, not Phase 1)
+- [ ] Verify SQL injection is prevented (SQLAlchemy parameterized queries)
+- [ ] Load test with expected user count
+
+## Deployment Readiness
+
+- [ ] Verify all environment variables are documented (.env.example)
+- [ ] Verify migrations run successfully (alembic upgrade head)
+- [ ] Verify backend starts without errors
+- [ ] Verify CORS is configured correctly
+- [ ] Verify health check endpoint works
+- [ ] Test with both SQLite (dev) and PostgreSQL (production-like)
