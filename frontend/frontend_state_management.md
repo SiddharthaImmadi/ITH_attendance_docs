@@ -438,3 +438,230 @@ queryClient.invalidateQueries({
 | API data | React Query | Sessions, check-ins |
 | UI toggles | `useState` | Modal open/close |
 | Complex local state | `useReducer` (Phase 2) | Multi-step check-in flow |
+
+
+## 13. Phase 2 State Management
+
+Phase 2 extends the existing state management strategy by introducing continuous attendance monitoring, live session updates, and administrator approval workflows.
+
+---
+
+### 13.1 Active Session State
+
+The currently active attendance session should be managed using React Query.
+
+The Active Session state includes:
+
+- Session information
+- Current attendance status
+- Presence status
+- Session progress
+- Check-in information
+- Check-out availability
+
+The backend remains the authoritative source for all attendance information.
+
+---
+
+### 13.2 Live Attendance Monitoring
+
+Attendance data changes while a session is active.
+
+Use React Query polling to refresh attendance information automatically.
+
+Recommended query:
+
+```typescript
+export function useActiveSession(sessionId: string) {
+  return useQuery({
+    queryKey: ['active-session', sessionId],
+    queryFn: () => api.fetchActiveSession(sessionId),
+    refetchInterval: 15000,
+    refetchOnWindowFocus: true,
+  });
+}
+```
+
+The polling interval may be adjusted based on backend performance.
+
+---
+
+### 13.3 Presence Timeline
+
+Presence history should be fetched independently from the Active Session data.
+
+```typescript
+export function usePresenceTimeline(sessionId: string) {
+  return useQuery({
+    queryKey: ['presence-timeline', sessionId],
+    queryFn: () => api.fetchPresenceTimeline(sessionId),
+    refetchInterval: 15000,
+  });
+}
+```
+
+Timeline events are displayed exactly as returned by the backend.
+
+The frontend must not reorder or modify event timestamps.
+
+---
+
+### 13.4 Early Check-out Request
+
+Submitting an early check-out request should use a mutation.
+
+```typescript
+export function useEarlyCheckoutRequest() {
+  return useMutation({
+    mutationFn: api.requestEarlyCheckout,
+  });
+}
+```
+
+After a successful request:
+
+- Refresh Active Session.
+- Refresh approval status.
+
+---
+
+### 13.5 Approval Status
+
+Members should automatically receive administrator decisions.
+
+```typescript
+export function useApprovalStatus(sessionId: string) {
+  return useQuery({
+    queryKey: ['approval-status', sessionId],
+    queryFn: () => api.fetchApprovalStatus(sessionId),
+    refetchInterval: 10000,
+  });
+}
+```
+
+When approval status changes, the UI should update automatically.
+
+---
+
+### 13.6 Complete Check-out
+
+Once administrator approval is received, members complete check-out using a mutation.
+
+```typescript
+export function useCompleteCheckout() {
+  return useMutation({
+    mutationFn: api.completeCheckout,
+  });
+}
+```
+
+After successful completion:
+
+Invalidate:
+
+- Active Session
+- Attendance History
+- Attendance Summary
+
+---
+
+### 13.7 Attendance Summary
+
+Attendance Summary should be fetched using React Query.
+
+```typescript
+export function useAttendanceSummary(sessionId: string) {
+  return useQuery({
+    queryKey: ['attendance-summary', sessionId],
+    queryFn: () => api.fetchAttendanceSummary(sessionId),
+  });
+}
+```
+
+---
+
+### 13.8 Administrator Monitoring
+
+Administrator monitoring requires additional queries.
+
+Examples include:
+
+```typescript
+useLiveAttendance(sessionId)
+
+usePendingCheckoutRequests(sessionId)
+
+usePresenceTimeline(sessionId)
+```
+
+Monitoring data should refresh automatically during active sessions.
+
+---
+
+### 13.9 Query Invalidation
+
+After major attendance actions, invalidate affected queries.
+
+| Action | Queries to Invalidate |
+|---------|-----------------------|
+| Check In | Active Session, Attendance History |
+| Presence Update | Active Session, Presence Timeline |
+| Early Check-out Request | Active Session, Approval Status |
+| Approval Decision | Active Session, Approval Status |
+| Complete Check-out | Active Session, Attendance History, Attendance Summary |
+| Session Close | Active Session, Session Detail, Reports |
+
+---
+
+### 13.10 Cache Organization
+
+Recommended query keys:
+
+```text
+['sessions']
+
+['session', sessionId]
+
+['active-session', sessionId]
+
+['presence-timeline', sessionId]
+
+['attendance-history']
+
+['attendance-summary', sessionId]
+
+['approval-status', sessionId]
+
+['pending-checkout-requests', sessionId]
+```
+
+Maintain consistent query keys throughout the application.
+
+---
+
+### 13.11 Performance Guidelines
+
+- Prefer React Query cache over duplicate local state.
+- Poll only during active sessions.
+- Stop polling after attendance completion.
+- Refresh only affected queries.
+- Avoid duplicate requests from multiple components.
+- Reuse cached server state whenever possible.
+
+---
+
+### 13.12 State Management Summary
+
+| State | Tool |
+|--------|------|
+| Authentication | React Context |
+| Form State | React Hook Form |
+| UI State | useState / useReducer |
+| Server State | React Query |
+| Active Session | React Query |
+| Presence Timeline | React Query |
+| Approval Status | React Query |
+| Attendance Summary | React Query |
+| Administrator Monitoring | React Query |
+
+Phase 2 continues the Phase 1 architecture by keeping React Query as the single source of truth for all server-side state while React Context manages authentication and local component state remains responsible only for transient UI interactions.

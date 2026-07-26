@@ -209,3 +209,327 @@ Not included in Phase 1. Add `prefers-color-scheme` support in Phase 2.
 - Focus indicators on all interactive elements
 - Icon buttons have aria-label
 - Color not the only indicator of status (use text + icon + color)
+
+
+## 14. Phase 2 Design System Extensions
+
+Phase 2 expands the design system to support the enhanced desktop-first dashboard, live attendance monitoring, and administrator workflows.
+
+---
+
+## 14.1 Layout Principles
+
+The application follows a **desktop-first** layout.
+
+Desktop Layout:
+
+```
++--------------------------------------------------------------+
+| Sidebar |                Main Content                        |
+|         |----------------------------------------------------|
+|         | Page Header                                        |
+|         |----------------------------------------------------|
+|         | Cards / Tables / Timeline / Forms                  |
+|         |                                                    |
++--------------------------------------------------------------+
+```
+
+Responsive behavior:
+
+- Desktop: Fixed sidebar
+- Tablet: Collapsible sidebar
+- Mobile: Hamburger navigation
+
+---
+
+## 14.2 Sidebar
+
+Sidebar Width:
+
+- Expanded: 260px
+- Collapsed: 72px
+
+Sidebar Items:
+
+- Dashboard
+- Sessions
+- History
+- Profile
+- Logout
+
+Active item style:
+
+- Primary background
+- White icon
+- White text
+- Rounded corners
+
+Inactive items:
+
+- Transparent background
+- Gray text
+- Blue hover background
+
+---
+
+## 14.3 Dashboard Cards
+
+Dashboard cards should use consistent spacing and hierarchy.
+
+Card Structure:
+
+```
+Title
+
+Status Badge
+
+Primary Information
+
+Secondary Information
+
+Primary Action
+```
+
+Card spacing:
+
+- Padding: p-6
+- Gap: gap-6
+- Border Radius: rounded-xl
+- Shadow: shadow-sm
+- Hover: shadow-md
+
+---
+
+## 14.4 Active Session Card
+
+The Active Session card is the highest-priority component.
+
+Display:
+
+- Session title
+- Current attendance status
+- Venue
+- Time remaining
+- Session progress
+- Open Session button
+
+The card should always appear above Available Sessions.
+
+---
+
+## 14.5 Session Cards
+
+Available Session cards display:
+
+- Session title
+- Date
+- Time
+- Venue
+- Attendance status
+- Check In button
+
+Cards should maintain equal height within the grid.
+
+---
+
+## 14.6 Timeline Component
+
+Timeline events are displayed vertically.
+
+```
+● Checked In
+│
+● Entered Venue
+│
+● Left Venue
+│
+● Returned
+│
+● Checked Out
+```
+
+Each event contains:
+
+- Status icon
+- Event title
+- Timestamp
+- Optional backend message
+
+---
+
+## 14.7 Status Colors
+
+Additional Phase 2 status colors:
+
+| Status | Tailwind |
+|---------|----------|
+| Active Session | blue-500 |
+| Inside Venue | emerald-500 |
+| Outside Venue | red-500 |
+| Pending Approval | amber-500 |
+| Approved | emerald-500 |
+| Rejected | red-500 |
+| Completed | gray-600 |
+
+Status indicators should always include both color and text.
+
+---
+
+## 14.8 Progress Indicators
+
+Session progress should use a horizontal progress bar.
+
+Examples:
+
+```
+████████░░ 80%
+
+███░░░░░░░ 30%
+```
+
+Use:
+
+- Rounded edges
+- Smooth animation
+- Percentage label
+
+---
+
+## 14.9 Tables
+
+Administrator tables should include:
+
+- Sticky header
+- Hover highlight
+- Alternating row backgrounds (optional)
+- Responsive horizontal scrolling
+
+Table actions should appear in the final column.
+
+---
+
+## 14.10 Dialogs
+
+Dialogs are used for:
+
+- Early Check-out Request
+- Confirmation Actions
+- Delete Confirmation
+- Session Close Confirmation
+
+Dialog Size:
+
+- Max Width: 600px
+- Rounded corners
+- Shadow-lg
+
+Buttons:
+
+Primary action on the right.
+
+Cancel action on the left.
+
+---
+
+## 14.11 Empty States
+
+Every major page should define an empty state.
+
+Example:
+
+"No active session."
+
+"Join an available session to begin attendance."
+
+Provide a primary action whenever possible.
+
+---
+
+## 14.12 Loading States
+
+Use skeleton loaders instead of blank pages.
+
+Examples:
+
+- Dashboard cards
+- Session Detail
+- Timeline
+- Attendance Summary
+- Tables
+
+Loading indicators should preserve page layout.
+
+---
+
+## 14.13 Notification Design
+
+Use toast notifications for:
+
+- Check-in successful
+- Check-out successful
+- Approval received
+- Request rejected
+- Session created
+- Session closed
+- API failures
+
+Toast Position:
+
+Top-right on desktop.
+
+Top-center on mobile.
+
+---
+
+## 14.14 Icons
+
+Use Lucide React icons consistently.
+
+Recommended icons:
+
+| Action | Icon |
+|---------|------|
+| Dashboard | LayoutDashboard |
+| Session | Calendar |
+| Attendance | CheckCircle |
+| Timeline | Clock |
+| Active Session | Activity |
+| Check In | LogIn |
+| Check Out | LogOut |
+| History | History |
+| Profile | User |
+| Logout | DoorOpen |
+
+Icons should be paired with text whenever possible.
+
+---
+
+## 14.15 Animation Guidelines
+
+Animations should enhance usability without slowing interaction.
+
+Recommended:
+
+- Fade between pages
+- Card hover elevation
+- Sidebar collapse animation
+- Timeline item appearance
+- Toast slide animation
+- Progress bar animation
+
+Avoid excessive motion that distracts users.
+
+---
+
+## 14.16 Design Principles
+
+All Phase 2 interfaces should follow these principles:
+
+- Desktop-first layout
+- Clean Modern SaaS appearance
+- Consistent spacing
+- Minimal visual clutter
+- Strong information hierarchy
+- High accessibility
+- Responsive behavior across all supported devices
+

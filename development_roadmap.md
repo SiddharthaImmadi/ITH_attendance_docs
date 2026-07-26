@@ -74,3 +74,97 @@ documented contract and adjust once the real endpoint is ready.
 - A short demo (per Milestone 5) can be given without manual workarounds.
 - Any deferred ideas relevant to Phase 2 are captured in `enhancements.md` for review before
   Phase 2 planning begins.
+
+## 5. Phase 2 milestones
+
+Phase 2 extends the Core MVP by introducing attendance monitoring throughout an active session.
+Unlike Phase 1, which verifies a member's arrival, Phase 2 verifies continued participation until
+the session ends.
+
+### Milestone 1 — Presence monitoring (backend-led, frontend follows)
+
+- Backend:
+  - `presence_events` table + migration.
+  - Automatic presence event recording.
+  - Inside / Outside venue detection.
+  - Presence timeline generation.
+- Frontend:
+  - Live attendance status indicator.
+  - Current inside/outside status.
+  - Presence timeline view.
+
+**Definition of done:** Members' movement relative to the venue is recorded correctly and visible
+to administrators.
+
+---
+
+### Milestone 2 — Leave / Return workflow (both)
+
+- Backend:
+  - Detect `Left Venue` and `Returned` events.
+  - Calculate outside duration.
+  - Apply configurable exit tolerance.
+- Frontend:
+  - Display leave and return notifications.
+  - Show current attendance state.
+  - Display outside duration where applicable.
+
+**Definition of done:** Leaving and returning to the venue correctly updates attendance events and
+session state.
+
+---
+
+### Milestone 3 — Check-out & duration (backend-led, frontend follows)
+
+- Backend:
+  - `POST /attendance/check-out`.
+  - Attendance duration calculation.
+  - Final attendance calculation.
+- Frontend:
+  - Check-out workflow.
+  - Attendance summary.
+  - Session completion screen.
+
+**Definition of done:** Members complete attendance through check-out, and attendance duration is
+calculated correctly.
+
+---
+
+### Milestone 4 — Live monitoring & reporting (both)
+
+- Backend:
+  - Live attendance dashboard endpoints.
+  - Extended Excel reporting.
+  - Presence event reporting.
+- Frontend:
+  - Live administrator dashboard.
+  - Presence timeline.
+  - Updated reporting interface.
+
+**Definition of done:** Administrators can monitor attendance during a live session and export the
+extended attendance report.
+
+---
+
+### Milestone 5 — Phase 2 validation
+
+- Both:
+  - Validate attendance lifecycle.
+  - Verify presence calculations.
+  - Verify duration calculations.
+  - Verify reporting accuracy.
+  - Resolve remaining implementation issues.
+
+**Definition of done:** A complete attendance session (login → session creation → check-in →
+presence monitoring → leave/return → check-out → report generation) can be demonstrated without
+manual intervention.
+
+## 6. Exit criteria for Phase 2
+
+- All Phase 2 milestones are complete.
+- Attendance monitoring functions correctly.
+- Presence events are recorded accurately.
+- Attendance duration is calculated correctly.
+- Extended attendance reports generate successfully.
+- Any deferred ideas relevant to Phase 3 are captured in `enhancements.md` before Phase 3 planning
+  begins.

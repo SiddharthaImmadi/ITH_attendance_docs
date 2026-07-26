@@ -429,3 +429,263 @@ Higher priority to test:
 Lower priority:
 - Response formatting (caught by manual testing)
 - Error messages (low impact)
+`
+
+## 12. Phase 2 Testing Strategy
+
+Phase 2 introduces attendance lifecycle management, presence monitoring, administrator approvals, and enhanced reporting.
+
+These features require additional unit tests, integration tests, and end-to-end workflow tests.
+
+---
+
+## 12.1 Test Structure
+
+Extend the existing structure.
+
+```
+tests/
+
+├── test_active_attendance.py
+
+├── test_presence_monitoring.py
+
+├── test_early_checkout.py
+
+├── test_monitoring.py
+
+├── unit/
+
+│   ├── test_presence_service.py
+
+│   ├── test_monitoring_service.py
+
+│   └── test_checkout_service.py
+
+└── integration/
+
+    └── test_phase2_workflow.py
+```
+
+---
+
+## 12.2 Unit Tests
+
+Service layer tests should verify business logic independently of the API.
+
+Required coverage:
+
+### Attendance Service
+
+- Active attendance retrieval
+- Check-out completion
+- Attendance duration calculation
+- Attendance summary generation
+- Invalid attendance transitions
+
+### Presence Service
+
+- Inside venue detection
+- Outside venue detection
+- Timeline event creation
+- Duplicate event prevention
+- Timeline ordering
+
+### Early Check-out Service
+
+- Request creation
+- Approval
+- Rejection
+- Duplicate requests
+- Invalid requests
+
+### Monitoring Service
+
+- Live statistics
+- Active attendance
+- Pending approvals
+- Attendance counts
+
+---
+
+## 12.3 API Integration Tests
+
+Create endpoint tests for:
+
+### Attendance
+
+- GET /attendance/active
+- POST /attendance/check-out
+- GET /attendance/summary
+
+### Presence
+
+- GET /attendance/timeline
+
+### Early Check-out
+
+- POST /attendance/early-checkout
+- GET /attendance/approval-status
+
+### Administrator
+
+- POST approve endpoint
+- POST reject endpoint
+- GET monitoring endpoint
+- GET monitoring statistics
+
+---
+
+## 12.4 Attendance Lifecycle Tests
+
+Verify the complete attendance lifecycle.
+
+```
+Check In
+
+↓
+
+Active Attendance
+
+↓
+
+(Optional)
+
+Early Check-out Request
+
+↓
+
+Administrator Decision
+
+↓
+
+Approved
+
+↓
+
+Check Out
+
+↓
+
+Attendance Summary
+```
+
+Each transition should be tested.
+
+---
+
+## 12.5 Presence Monitoring Tests
+
+Verify:
+
+- entering venue;
+- leaving venue;
+- returning;
+- multiple presence updates;
+- chronological timeline generation.
+
+Ensure duplicate events are not created.
+
+---
+
+## 12.6 Early Check-out Tests
+
+Verify:
+
+- valid request;
+- invalid request;
+- duplicate request;
+- approval;
+- rejection;
+- unauthorized approval attempts;
+- approval after attendance completion.
+
+---
+
+## 12.7 Authorization Tests
+
+Verify:
+
+Members:
+
+- cannot approve requests;
+- cannot access monitoring endpoints;
+- cannot access other members' attendance.
+
+Administrators:
+
+- can approve requests;
+- can reject requests;
+- can view monitoring data;
+- cannot modify another administrator's resources.
+
+---
+
+## 12.8 Reporting Tests
+
+Verify reports include:
+
+- attendance duration;
+- check-out time;
+- approval status;
+- approval timestamps;
+- attendance summary.
+
+Ensure exported reports match database records.
+
+---
+
+## 12.9 Performance Tests
+
+Verify:
+
+- monitoring endpoints remain responsive;
+- timeline queries scale efficiently;
+- large attendance datasets are handled correctly;
+- no N+1 query issues exist.
+
+---
+
+## 12.10 Error Handling Tests
+
+Verify expected responses for:
+
+- invalid attendance state;
+- attendance already completed;
+- approval pending;
+- approval rejected;
+- missing attendance record;
+- invalid session;
+- unauthorized access.
+
+Responses must follow the standard API error format.
+
+---
+
+## 12.11 Acceptance Criteria
+
+Each Phase 2 feature should include tests covering:
+
+| Feature | Required Tests |
+|----------|----------------|
+| Active Attendance | Lifecycle, retrieval, completion |
+| Presence Monitoring | Timeline generation, presence calculation |
+| Early Check-out | Request, approval, rejection |
+| Administrator Monitoring | Statistics, live attendance, pending approvals |
+| Attendance Summary | Summary generation and report accuracy |
+
+---
+
+## 12.12 Coverage Goal
+
+**Phase 2 target: 85% minimum backend coverage**
+
+Priority order:
+
+1. Attendance lifecycle
+2. Presence monitoring
+3. Early check-out workflow
+4. Monitoring services
+5. Reporting enhancements
+
+Business logic inside `app/services/` should receive the highest level of test coverage.

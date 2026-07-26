@@ -268,3 +268,236 @@
 - [ ] Verify CORS is configured correctly
 - [ ] Verify health check endpoint works
 - [ ] Test with both SQLite (dev) and PostgreSQL (production-like)
+
+# Backend Development To-Do List — Phase 2
+
+## Milestone 6: Attendance Lifecycle
+
+### Database Updates
+
+- [ ] Create migration for Phase 2 attendance enhancements
+- [ ] Add check_out_time to attendance_records
+- [ ] Add attendance_duration field
+- [ ] Add attendance_state field
+- [ ] Add early_checkout_reason field
+- [ ] Add approval_status field
+- [ ] Add approval_remark field
+- [ ] Add approved_by foreign key
+- [ ] Add approved_at timestamp
+- [ ] Create indexes for approval_status
+- [ ] Run migrations
+
+### Attendance Service
+
+- [ ] Extend AttendanceService for attendance lifecycle
+- [ ] Implement get_active_session()
+- [ ] Implement get_attendance_status()
+- [ ] Implement complete_check_out()
+- [ ] Calculate attendance duration
+- [ ] Generate attendance summary
+- [ ] Validate attendance state transitions
+- [ ] Prevent duplicate check-out
+- [ ] Prevent invalid state changes
+
+### Attendance API
+
+- [ ] Create GET /attendance/active endpoint
+- [ ] Create POST /attendance/check-out endpoint
+- [ ] Create GET /attendance/summary endpoint
+- [ ] Verify member authorization
+- [ ] Return standardized response models
+- [ ] Handle invalid attendance states
+
+### Testing
+
+- [ ] Test complete attendance lifecycle
+- [ ] Test attendance duration calculation
+- [ ] Test attendance summary generation
+- [ ] Test invalid attendance transitions
+
+---
+
+## Milestone 7: Presence Monitoring
+
+### Presence Tracking
+
+- [ ] Create PresenceMonitoringService
+- [ ] Detect inside/outside venue
+- [ ] Record presence events
+- [ ] Calculate current presence status
+- [ ] Prevent duplicate presence events
+- [ ] Maintain chronological event order
+
+### Presence Timeline
+
+- [ ] Create presence_events table
+- [ ] Create SQLAlchemy model
+- [ ] Create Alembic migration
+- [ ] Create Pydantic schemas
+- [ ] Create timeline retrieval service
+- [ ] Return ordered timeline events
+
+### Presence API
+
+- [ ] Create GET /attendance/timeline endpoint
+- [ ] Return chronological events
+- [ ] Validate member ownership
+- [ ] Validate administrator access
+
+### Testing
+
+- [ ] Test presence event creation
+- [ ] Test timeline ordering
+- [ ] Test presence calculations
+- [ ] Test authorization
+
+---
+
+## Milestone 8: Early Check-out Workflow
+
+### Database
+
+- [ ] Create early check-out request model
+- [ ] Create migration
+- [ ] Add foreign key relationships
+- [ ] Add indexes
+
+### Service Layer
+
+- [ ] Implement request_early_checkout()
+- [ ] Validate active attendance
+- [ ] Validate request reason
+- [ ] Prevent duplicate requests
+- [ ] Implement approve_request()
+- [ ] Implement reject_request()
+- [ ] Notify attendance service of decisions
+
+### API
+
+- [ ] Create POST /attendance/early-checkout
+- [ ] Create GET /attendance/approval-status
+- [ ] Create POST /attendance/approve
+- [ ] Create POST /attendance/reject
+
+### Validation
+
+- [ ] Require approval reason
+- [ ] Restrict approval to administrators
+- [ ] Prevent approval of completed attendance
+- [ ] Prevent duplicate approvals
+
+### Testing
+
+- [ ] Test approval workflow
+- [ ] Test rejection workflow
+- [ ] Test invalid requests
+- [ ] Test permission enforcement
+
+---
+
+## Milestone 9: Administrator Monitoring
+
+### Monitoring Service
+
+- [ ] Create MonitoringService
+- [ ] Calculate live attendance statistics
+- [ ] Fetch active members
+- [ ] Fetch members outside venue
+- [ ] Fetch completed attendance
+- [ ] Fetch pending approvals
+
+### API
+
+- [ ] Create GET /monitoring/live
+- [ ] Create GET /monitoring/statistics
+- [ ] Create GET /monitoring/pending-requests
+
+### Performance
+
+- [ ] Optimize monitoring queries
+- [ ] Eliminate N+1 queries
+- [ ] Add required indexes
+- [ ] Optimize joins
+
+### Testing
+
+- [ ] Test monitoring endpoints
+- [ ] Test administrator permissions
+- [ ] Test large attendance datasets
+
+---
+
+## Milestone 10: Attendance Reporting
+
+### Reporting Service
+
+- [ ] Extend attendance reports
+- [ ] Include attendance duration
+- [ ] Include check-out time
+- [ ] Include presence timeline
+- [ ] Include approval information
+- [ ] Include attendance summary
+
+### Export
+
+- [ ] Extend Excel export
+- [ ] Include new Phase 2 fields
+- [ ] Verify workbook formatting
+- [ ] Validate generated reports
+
+### Testing
+
+- [ ] Test updated report generation
+- [ ] Test exported workbook structure
+- [ ] Test report accuracy
+
+---
+
+## Milestone 11: Backend Polish
+
+### Error Handling
+
+- [ ] Add Phase 2 error codes
+- [ ] Standardize approval errors
+- [ ] Standardize attendance lifecycle errors
+- [ ] Improve validation responses
+
+### Performance
+
+- [ ] Profile attendance services
+- [ ] Optimize timeline queries
+- [ ] Optimize monitoring endpoints
+- [ ] Review database indexes
+
+### Security
+
+- [ ] Verify administrator authorization
+- [ ] Verify member ownership validation
+- [ ] Verify approval security
+- [ ] Review endpoint protection
+
+---
+
+## Phase 2 Integration Testing
+
+- [ ] Test Active Attendance
+- [ ] Test attendance lifecycle
+- [ ] Test presence monitoring
+- [ ] Test timeline generation
+- [ ] Test early check-out request
+- [ ] Test administrator approval
+- [ ] Test administrator rejection
+- [ ] Test attendance summary
+- [ ] Test monitoring dashboard APIs
+- [ ] Test reporting enhancements
+- [ ] Test concurrent attendance operations
+
+---
+
+## Documentation
+
+- [ ] Verify implementation matches API_contract.md
+- [ ] Verify implementation follows rules_backend.md
+- [ ] Update database documentation
+- [ ] Update progress.md
+- [ ] Add Phase 2 changelog entry

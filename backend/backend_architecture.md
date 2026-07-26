@@ -208,3 +208,332 @@ logger.error(f"Distance check failed: {distance}m > {radius}m", exc_info=True)
 ```
 
 Log key business events (login, check-in, session close), not every function call.
+
+
+## 13. Phase 2 Architecture Extensions
+
+Phase 2 expands the backend architecture to support attendance lifecycle management, presence monitoring, administrator approvals, and enhanced reporting while preserving the existing layered architecture.
+
+---
+
+## 13.1 Updated Request Flow
+
+```
+HTTP Request
+
+↓
+
+Middleware
+
+↓
+
+Route Handler
+
+↓
+
+Service Layer
+
+↓
+
+Business Validation
+
+↓
+
+ORM
+
+↓
+
+Database
+
+↓
+
+Response
+```
+
+Business validation may involve multiple services before a response is returned.
+
+---
+
+## 13.2 Expanded Router Structure
+
+Phase 2 extends the API layer.
+
+```
+app/api/
+
+├── auth.py
+
+├── sessions.py
+
+├── attendance.py
+
+├── monitoring.py
+
+└── reports.py
+```
+
+Responsibilities:
+
+attendance.py
+
+- check in
+- active attendance
+- check out
+- attendance summary
+- early check-out workflow
+- attendance timeline
+
+monitoring.py
+
+- live attendance
+- monitoring statistics
+- pending approvals
+
+reports.py
+
+- attendance exports
+- enhanced reports
+
+---
+
+## 13.3 Expanded Service Layer
+
+```
+app/services/
+
+├── auth_service.py
+
+├── sessions_service.py
+
+├── attendance_service.py
+
+├── presence_service.py
+
+├── monitoring_service.py
+
+├── reports_service.py
+
+└── geo_service.py
+```
+
+Responsibilities remain clearly separated.
+
+AttendanceService
+
+- attendance lifecycle
+
+PresenceService
+
+- presence monitoring
+
+MonitoringService
+
+- administrator dashboard data
+
+ReportsService
+
+- reporting only
+
+GeoService
+
+- location calculations
+
+---
+
+## 13.4 Service Interaction
+
+Recommended architecture:
+
+```
+AttendanceService
+
+↓
+
+PresenceService
+
+↓
+
+GeoService
+```
+
+Administrator workflow:
+
+```
+MonitoringService
+
+↓
+
+AttendanceService
+
+↓
+
+ReportsService
+```
+
+Each service should expose clear public methods.
+
+---
+
+## 13.5 Attendance Lifecycle
+
+Attendance lifecycle is managed by the backend.
+
+```
+Check In
+
+↓
+
+Active Attendance
+
+↓
+
+(Optional)
+
+Early Check-out Request
+
+↓
+
+Administrator Decision
+
+↓
+
+Approved
+
+↓
+
+Check Out
+
+↓
+
+Attendance Summary
+```
+
+Only valid state transitions are permitted.
+
+---
+
+## 13.6 Presence Monitoring
+
+Presence events are handled independently from attendance records.
+
+Responsibilities:
+
+- evaluate member location;
+- generate presence events;
+- maintain chronological timelines;
+- determine current presence state.
+
+Presence monitoring should remain independent from reporting.
+
+---
+
+## 13.7 Administrator Approval Workflow
+
+Approval requests follow this architecture.
+
+```
+Member
+
+↓
+
+AttendanceService
+
+↓
+
+Database
+
+↓
+
+Administrator
+
+↓
+
+MonitoringService
+
+↓
+
+AttendanceService
+
+↓
+
+Database
+```
+
+Attendance completion occurs only after approval.
+
+---
+
+## 13.8 Error Handling
+
+Phase 2 continues using centralized exception handling.
+
+Additional business errors include:
+
+- INVALID_ATTENDANCE_STATE
+- APPROVAL_PENDING
+- APPROVAL_REJECTED
+- ACTIVE_ATTENDANCE_NOT_FOUND
+- INVALID_PRESENCE_EVENT
+
+All errors continue using the standard API response format.
+
+---
+
+## 13.9 Transaction Boundaries
+
+Single database transactions should be used for operations that update multiple records.
+
+Examples:
+
+- attendance completion;
+- approval processing;
+- presence event creation.
+
+Rollback the transaction if any operation fails.
+
+---
+
+## 13.10 Performance Considerations
+
+Phase 2 introduces additional read-heavy endpoints.
+
+Recommendations:
+
+- optimize attendance queries;
+- minimize joins;
+- eager load related entities when appropriate;
+- avoid N+1 query patterns;
+- index frequently filtered columns.
+
+---
+
+## 13.11 Logging
+
+Additional business events should be logged.
+
+Examples:
+
+- attendance completed;
+- early check-out requested;
+- request approved;
+- request rejected;
+- presence event recorded.
+
+Sensitive information must never be logged.
+
+---
+
+## 13.12 Architecture Principles
+
+Phase 2 preserves the existing backend architecture.
+
+Core principles remain:
+
+- thin route handlers;
+- business logic inside services;
+- dependency injection;
+- asynchronous I/O;
+- centralized error handling;
+- backend as the source of truth;
+- transactional consistency;
+- independently testable services.

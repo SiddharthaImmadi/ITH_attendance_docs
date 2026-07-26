@@ -170,3 +170,58 @@ See `API_contract.md` for the authoritative, detailed contract. Summary:
 | POST | `/attendance/check-in` | Member: submit check-in |
 | GET | `/attendance/history` | Member: own check-in history |
 | GET | `/reports/attendance.xlsx` | Admin: export Excel report |
+
+**## 9. Phase 2 Architecture Extension**
+
+Phase 2 builds upon the Phase 1 architecture without replacing any existing architectural
+decisions. The overall system structure, technology stack, repository organization, and
+communication flow remain unchanged. This phase focuses on implementing the documented
+architecture and introducing additional business capabilities required by the project roadmap.
+
+### Phase 2 objectives
+
+The primary objectives of Phase 2 are:
+
+- Complete backend implementation using the architecture defined in this document.
+- Develop the React frontend that consumes the FastAPI backend.
+- Implement secure authentication and authorization.
+- Build the attendance workflow with business rule validation.
+- Generate attendance reports from PostgreSQL data.
+- Establish a stable integration between frontend, backend, and database.
+
+### Architectural continuity
+
+The following architectural decisions remain unchanged from Phase 1:
+
+- React + TypeScript continues as the frontend technology.
+- FastAPI remains the backend framework.
+- PostgreSQL continues as the system of record.
+- SQLAlchemy and Alembic remain responsible for data persistence and schema migrations.
+- JWT continues to provide stateless authentication.
+- Excel files remain an export format only and are never treated as the primary data source.
+
+Phase 2 extends the implementation of these components rather than introducing new
+architectural technologies.
+
+### Repository evolution
+
+The repository structure introduced in Phase 1 remains valid throughout Phase 2.
+
+Instead of reorganizing the project, existing modules will gradually be populated with
+production-ready implementations. New source files may be added inside existing folders as
+features are implemented, but the overall project organization remains stable.
+
+This approach ensures that documentation, implementation, and team collaboration continue to
+reference a consistent repository structure throughout development.
+
+### Implementation approach
+
+Phase 2 follows an incremental implementation strategy.
+
+Development progresses through small, reviewable milestones where documentation is reviewed
+before implementation begins. Each completed milestone is validated before the next milestone
+starts, allowing both frontend and backend development to evolve together while remaining
+aligned with the shared API contract.
+
+Future phases may extend the architecture with additional capabilities described in
+`enhancements.md`, but those features are intentionally outside the scope of Phase 2.

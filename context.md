@@ -125,3 +125,50 @@ just the minimum vocabulary needed to read the other docs.
    pull request.
 5. Update `progress.md` and, where relevant, `changelog.md` at the end of a working session —
    don't leave it to the next person to reconstruct what happened.
+
+## 8. Phase 2 Context
+
+Phase 2 marks the transition from project planning into active implementation.
+
+The documentation produced during Phase 1 remains the authoritative foundation of the project.
+Phase 2 extends that documentation as implementation progresses rather than replacing existing
+architectural or product decisions.
+
+### Documentation Philosophy
+
+The project documentation follows a layered approach.
+
+- Foundation documents define long-term architectural and product decisions.
+- Living documents record implementation progress and project evolution.
+- New phases extend existing documentation instead of replacing previous work.
+
+This allows every developer or AI agent to understand not only the current state of the project,
+but also how and why the project evolved over time.
+
+### Development Philosophy
+
+Implementation follows the documentation, not the other way around.
+
+Before implementing a new feature:
+
+1. Verify the feature exists within the current project scope.
+2. Review the relevant architecture and API documentation.
+3. Implement the feature.
+4. Validate functionality.
+5. Update the project's living documentation.
+
+When documentation and implementation disagree, documentation must be reviewed before the
+implementation is considered correct.
+
+### AI Agent Expectations
+
+AI coding assistants should:
+
+- Read `context.md` before any implementation work.
+- Treat the documentation as the project's source of truth.
+- Avoid introducing undocumented features or assumptions.
+- Extend documentation when new project phases begin.
+- Preserve existing architectural decisions unless explicitly revised by the project owner.
+
+The objective is to maintain consistency between documentation, implementation, and future project
+development throughout every phase of the application lifecycle.

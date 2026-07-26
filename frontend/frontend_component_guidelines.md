@@ -412,3 +412,314 @@ Before marking a component as done:
 - [ ] Styled with Tailwind + shadcn
 - [ ] Responsive (mobile-first)
 - [ ] Has unit tests (simple ones)
+
+
+## 11. Phase 2 Component Architecture
+
+Phase 2 extends the component architecture to support the complete attendance lifecycle, live monitoring, and administrator workflows.
+
+---
+
+## 11.1 Updated Feature Structure
+
+```
+src/
+├── components/
+│
+├── common/
+│   ├── LoadingSkeleton.tsx
+│   ├── EmptyState.tsx
+│   ├── StatusBadge.tsx
+│   ├── ConfirmationDialog.tsx
+│   └── ProgressBar.tsx
+│
+├── layout/
+│   ├── Sidebar.tsx
+│   ├── DashboardLayout.tsx
+│   └── PageHeader.tsx
+│
+├── features/
+│
+│   ├── attendance/
+│   │   ├── ActiveSessionCard.tsx
+│   │   ├── ActiveSessionDetails.tsx
+│   │   ├── PresenceTimeline.tsx
+│   │   ├── AttendanceSummary.tsx
+│   │   ├── AttendanceStatus.tsx
+│   │   ├── SessionProgress.tsx
+│   │   ├── EarlyCheckoutDialog.tsx
+│   │   ├── ApprovalStatusBanner.tsx
+│   │   └── AttendanceHistory.tsx
+│
+│   ├── monitoring/
+│   │   ├── LiveAttendancePanel.tsx
+│   │   ├── MemberAttendanceTable.tsx
+│   │   ├── PendingRequestsTable.tsx
+│   │   ├── MonitoringStatistics.tsx
+│   │   └── PresenceTimeline.tsx
+│
+│   └── session/
+│       ├── SessionCard.tsx
+│       ├── SessionList.tsx
+│       ├── SessionOverview.tsx
+│       └── SessionDetail.tsx
+```
+
+---
+
+## 11.2 Dashboard Layout Components
+
+The dashboard should be composed of reusable layout components.
+
+```
+DashboardLayout
+
+├── Sidebar
+
+├── PageHeader
+
+├── ActiveSessionCard
+
+├── AvailableSessionsGrid
+
+└── AttendanceHistory
+```
+
+Each section should remain independently reusable.
+
+---
+
+## 11.3 Active Session Components
+
+The Active Session page should consist of small focused components.
+
+```
+ActiveSessionPage
+
+├── SessionHeader
+
+├── AttendanceStatus
+
+├── SessionProgress
+
+├── PresenceTimeline
+
+├── ApprovalStatusBanner
+
+└── ActionButtons
+```
+
+Avoid creating one large component containing all logic.
+
+---
+
+## 11.4 Timeline Component
+
+The timeline should be reusable by both Members and Administrators.
+
+Props:
+
+```typescript
+interface PresenceTimelineProps {
+    events: TimelineEvent[];
+}
+```
+
+The component only renders data.
+
+Fetching should occur in the parent component.
+
+---
+
+## 11.5 Status Components
+
+Attendance status should always be displayed through reusable components.
+
+Example:
+
+```
+<AttendanceStatus
+    status="Present"
+/>
+
+<AttendanceStatus
+    status="Pending Approval"
+/>
+```
+
+Avoid repeating status color logic throughout the application.
+
+---
+
+## 11.6 Progress Component
+
+Session progress should be implemented as a reusable component.
+
+Example:
+
+```
+<SessionProgress
+    current={45}
+    total={60}
+/>
+```
+
+The component is responsible only for presentation.
+
+---
+
+## 11.7 Early Check-out Dialog
+
+The dialog should contain:
+
+- Reason field
+- Validation messages
+- Cancel button
+- Submit button
+
+Business logic belongs inside hooks, not inside the dialog.
+
+---
+
+## 11.8 Administrator Components
+
+Administrator monitoring should reuse small focused components.
+
+```
+SessionDetail
+
+├── SessionOverview
+
+├── MonitoringStatistics
+
+├── MemberAttendanceTable
+
+├── PendingRequestsTable
+
+└── PresenceTimeline
+```
+
+Each component should have a single responsibility.
+
+---
+
+## 11.9 Component Responsibilities
+
+Presentation Components
+
+Responsible for:
+
+- Rendering UI
+- Styling
+- User interaction
+
+Should NOT:
+
+- Call APIs directly
+- Perform business logic
+
+Container Components
+
+Responsible for:
+
+- Fetching data
+- Managing mutations
+- Passing props
+- Handling loading and error states
+
+---
+
+## 11.10 Component Communication
+
+Parent components should own server state.
+
+Example:
+
+```
+Page
+
+↓
+
+Fetch Data
+
+↓
+
+Pass Props
+
+↓
+
+Child Components
+```
+
+Avoid unnecessary prop drilling.
+
+Use Context only for shared application state such as authentication.
+
+---
+
+## 11.11 Component Guidelines
+
+Every new Phase 2 component should:
+
+- Be reusable.
+- Be strongly typed.
+- Have a single responsibility.
+- Handle loading states.
+- Handle empty states.
+- Handle error states.
+- Follow the design system.
+- Be responsive.
+- Support keyboard accessibility.
+
+---
+
+## 11.12 Component Naming
+
+Use descriptive PascalCase names.
+
+Examples:
+
+```
+ActiveSessionCard
+
+AttendanceSummary
+
+PresenceTimeline
+
+SessionProgress
+
+MonitoringStatistics
+
+PendingRequestsTable
+
+ApprovalStatusBanner
+
+EarlyCheckoutDialog
+```
+
+Avoid generic names such as:
+
+```
+Card2
+
+Panel
+
+Widget
+
+Component
+```
+
+Names should clearly describe the component's purpose.
+
+---
+
+## 11.13 Phase 2 Design Principles
+
+All new components should follow these principles:
+
+- Small and composable.
+- Presentation separated from business logic.
+- Reusable across multiple pages.
+- Built using Tailwind CSS and shadcn/ui.
+- Consistent with the established design system.
+- Optimized for desktop-first layouts while remaining responsive.

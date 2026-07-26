@@ -232,3 +232,208 @@ UNIQUE constraint on `(session_id, member_id)` also acts as an index.
 - PostgreSQL WAL (Write-Ahead Logging) enabled for durability
 - Regular dumps: `pg_dump attendance_app_dev > backup.sql`
 - Test restore: `psql < backup.sql` (as part of deployment verification)
+
+
+## 9. Phase 2 Schema Extensions
+
+> Phase 2 extends the existing schema to support attendance lifecycle management, presence monitoring, early check-out approval, and enhanced reporting.
+
+---
+
+## 9.1 Updated Entity Relationship Diagram
+
+```
+users
+   │
+   │
+sessions
+   │
+   │
+attendance_records
+   │
+   ├──────────────┐
+   │              │
+   ▼              ▼
+presence_events   early_checkout_requests
+```
+
+Attendance records remain the primary entity.
+
+Presence events and early check-out requests reference an attendance record.
+
+---
+
+## 9.2 attendance_records Enhancements
+
+Extend the existing table with additional lifecycle fields.
+
+| Column | Type | Notes |
+|----------|------|------|
+| check_out_time | TIMESTAMPTZ | Server timestamp of check-out |
+| attendance_duration | INTEGER | Duration in minutes |
+| attendance_state | VARCHAR(50) | Current attendance lifecycle state |
+
+Possible attendance states:
+
+- active
+- pending_approval
+- approved
+- rejected
+- completed
+
+---
+
+## 9.3 presence_events Table
+
+Stores chronological attendance activity.
+
+| Column | Type | Notes |
+|----------|------|------|
+| id | UUID | Primary key |
+| attendance_id | UUID | FK → attendance_records.id |
+| event_type | VARCHAR(50) | entered, left, returned, checkout |
+| latitude | DOUBLE PRECISION | Recorded latitude |
+| longitude | DOUBLE PRECISION | Recorded longitude |
+| recorded_at | TIMESTAMPTZ | Server timestamp |
+
+Indexes:
+
+- attendance_id
+- recorded_at
+
+---
+
+## 9.4 early_checkout_requests Table
+
+Stores administrator approval workflow.
+
+| Column | Type | Notes |
+|----------|------|------|
+| id | UUID | Primary key |
+| attendance_id | UUID | FK → attendance_records.id |
+| reason | TEXT | Member explanation |
+| approval_status | VARCHAR(50) | pending, approved, rejected |
+| approval_remark | TEXT | Administrator comments |
+| approved_by | UUID | FK → users.id |
+| approved_at | TIMESTAMPTZ | Decision timestamp |
+| created_at | TIMESTAMPTZ | Request timestamp |
+
+Indexes:
+
+- attendance_id
+- approval_status
+- approved_by
+
+---
+
+## 9.5 Relationships
+
+```
+attendance_records
+
+1
+
+↓
+
+N
+
+presence_events
+```
+
+```
+attendance_records
+
+1
+
+↓
+
+0..1
+
+early_checkout_requests
+```
+
+One attendance record may contain multiple presence events.
+
+An attendance record may have at most one early check-out request.
+
+---
+
+## 9.6 Constraints
+
+Attendance lifecycle should enforce:
+
+- one attendance record per member per session;
+- one early check-out request per attendance record;
+- chronological presence events;
+- valid attendance state transitions.
+
+Business rules remain enforced by the service layer.
+
+---
+
+## 9.7 Additional Indexes
+
+Recommended indexes:
+
+```
+attendance_state
+
+approval_status
+
+recorded_at
+
+attendance_id
+
+approved_by
+```
+
+These improve monitoring and reporting performance.
+
+---
+
+## 9.8 Migration Strategy
+
+Create a dedicated Phase 2 migration.
+
+Example:
+
+```
+004_phase2_attendance_extensions.py
+```
+
+Migration responsibilities:
+
+- extend attendance_records;
+- create presence_events;
+- create early_checkout_requests;
+- create indexes;
+- create foreign keys.
+
+Existing Phase 1 data should remain valid after migration.
+
+---
+
+## 9.9 Expected Data Growth
+
+| Table | Expected Growth |
+|----------|----------------|
+| attendance_records | Moderate |
+| presence_events | High |
+| early_checkout_requests | Low |
+
+Presence events are expected to become the largest table.
+
+Indexes should be maintained accordingly.
+
+---
+
+## 9.10 Design Principles
+
+The database should continue to follow these principles:
+
+- Normalize related data.
+- Preserve referential integrity.
+- Keep attendance_records as the primary attendance entity.
+- Store chronological activity separately.
+- Support efficient reporting and monitoring.
+- Ensure all schema changes are delivered through Alembic migrations.

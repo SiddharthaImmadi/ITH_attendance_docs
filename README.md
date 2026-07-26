@@ -58,3 +58,48 @@ Public repository containing all project documentation, requirements, and archit
 - ⏳ Code scaffolding not yet started (Milestone 0)
 
 Last updated: 2026-07-20
+
+---
+
+# Phase 2 Documentation Update
+
+Phase 2 transitions the project from a completed planning stage into active implementation while
+preserving the architectural and documentation decisions established during Phase 1.
+
+## Current Phase
+
+| Item | Status |
+|---|---|
+| Documentation Foundation | ✅ Completed |
+| Architecture | ✅ Established |
+| Backend Implementation | 🚧 In Progress |
+| Frontend Implementation | 🚧 In Progress |
+| Testing | ⏳ Planned |
+| Local Deployment | ⏳ Planned |
+
+## Phase 2 Focus
+
+Phase 2 documentation extends the existing documentation set rather than replacing it.
+
+During this phase:
+
+- Existing architectural decisions remain the project's foundation.
+- Backend implementation follows the documented architecture and business rules.
+- Frontend implementation follows the documented UI, routing, and state management guidelines.
+- API development continues to be driven by `API_contract.md`.
+- Progress is tracked through the living documentation (`progress.md`, `backend_todo.md`, and `frontend_todo.md`).
+
+## Reading Order for Phase 2
+
+New contributors should follow this reading sequence before beginning implementation:
+
+1. `README.md`
+2. `context.md`
+3. `PRD.md`
+4. `system_architecture.md`
+5. `API_contract.md`
+6. Technology-specific documentation (`Frontend/` or `Backend/`)
+7. Development TODO documents
+
+Following this order ensures that implementation decisions are made using the established
+requirements, architecture, and project conventions.

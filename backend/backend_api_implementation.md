@@ -437,3 +437,254 @@ async def export_attendance(
 | GET /reports/attendance.xlsx | ✓ | ReportsService.generate_attendance_xlsx | sessions, attendance_records, users (+ openpyxl) | ✓ |
 
 **9 endpoints total in Phase 1.** (The 11-endpoint count in the contract table includes the index endpoints `/auth/login` and `/sessions/{id}`.)
+
+
+## Phase 2 Endpoint Implementation Guide
+
+> Step-by-step implementation guide for all Phase 2 endpoints.
+
+---
+
+## 10. GET /attendance/active
+
+**Purpose:** Return the member's currently active attendance.
+
+### Implementation Steps
+
+1. Verify authenticated member.
+2. Call `AttendanceService.get_active_attendance()`.
+3. Query attendance record with active state.
+4. Return attendance details.
+
+### Error Cases
+
+- 401 UNAUTHORIZED
+- 404 ACTIVE_ATTENDANCE_NOT_FOUND
+
+---
+
+## 11. POST /attendance/check-out
+
+**Purpose:** Complete attendance after validation.
+
+### Implementation Steps
+
+1. Verify authenticated member.
+2. Retrieve active attendance.
+3. Validate attendance state.
+4. Verify approval requirements.
+5. Record check-out time.
+6. Calculate attendance duration.
+7. Generate attendance summary.
+8. Save updates.
+9. Return completed attendance.
+
+### Error Cases
+
+- 401 UNAUTHORIZED
+- 404 ACTIVE_ATTENDANCE_NOT_FOUND
+- 409 APPROVAL_PENDING
+- 409 INVALID_ATTENDANCE_STATE
+
+---
+
+## 12. GET /attendance/summary
+
+**Purpose:** Return the final attendance summary.
+
+### Implementation Steps
+
+1. Verify authenticated member.
+2. Retrieve attendance record.
+3. Generate summary.
+4. Return summary.
+
+### Error Cases
+
+- 401 UNAUTHORIZED
+- 404 NOT_FOUND
+
+---
+
+## 13. GET /attendance/timeline
+
+**Purpose:** Return chronological presence events.
+
+### Implementation Steps
+
+1. Verify authentication.
+2. Retrieve attendance record.
+3. Fetch presence events.
+4. Order by timestamp.
+5. Return timeline.
+
+### Error Cases
+
+- 401 UNAUTHORIZED
+- 404 NOT_FOUND
+
+---
+
+## 14. POST /attendance/early-checkout
+
+**Purpose:** Submit an early check-out request.
+
+### Implementation Steps
+
+1. Verify authenticated member.
+2. Validate active attendance.
+3. Validate request reason.
+4. Prevent duplicate requests.
+5. Save request.
+6. Return pending approval status.
+
+### Error Cases
+
+- 401 UNAUTHORIZED
+- 404 ACTIVE_ATTENDANCE_NOT_FOUND
+- 409 REQUEST_ALREADY_EXISTS
+- 422 VALIDATION_ERROR
+
+---
+
+## 15. GET /attendance/approval-status
+
+**Purpose:** Return approval progress.
+
+### Implementation Steps
+
+1. Verify authenticated member.
+2. Retrieve approval record.
+3. Return current approval status.
+
+### Error Cases
+
+- 401 UNAUTHORIZED
+- 404 NOT_FOUND
+
+---
+
+## 16. POST /attendance/approve
+
+**Purpose:** Administrator approves an early check-out request.
+
+### Implementation Steps
+
+1. Verify administrator.
+2. Retrieve pending request.
+3. Validate ownership.
+4. Update approval status.
+5. Record approver.
+6. Record approval timestamp.
+7. Return updated request.
+
+### Error Cases
+
+- 401 UNAUTHORIZED
+- 403 FORBIDDEN
+- 404 NOT_FOUND
+- 409 INVALID_REQUEST_STATE
+
+---
+
+## 17. POST /attendance/reject
+
+**Purpose:** Administrator rejects an early check-out request.
+
+### Implementation Steps
+
+1. Verify administrator.
+2. Retrieve pending request.
+3. Validate ownership.
+4. Record rejection.
+5. Save administrator remarks.
+6. Return updated request.
+
+### Error Cases
+
+- 401 UNAUTHORIZED
+- 403 FORBIDDEN
+- 404 NOT_FOUND
+- 409 INVALID_REQUEST_STATE
+
+---
+
+## 18. GET /monitoring/live
+
+**Purpose:** Administrator views live attendance.
+
+### Implementation Steps
+
+1. Verify administrator.
+2. Call `MonitoringService.get_live_statistics()`.
+3. Retrieve active attendance.
+4. Return monitoring data.
+
+### Error Cases
+
+- 401 UNAUTHORIZED
+- 403 FORBIDDEN
+
+---
+
+## 19. GET /monitoring/statistics
+
+**Purpose:** Return attendance statistics.
+
+### Implementation Steps
+
+1. Verify administrator.
+2. Calculate attendance metrics.
+3. Return monitoring summary.
+
+### Error Cases
+
+- 401 UNAUTHORIZED
+- 403 FORBIDDEN
+
+---
+
+## 20. GET /monitoring/pending-requests
+
+**Purpose:** List pending early check-out requests.
+
+### Implementation Steps
+
+1. Verify administrator.
+2. Retrieve pending requests.
+3. Return request list.
+
+### Error Cases
+
+- 401 UNAUTHORIZED
+- 403 FORBIDDEN
+
+---
+
+## Phase 2 Implementation Checklist
+
+| Endpoint | Handler | Service | Database | Tests |
+|----------|---------|---------|----------|-------|
+| GET /attendance/active | ✓ | AttendanceService | attendance_records | ✓ |
+| POST /attendance/check-out | ✓ | AttendanceService | attendance_records | ✓ |
+| GET /attendance/summary | ✓ | AttendanceService | attendance_records | ✓ |
+| GET /attendance/timeline | ✓ | PresenceService | presence_events | ✓ |
+| POST /attendance/early-checkout | ✓ | AttendanceService | early_checkout_requests | ✓ |
+| GET /attendance/approval-status | ✓ | AttendanceService | early_checkout_requests | ✓ |
+| POST /attendance/approve | ✓ | AttendanceService | early_checkout_requests | ✓ |
+| POST /attendance/reject | ✓ | AttendanceService | early_checkout_requests | ✓ |
+| GET /monitoring/live | ✓ | MonitoringService | attendance_records | ✓ |
+| GET /monitoring/statistics | ✓ | MonitoringService | attendance_records | ✓ |
+| GET /monitoring/pending-requests | ✓ | MonitoringService | early_checkout_requests | ✓ |
+
+**Phase 2 adds 11 new endpoints while preserving all existing Phase 1 endpoints.**
+
+### Phase 2 Implementation Principles
+
+- Route handlers remain thin.
+- Business logic belongs in services.
+- Authorization is validated before service execution.
+- Database updates are transactional.
+- All responses follow `API_contract.md`.
+- Business errors use standardized error codes.
+- Every endpoint includes unit and integration tests.

@@ -316,3 +316,160 @@ function App() {
   );
 }
 ```
+## 11. Phase 2 Route Extensions
+
+Phase 2 extends the existing routing structure to support continuous attendance monitoring, administrator review workflows, and attendance summaries.
+
+---
+
+## 11.1 Updated Route Hierarchy
+
+```
+/
+├── /login
+├── /admin
+│   ├── /dashboard
+│   ├── /sessions
+│   ├── /sessions/create
+│   └── /sessions/:id
+│       ├── Overview
+│       ├── Live Monitoring
+│       ├── Early Check-out Requests
+│       └── Reports
+└── /member
+    ├── /dashboard
+    ├── /sessions/:id/checkin
+    ├── /sessions/:id/active
+    ├── /sessions/:id/summary
+    ├── /history
+    └── /profile
+```
+
+---
+
+## 11.2 New Member Routes
+
+| Route | Purpose |
+|--------|---------|
+| `/member/sessions/:id/active` | Active attendance session |
+| `/member/sessions/:id/summary` | Attendance summary after successful check-out |
+| `/member/profile` | Member profile and preferences (future-ready) |
+
+---
+
+## 11.3 Active Session Navigation
+
+Member navigation flow:
+
+```
+Dashboard
+
+↓
+
+Check In
+
+↓
+
+Active Session
+
+↓
+
+Attendance Summary
+
+↓
+
+Dashboard
+```
+
+If an Active Session exists, selecting **Open Session** from the dashboard always returns the member to the active attendance page.
+
+---
+
+## 11.4 Early Check-out Navigation
+
+When a member requests early check-out:
+
+```
+Active Session
+
+↓
+
+Request Early Check-out
+
+↓
+
+Pending Approval
+
+↓
+
+Administrator Decision
+
+├── Approved
+│     ↓
+│ Complete Check-out
+│     ↓
+│ Attendance Summary
+│
+└── Rejected
+      ↓
+Return to Active Session
+```
+
+---
+
+## 11.5 Administrator Navigation
+
+Session Detail becomes the central workspace for administrators.
+
+Within a session, administrators can access:
+
+- Session Overview
+- Live Attendance Monitoring
+- Early Check-out Requests
+- Attendance Reports
+
+Navigation between these sections should not require leaving the Session Detail page.
+
+---
+
+## 11.6 Route Protection
+
+All new Phase 2 routes inherit the existing authentication rules.
+
+Member-only routes:
+
+- Active Session
+- Attendance Summary
+- Attendance History
+- Profile
+
+Administrator-only functionality:
+
+- Live Monitoring
+- Early Check-out Review
+- Reports
+
+---
+
+## 11.7 Navigation Principles
+
+- Users should never manually type URLs to continue attendance.
+- Active sessions should always be reachable from the dashboard.
+- Attendance Summary is displayed only after successful attendance completion.
+- After attendance completion, navigation returns naturally to the dashboard.
+- Protected routes must remain inaccessible after logout.
+
+---
+
+## 11.8 Route Summary
+
+| Route | Component | Role |
+|--------|-----------|------|
+| `/member/dashboard` | MemberDashboard | Member |
+| `/member/sessions/:id/checkin` | CheckInFlow | Member |
+| `/member/sessions/:id/active` | ActiveSessionPage | Member |
+| `/member/sessions/:id/summary` | AttendanceSummaryPage | Member |
+| `/member/history` | AttendanceHistory | Member |
+| `/member/profile` | MemberProfile | Member |
+| `/admin/dashboard` | AdminDashboard | Admin |
+| `/admin/sessions/:id` | SessionDetail | Admin |

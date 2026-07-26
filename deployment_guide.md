@@ -100,3 +100,80 @@ backend + Postgres (e.g. Render/Railway/Fly.io), chosen host for frontend (e.g. 
 environment variable management in that host, HTTPS, and backup strategy for the database
 (Rulebook §11.3, §13). Do not build CI/CD or infra-as-code for this until the project reaches that
 phase.
+
+
+## 9. Phase 2 Local Development
+
+Phase 2 continues to use the same local development environment established during Phase 1.
+
+No additional infrastructure is required. Existing backend, frontend and PostgreSQL setup
+procedures remain unchanged.
+
+## 10. Database Migration Workflow
+
+During Phase 2, new database tables and schema changes will be introduced incrementally.
+
+Recommended workflow:
+
+```bash
+# Create a migration
+alembic revision --autogenerate -m "describe change"
+
+# Review generated migration
+
+# Apply migration
+alembic upgrade head
+```
+
+Never edit an already applied migration unless the database is recreated for development.
+
+---
+
+## 11. Backend Development Verification
+
+Before pushing backend changes:
+
+- [ ] Backend starts successfully.
+- [ ] Database migrations execute successfully.
+- [ ] FastAPI documentation loads (`/docs`).
+- [ ] New endpoints respond correctly.
+- [ ] Existing endpoints continue working.
+- [ ] No unexpected server errors appear.
+
+---
+
+## 12. Frontend Development Verification
+
+Before pushing frontend changes:
+
+- [ ] Frontend starts successfully.
+- [ ] Application communicates with the backend.
+- [ ] No console errors exist.
+- [ ] UI behaves correctly.
+- [ ] Loading and error states are verified.
+- [ ] Existing functionality remains unaffected.
+
+---
+
+## 13. Full Integration Verification
+
+Before considering a milestone complete:
+
+1. Start PostgreSQL.
+2. Start the FastAPI backend.
+3. Start the React frontend.
+4. Verify authentication.
+5. Verify current milestone functionality.
+6. Verify previous milestone functionality.
+7. Confirm no regressions were introduced.
+
+Every milestone should leave the application in a runnable state.
+
+---
+
+## 14. Future Deployment
+
+Local-first development remains the project strategy until Phase 4.
+
+Cloud deployment, CI/CD, production infrastructure, backups and deployment automation remain
+outside the scope of Phase 2 and will be introduced during the Production Hardening phase.

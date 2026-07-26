@@ -291,3 +291,228 @@ Generate secret: `python -c "import secrets; print(secrets.token_urlsafe(32))"`
 | Token replay | Use stolen token multiple times | Token has expiration timestamp |
 | SQL injection on password | Inject SQL in password field | Use parameterized queries (SQLAlchemy does this) |
 | Password exposure in logs | Log the password field | Never log password fields |
+
+
+## 13. Phase 2 Authentication & Authorization Extensions
+
+Phase 2 continues using the existing JWT-based authentication system.
+
+No changes are required to:
+
+- password hashing;
+- JWT generation;
+- JWT verification;
+- token expiration;
+- login flow.
+
+The focus of Phase 2 is expanding authorization rules for the new attendance lifecycle.
+
+---
+
+## 13.1 Authentication Flow
+
+Authentication remains unchanged.
+
+```
+Login
+
+↓
+
+JWT Issued
+
+↓
+
+Protected API Request
+
+↓
+
+JWT Verification
+
+↓
+
+Role Verification
+
+↓
+
+Business Logic
+```
+
+All Phase 2 endpoints continue to require a valid JWT.
+
+---
+
+## 13.2 Member Permissions
+
+Authenticated members may:
+
+- view available sessions;
+- check in;
+- view active attendance;
+- submit early check-out requests;
+- view approval status;
+- complete approved check-out;
+- view attendance history;
+- view attendance summaries.
+
+Members may not:
+
+- approve requests;
+- reject requests;
+- access monitoring endpoints;
+- access another member's attendance.
+
+---
+
+## 13.3 Administrator Permissions
+
+Authenticated administrators may:
+
+- manage sessions;
+- monitor live attendance;
+- review early check-out requests;
+- approve requests;
+- reject requests;
+- generate reports;
+- access monitoring statistics.
+
+Administrators may only manage resources they own where ownership rules apply.
+
+---
+
+## 13.4 Authorization Dependencies
+
+Continue using dependency injection.
+
+Examples:
+
+```python
+get_current_user()
+
+get_current_admin()
+```
+
+Business services should assume authorization has already been validated by the route layer.
+
+---
+
+## 13.5 Endpoint Protection
+
+Member endpoints:
+
+```
+GET  /attendance/active
+
+GET  /attendance/summary
+
+GET  /attendance/timeline
+
+POST /attendance/check-out
+
+POST /attendance/early-checkout
+
+GET  /attendance/approval-status
+```
+
+Administrator endpoints:
+
+```
+GET  /monitoring/live
+
+GET  /monitoring/statistics
+
+GET  /monitoring/pending-requests
+
+POST /attendance/approve
+
+POST /attendance/reject
+```
+
+All endpoints require authentication.
+
+Administrator endpoints additionally require administrator authorization.
+
+---
+
+## 13.6 Ownership Validation
+
+Authorization extends beyond roles.
+
+Services should verify ownership before returning protected resources.
+
+Examples:
+
+Members:
+
+- may only access their own attendance records.
+
+Administrators:
+
+- may only manage sessions they created.
+
+Ownership validation belongs in the service layer.
+
+---
+
+## 13.7 Security Principles
+
+Phase 2 continues the existing security model.
+
+Principles:
+
+- authenticate every protected request;
+- authorize every sensitive operation;
+- never trust client-provided user identifiers;
+- derive user identity from the verified JWT;
+- validate ownership before returning data.
+
+---
+
+## 13.8 Error Responses
+
+Unauthorized authentication:
+
+```
+401 UNAUTHORIZED
+```
+
+Insufficient permissions:
+
+```
+403 FORBIDDEN
+```
+
+Ownership violation:
+
+```
+404 NOT_FOUND
+```
+
+Returning `404` for unauthorized ownership prevents resource enumeration.
+
+---
+
+## 13.9 Testing Requirements
+
+Verify:
+
+- members cannot access administrator endpoints;
+- administrators can approve requests;
+- members cannot approve requests;
+- members cannot access another member's attendance;
+- administrators cannot manage sessions they do not own;
+- JWT authentication remains required for all protected endpoints.
+
+---
+
+## 13.10 Phase 2 Security Principles
+
+The authentication architecture remains unchanged.
+
+Phase 2 extends authorization while preserving:
+
+- stateless JWT authentication;
+- role-based access control;
+- ownership validation;
+- secure password handling;
+- short-lived access tokens;
+- dependency-based authorization.

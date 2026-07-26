@@ -116,3 +116,71 @@ them in `development_roadmap.md`.
 | Phase 4 — Production hardening | Offline sync, audit logs, spoofing checks, backups, deployment |
 
 Full detail in `development_roadmap.md`.
+
+## 9. Phase 2 Product Requirements
+
+> Scope: This section extends the original Phase 1 PRD. All Phase 1 functional and non-functional
+> requirements remain valid unless explicitly superseded in future phases.
+
+Phase 2 expands the Attendance & Activity Tracking Application from a verified attendance system
+into a basic attendance monitoring system. The objective is to provide administrators with better
+visibility into member presence throughout an event while preserving the simple and reliable
+attendance workflow established during Phase 1.
+
+### 9.1 Goals (Phase 2)
+
+1. Extend attendance beyond a single check-in event.
+2. Record when a member leaves and returns to the event venue.
+3. Calculate the total duration of attendance for each member.
+4. Provide administrators with a more complete attendance timeline.
+
+### 9.2 Functional Requirements (Phase 2)
+
+#### Attendance Monitoring
+
+- FR-18: The system shall allow members to check out of an active session.
+- FR-19: The system shall calculate attendance duration using server-side timestamps.
+- FR-20: The system shall record when a member leaves the approved attendance area.
+- FR-21: The system shall record when a member re-enters the approved attendance area.
+- FR-22: A member's attendance timeline shall preserve the chronological order of all attendance events.
+- FR-23: Administrators shall be able to view the complete attendance timeline for every member participating in a session.
+
+#### Session Status Extension
+
+The simplified attendance lifecycle introduced in Phase 1 is extended to include additional
+attendance events required for monitoring.
+
+The detailed business rules, status transitions, and validation logic are documented separately
+within the project rule documentation and implementation documents.
+
+### 9.3 Reporting
+
+Phase 2 reporting extends the Phase 1 attendance report by incorporating attendance duration and
+additional attendance events where applicable.
+
+The detailed report structure will be defined within the reporting documentation during
+implementation.
+
+### 9.4 Non-Goals (Phase 2)
+
+The following capabilities remain outside the scope of Phase 2:
+
+- Member activity submissions.
+- Activity evidence management.
+- Offline synchronization.
+- Advanced anti-spoofing detection.
+- Complete audit logging.
+- AI-assisted features.
+
+These remain scheduled for later phases as described in
+`development_roadmap.md`.
+
+### 9.5 Acceptance Criteria (Phase 2)
+
+| ID | Scenario | Expected Result |
+|---|---|---|
+| F11 | Member checks out normally | Attendance duration is calculated correctly |
+| F12 | Member leaves the venue | Leave event is recorded |
+| F13 | Member returns to the venue | Return event is recorded chronologically |
+| F14 | Administrator views attendance timeline | Complete sequence of attendance events is displayed |
+| F15 | Attendance report generated | Report includes Phase 2 attendance information where applicable |

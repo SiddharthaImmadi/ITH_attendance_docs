@@ -94,3 +94,158 @@ No offline/PWA support, no left-venue/returned live monitoring UI, no activity s
 no correction/dispute UI, no admin analytics charts beyond a simple check-in list. These are
 Phase 2+ (see `PRD.md §3`, `development_roadmap.md`). Also: **no Flutter/mobile work** — Phase 1 is
 web-only.
+
+## 11. Phase 2 Frontend Rules
+
+Phase 2 extends the Phase 1 web application by introducing attendance monitoring throughout an
+active session. All rules from Sections 1–10 remain applicable unless explicitly superseded here.
+
+### 11.1 Attendance Monitoring
+
+The frontend is responsible for presenting attendance information clearly but never deciding
+attendance outcomes.
+
+Responsibilities include:
+
+- Displaying the member's current attendance state.
+- Showing live session status.
+- Displaying presence history received from the backend.
+- Showing leave and return events.
+- Initiating member check-out.
+- Displaying final attendance summaries.
+
+The frontend must never calculate attendance duration or attendance status itself.
+
+---
+
+### 11.2 Live Data
+
+Attendance information changes during an active session.
+
+The frontend should refresh monitoring data using the agreed API strategy (polling or another
+approved approach).
+
+Avoid excessive requests.
+
+The backend remains the single source of truth.
+
+---
+
+### 11.3 Presence Timeline
+
+Presence history should be presented chronologically.
+
+Examples include:
+
+- Checked In
+- Left Venue
+- Returned
+- Checked Out
+
+The frontend displays events exactly as received from the backend without modifying timestamps or
+event order.
+
+---
+
+### 11.4 Leave and Return Experience
+
+If a member temporarily leaves the venue:
+
+- Clearly indicate that they are outside the permitted area.
+- Display any warnings returned by the backend.
+- Update the UI immediately when the member returns.
+
+Do not automatically assume attendance failure because the member left the venue.
+
+Attendance decisions always come from backend validation.
+
+---
+
+### 11.5 Check-out Flow
+
+The check-out experience should be as polished as the check-in experience.
+
+The flow should include:
+
+1. Member initiates check-out.
+2. Submit the request.
+3. Display loading state.
+4. Display attendance summary returned by the backend.
+5. Clearly indicate successful session completion.
+
+Never calculate attendance duration on the client.
+
+---
+
+### 11.6 Administrator Monitoring
+
+Administrator pages should support live monitoring of active sessions.
+
+The interface should clearly distinguish:
+
+- Members currently present.
+- Members temporarily outside.
+- Members who have completed check-out.
+- Members requiring attention.
+
+Large tables should remain readable and responsive.
+
+---
+
+### 11.7 Performance Guidelines
+
+Phase 2 introduces more frequently changing information.
+
+Frontend code should:
+
+- Minimize unnecessary re-renders.
+- Refresh only data that changes.
+- Reuse cached data where appropriate.
+- Avoid repeated API requests from multiple components.
+- Continue using React Query for server state management.
+
+Performance improvements must never compromise correctness.
+
+---
+
+### 11.8 Error Handling
+
+All monitoring-related failures should present meaningful feedback.
+
+Examples include:
+
+- Unable to refresh attendance data.
+- Check-out request failed.
+- Monitoring information temporarily unavailable.
+
+Never leave the user without feedback during background operations.
+
+---
+
+### 11.9 Testing
+
+In addition to Phase 1 tests, verify:
+
+- Presence timeline rendering.
+- Leave event display.
+- Return event display.
+- Check-out workflow.
+- Attendance summary display.
+- Monitoring page refresh.
+- Error handling during monitoring.
+- Loading states throughout long-running operations.
+
+---
+
+### 11.10 Phase 2 Scope
+
+Phase 2 frontend includes:
+
+- Attendance monitoring
+- Presence timeline
+- Leave/Return visualization
+- Check-out workflow
+- Enhanced attendance reporting
+- Live administrator monitoring
+
+Features planned for later phases remain out of scope unless the project documentation is updated.

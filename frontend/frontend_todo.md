@@ -223,3 +223,183 @@
 - [ ] Verify all state management follows state_management.md
 - [ ] Update progress.md with completion status
 - [ ] Add entry to changelog.md for Phase 1 completion
+
+# Frontend Development To-Do List — Phase 2
+
+## Milestone 6: Enhanced Member Dashboard
+
+### Dashboard Layout
+- [ ] Upgrade Member Dashboard to Phase 2 design
+- [ ] Implement sidebar navigation
+- [ ] Display Active Session card
+- [ ] Display Available Sessions as responsive cards
+- [ ] Enhance Attendance History section
+- [ ] Add session progress indicator
+- [ ] Implement responsive sidebar (desktop/tablet/mobile)
+
+### Navigation
+- [ ] Create sidebar navigation component
+- [ ] Add Dashboard navigation
+- [ ] Add Sessions navigation
+- [ ] Add History navigation
+- [ ] Add Profile navigation
+- [ ] Add Logout action
+- [ ] Highlight current navigation item
+
+---
+
+## Milestone 7: Attendance Lifecycle
+
+### Active Session Page
+- [ ] Create ActiveSessionPage
+- [ ] Display session information
+- [ ] Display current attendance status
+- [ ] Display presence status (Inside/Outside Venue)
+- [ ] Display session progress
+- [ ] Add Open Session navigation
+- [ ] Add Check Out button
+
+### Live Attendance
+- [ ] Implement automatic attendance refresh
+- [ ] Display live attendance updates
+- [ ] Display attendance status changes
+- [ ] Handle monitoring failures gracefully
+
+### Presence Timeline
+- [ ] Create PresenceTimeline component
+- [ ] Display attendance events chronologically
+- [ ] Display event timestamps
+- [ ] Display backend messages when available
+- [ ] Auto-refresh timeline
+
+---
+
+## Milestone 8: Early Check-out Workflow
+
+### Check-out Request
+- [ ] Create EarlyCheckOutDialog component
+- [ ] Add reason input
+- [ ] Validate reason before submission
+- [ ] Submit request to backend
+- [ ] Display loading state
+
+### Pending Approval
+- [ ] Display pending approval message
+- [ ] Continue monitoring active session
+- [ ] Refresh approval status automatically
+
+### Approval Handling
+- [ ] Display approval notification
+- [ ] Display rejection notification
+- [ ] Display administrator remarks (if provided)
+- [ ] Enable Complete Check-out after approval
+
+---
+
+## Milestone 9: Attendance Summary
+
+### Attendance Summary Page
+- [ ] Create AttendanceSummaryPage
+- [ ] Display session information
+- [ ] Display check-in time
+- [ ] Display check-out time
+- [ ] Display attendance duration
+- [ ] Display final attendance status
+- [ ] Display attendance timeline
+- [ ] Add Return to Dashboard button
+
+---
+
+## Milestone 10: Admin Live Monitoring
+
+### Live Monitoring
+- [ ] Display live attendance summary
+- [ ] Display members currently present
+- [ ] Display members outside venue
+- [ ] Display members checked out
+- [ ] Auto-refresh monitoring data
+
+### Early Check-out Requests
+- [ ] Display pending requests
+- [ ] Display member reason
+- [ ] Approve request
+- [ ] Reject request
+- [ ] Refresh request list after decision
+
+### Enhanced Session Detail
+- [ ] Integrate monitoring into Session Detail page
+- [ ] Display live attendance statistics
+- [ ] Display presence timeline
+- [ ] Improve session overview
+
+---
+
+## Milestone 11: Reporting Enhancements
+
+### Attendance Reports
+- [ ] Display attendance duration
+- [ ] Display leave/return events
+- [ ] Display attendance timeline
+- [ ] Enhance attendance summaries
+
+### Export
+- [ ] Include Phase 2 attendance information
+- [ ] Include attendance duration
+- [ ] Include leave/return history
+- [ ] Include final attendance status
+
+---
+
+## Milestone 12: Phase 2 Polish
+
+### UI Polish
+- [ ] Animate attendance status changes
+- [ ] Animate timeline updates
+- [ ] Improve dashboard transitions
+- [ ] Review spacing and alignment
+- [ ] Ensure consistent card layouts
+
+### Error Handling
+- [ ] Handle monitoring failures
+- [ ] Handle approval failures
+- [ ] Handle check-out failures
+- [ ] Handle refresh failures
+
+### Performance
+- [ ] Optimize dashboard refresh
+- [ ] Prevent unnecessary re-renders
+- [ ] Optimize live monitoring
+- [ ] Verify responsive performance
+
+### Accessibility
+- [ ] Verify sidebar accessibility
+- [ ] Verify timeline keyboard navigation
+- [ ] Verify live region announcements
+- [ ] Verify responsive accessibility
+
+---
+
+## Phase 2 Integration Testing
+
+- [ ] Test complete attendance lifecycle
+- [ ] Test Active Session page
+- [ ] Test live attendance updates
+- [ ] Test presence timeline
+- [ ] Test early check-out request
+- [ ] Test administrator approval workflow
+- [ ] Test administrator rejection workflow
+- [ ] Test attendance summary
+- [ ] Test live monitoring dashboard
+- [ ] Test reporting enhancements
+- [ ] Test responsive layouts
+- [ ] Test full frontend/backend integration
+
+---
+
+## Documentation
+
+- [ ] Verify implementation follows frontend_ui_spec.md
+- [ ] Verify implementation follows component_guidelines.md
+- [ ] Verify implementation follows rules_frontend.md
+- [ ] Update progress.md with Phase 2 completion status
+- [ ] Add Phase 2 entry to changelog.md

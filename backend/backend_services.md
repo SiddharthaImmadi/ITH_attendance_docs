@@ -421,3 +421,311 @@ async def test_check_in_duplicate():
 | **Testing** | Mock the DB, test service in isolation |
 | **Dependencies** | Inject DB, other services via `__init__` |
 | **No global state** | Every service instance is fresh (created per request) |
+
+
+## 12. Phase 2 Service Layer Extensions
+
+Phase 2 extends the service layer to support the complete attendance lifecycle, presence monitoring, administrator approvals, and enhanced reporting.
+
+---
+
+## 12.1 Updated Service Structure
+
+```
+app/services/
+
+├── auth_service.py
+
+├── sessions_service.py
+
+├── attendance_service.py
+
+├── presence_service.py
+
+├── monitoring_service.py
+
+├── reports_service.py
+
+├── geo_service.py
+
+└── notification_service.py (optional)
+```
+
+Each service should own a single business domain.
+
+---
+
+## 12.2 AttendanceService Responsibilities
+
+AttendanceService now manages the complete attendance lifecycle.
+
+Responsibilities include:
+
+- check in
+- active attendance retrieval
+- attendance status
+- attendance completion
+- attendance duration calculation
+- attendance summary generation
+- attendance state validation
+
+Example methods:
+
+```python
+check_in()
+
+get_active_attendance()
+
+complete_check_out()
+
+generate_summary()
+
+validate_transition()
+```
+
+AttendanceService should not manage administrator approvals directly.
+
+---
+
+## 12.3 PresenceService
+
+Presence monitoring should be isolated into its own service.
+
+Responsibilities:
+
+- evaluate member location
+- determine inside/outside status
+- create presence events
+- build attendance timeline
+- prevent duplicate events
+
+Example methods:
+
+```python
+record_presence()
+
+create_event()
+
+get_timeline()
+
+get_current_status()
+```
+
+---
+
+## 12.4 MonitoringService
+
+MonitoringService provides administrator dashboards.
+
+Responsibilities:
+
+- active attendance
+- attendance statistics
+- pending approvals
+- completed attendance
+- live monitoring summaries
+
+Example methods:
+
+```python
+get_live_statistics()
+
+get_active_members()
+
+get_pending_requests()
+
+get_monitoring_summary()
+```
+
+MonitoringService should not modify attendance records.
+
+---
+
+## 12.5 ReportsService
+
+ReportsService should generate reports only.
+
+Responsibilities:
+
+- attendance summary export
+- attendance timeline export
+- approval information
+- duration calculations for reports
+
+Report formatting belongs inside this service.
+
+---
+
+## 12.6 Service Communication
+
+Services may collaborate but should avoid circular dependencies.
+
+Recommended flow:
+
+```
+AttendanceService
+
+↓
+
+PresenceService
+
+↓
+
+GeoService
+```
+
+Administrator workflow:
+
+```
+MonitoringService
+
+↓
+
+AttendanceService
+
+↓
+
+ReportsService
+```
+
+Services should communicate through clearly defined method calls.
+
+---
+
+## 12.7 Business Rule Ownership
+
+Business rules belong in only one service.
+
+Examples:
+
+Attendance validation
+
+→ AttendanceService
+
+Distance calculation
+
+→ GeoService
+
+Presence evaluation
+
+→ PresenceService
+
+Monitoring statistics
+
+→ MonitoringService
+
+Report generation
+
+→ ReportsService
+
+Avoid duplicating business rules across services.
+
+---
+
+## 12.8 State Management
+
+Attendance state transitions must be validated before changes are committed.
+
+Example:
+
+```
+Checked In
+
+↓
+
+Active
+
+↓
+
+Pending Approval
+
+↓
+
+Approved
+
+↓
+
+Checked Out
+```
+
+Invalid transitions should raise appropriate exceptions.
+
+---
+
+## 12.9 Database Transactions
+
+Operations affecting multiple tables should execute within a single transaction.
+
+Examples:
+
+- attendance completion;
+- approval processing;
+- timeline creation.
+
+Rollback the transaction if any operation fails.
+
+---
+
+## 12.10 Service Error Handling
+
+Services should raise descriptive business exceptions.
+
+Examples:
+
+```python
+raise HTTPException(409, "INVALID_ATTENDANCE_STATE")
+
+raise HTTPException(409, "APPROVAL_PENDING")
+
+raise HTTPException(404, "ACTIVE_ATTENDANCE_NOT_FOUND")
+
+raise HTTPException(422, "INVALID_PRESENCE_EVENT")
+```
+
+Avoid returning partially updated business objects.
+
+---
+
+## 12.11 Service Testing
+
+Each service should be tested independently.
+
+AttendanceService:
+
+- lifecycle
+- state transitions
+- summary generation
+
+PresenceService:
+
+- presence detection
+- timeline creation
+- duplicate prevention
+
+MonitoringService:
+
+- statistics
+- active attendance
+- pending approvals
+
+ReportsService:
+
+- workbook generation
+- attendance summaries
+- export formatting
+
+Mock database interactions where appropriate.
+
+---
+
+## 12.12 Phase 2 Service Principles
+
+All Phase 2 services should follow these principles:
+
+- Single Responsibility Principle.
+- Business logic belongs only in services.
+- Route handlers remain thin.
+- Services communicate through clear interfaces.
+- Database operations are transactional.
+- Business rules are implemented once and reused.
+- Services remain independently testable.
