@@ -16,14 +16,48 @@ Authorization: Bearer <jwt>
 
 ## Table of Contents
 
-1. [Standard Error Format](#standard-error-format)
-2. [Authentication](#authentication)
-3. [Sessions](#sessions)
-4. [Attendance / Check-in](#attendance--check-in)
-5. [Reports](#reports)
-6. [Error Code Reference](#error-code-reference)
-
+1. Standard Response Format
+2. Standard Error Format
+3. Authentication
+4. Events
+5. Attendance
+6. Presence Monitoring
+7. Emergency Tickets
+8. Notifications
+9. Volunteer Blocking
+10. Reports
+11. Activity History
+12. Audit Logs
+13. Error Code Reference
+14. Changelog
 ---
+
+## Standard Response Format
+
+All successful responses use this envelope:
+
+```json
+{
+  "success": true,
+  "message": "Operation completed successfully.",
+  "data": {}
+}
+```
+
+All error responses use:
+
+```json
+{
+  "success": false,
+  "message": "Operation failed.",
+  "errors": [
+    {
+      "code": "ERROR_CODE",
+      "details": "Additional information."
+    }
+  ]
+}
+```
 
 ## Standard Error Format
 
@@ -147,7 +181,7 @@ on app reload to restore session state.
 
 ---
 
-## Sessions
+## Events
 
 ### POST /sessions
 
@@ -230,6 +264,23 @@ Session starts in `scheduled` status.
   }
 }
 ```
+}
+  "boundary_type": "GEOJSON",
+  "boundary": {},
+  "gps_update_interval": 15,
+  "outside_grace_period": 10,
+  "auto_timeout_minutes": 30
+}
+
+### Validation Rules
+
+- boundary_type is required.
+- GEOJSON requires a valid GeoJSON Polygon.
+- CAPTURED_POINTS requires at least three GPS coordinates.
+- Boundary cannot be modified after the session becomes ACTIVE.
+- gps_update_interval must be greater than 0.
+- outside_grace_period must be greater than or equal to 0.
+- auto_timeout_minutes must be greater than 0.
 
 ---
 
@@ -562,6 +613,560 @@ open session.
 
 ---
 
+# Presence Monitoring
+
+Presence Monitoring starts automatically after a successful check-in and ends when:
+
+- The volunteer checks out.
+- The event times out.
+- The attendance session is completed.
+
+The client submits periodic GPS updates while monitoring is active.
+
+---
+
+## POST /presence/location
+
+**Purpose:** Submit the volunteer's current GPS location.
+
+**Auth required:** Yes (member only)
+
+### Request
+
+```json
+{
+  "attendance_id": "uuid",
+  "latitude": 17.3850,
+  "longitude": 78.4867,
+  "accuracy": 4.2,
+  "provider": "gps",
+  "captured_at": "2026-08-01T10:15:30Z"
+}
+```
+
+### Field Notes
+
+| Field | Description |
+|--------|-------------|
+| attendance_id | Attendance record identifier |
+| latitude | Current latitude |
+| longitude | Current longitude |
+| accuracy | GPS accuracy in meters |
+| provider | gps / network |
+| captured_at | Device timestamp |
+
+---
+
+### Response 200
+
+```json
+{
+  "success": true,
+  "message": "Location received.",
+  "data": {
+    "status": "ACTIVE",
+    "inside_boundary": true
+  }
+}
+```
+
+---
+
+### Possible Status Values
+
+- ACTIVE
+- OUTSIDE
+- RETURNED
+- LEFT
+- DISCONNECTED
+- COMPLETED
+
+---
+
+### Business Rules
+
+- GPS updates occur every 15 seconds.
+- Remaining outside for 10 seconds changes status to OUTSIDE.
+- Returning inside changes status to RETURNED.
+- Approved emergency exits may transition to LEFT.
+- GPS loss marks the session as DISCONNECTED.
+- Monitoring automatically stops after the configured timeout once the event ends.
+
+---
+
+## GET /presence/{attendanceId}
+
+Returns the current monitoring session.
+
+---
+
+## GET /presence
+
+Optional filters:
+
+- event_id
+- volunteer_id
+- status
+
+--
+---
+
+# Emergency Tickets
+
+Emergency Tickets allow volunteers to request permission to temporarily or permanently leave an active event.
+
+Only one active emergency ticket may exist for an attendance record.
+
+---
+
+## POST /tickets
+
+**Purpose:** Create an emergency leave request.
+
+**Auth required:** Yes (member only)
+
+### Request
+
+```json
+{
+  "attendance_id": "uuid",
+  "reason": "Medical Emergency",
+  "description": "Need to visit the hospital."
+}
+```
+
+### Validation Rules
+
+- Attendance must be ACTIVE.
+- One active ticket per attendance.
+- Description maximum length: 100 characters.
+- Attendance must belong to the authenticated member.
+
+---
+
+### Response 201
+
+```json
+{
+  "success": true,
+  "message": "Emergency ticket created.",
+  "data": {
+    "ticket_id": "uuid",
+    "status": "PENDING"
+  }
+}
+```
+
+---
+
+## GET /tickets
+
+Returns emergency tickets.
+
+### Optional Filters
+
+- event_id
+- volunteer_id
+- status
+
+---
+
+## GET /tickets/{ticketId}
+
+Returns complete ticket details.
+
+---
+
+## POST /tickets/{ticketId}/approve
+
+**Auth required:** Admin only
+
+Approves the emergency request.
+
+Response:
+
+```json
+{
+  "success": true,
+  "message": "Emergency ticket approved."
+}
+```
+
+---
+
+## POST /tickets/{ticketId}/reject
+
+**Auth required:** Admin only
+
+Rejects the emergency request.
+
+Response:
+
+```json
+{
+  "success": true,
+  "message": "Emergency ticket rejected."
+}
+```
+
+---
+
+## POST /tickets/{ticketId}/cancel
+
+**Auth required:** Member only
+
+Cancels a pending emergency request.
+
+---
+
+### Ticket Status
+
+- PENDING
+- APPROVED
+- REJECTED
+- CANCELLED
+- USED
+
+---
+
+### Business Rules
+
+- Only one active emergency ticket per attendance.
+- Only PENDING tickets may be cancelled.
+- APPROVED tickets become USED once the volunteer exits the venue.
+- REJECTED tickets cannot be reused.
+- All ticket actions are recorded in the activity history.
+
+--
+---
+
+# Notifications
+
+Notifications provide in-app alerts generated automatically by the system.
+
+Users cannot create notifications manually.
+
+---
+
+## GET /notifications
+
+**Purpose:** Return notifications for the authenticated user.
+
+**Auth required:** Yes
+
+### Optional Filters
+
+- status
+- type
+
+---
+
+### Response 200
+
+```json
+{
+  "success": true,
+  "message": "Notifications retrieved successfully.",
+  "data": [
+    {
+      "id": "uuid",
+      "type": "EVENT_REMINDER",
+      "title": "Upcoming Event",
+      "message": "Workshop begins in 30 minutes.",
+      "status": "UNREAD",
+      "created_at": "2026-08-01T08:30:00Z"
+    }
+  ]
+}
+```
+
+---
+
+## GET /notifications/{notificationId}
+
+Returns a single notification.
+
+---
+
+## PATCH /notifications/{notificationId}/read
+
+Marks a notification as READ.
+
+### Response
+
+```json
+{
+  "success": true,
+  "message": "Notification marked as read."
+}
+```
+
+---
+
+## PATCH /notifications/read-all
+
+Marks every unread notification for the authenticated user as READ.
+
+### Response
+
+```json
+{
+  "success": true,
+  "message": "All notifications marked as read."
+}
+```
+
+---
+
+## Notification Types
+
+- EVENT_REMINDER
+- CHECK_IN_SUCCESS
+- CHECK_OUT_SUCCESS
+- EMERGENCY_APPROVED
+- EMERGENCY_REJECTED
+- VOLUNTEER_LEFT
+- GPS_DISCONNECTED
+- BLOCKED
+- GENERAL
+
+---
+
+## Notification Status
+
+- UNREAD
+- READ
+- EXPIRED
+
+---
+
+## Business Rules
+
+- Notifications are generated by other modules.
+- Users cannot edit notification content.
+- Notifications automatically expire according to the application's retention policy.
+- Expired notifications are read-only and are not returned by default.
+
+--
+---
+
+# Volunteer Blocking
+
+Volunteer Blocking temporarily prevents a volunteer from participating in future events after violating attendance policies.
+
+Only administrators can remove an active block.
+
+---
+
+
+
+## GET /blocks/me
+
+**Purpose:** Return the authenticated volunteer's current block status.
+
+**Auth required:** Yes (member)
+
+### Response 200
+
+```json
+{
+  "success": true,
+  "message": "Block status retrieved successfully.",
+  "data": {
+    "status": "ACTIVE",
+    "blocked_events_remaining": 2,
+    "reason": "Unauthorized venue exit",
+    "blocked_since": "2026-08-15T10:20:00Z"
+  }
+}
+```
+
+---
+
+## GET /blocks
+
+**Purpose:** List blocked volunteers.
+
+**Auth required:** Yes (admin)
+
+### Optional Filters
+
+- status
+- volunteer_id
+
+---
+
+## GET /blocks/{blockId}
+
+Returns complete block details.
+
+---
+
+## POST /blocks/{blockId}/remove
+
+**Purpose:** Remove an active block.
+
+**Auth required:** Yes (admin)
+
+### Request
+
+```json
+{
+  "reason": "Administrative review completed."
+}
+```
+
+### Response
+
+```json
+{
+  "success": true,
+  "message": "Volunteer block removed successfully."
+}
+```
+
+---
+
+## Block Status
+
+- ACTIVE
+- COMPLETED
+- REMOVED
+
+---
+
+## Business Rules
+
+- A volunteer can have only one ACTIVE block at a time.
+- Active blocks prevent event registration and check-in.
+- New blocks are automatically created by attendance and presence policy violations.
+- By default, a block lasts for three eligible club-organized events.
+- After each eligible event, the remaining block count decreases automatically.
+- When the remaining count reaches zero, the block status changes to COMPLETED.
+- Administrators may remove a block at any time, changing its status to REMOVED.
+- All block creation, completion, and removal actions are recorded in the audit history.
+
+--
+---
+
+### Module Integration
+
+| Module | Integration |
+|----------|-------------|
+| Attendance | Prevents check-in while an ACTIVE block exists |
+| Presence Monitoring | May create a block after unauthorized venue exit |
+| Emergency Tickets | Approved emergency exits do not create blocks |
+| Notifications | Sends BLOCKED notification to the volunteer |
+| Reports | Includes block statistics |
+| Audit Logs | Records all administrative block actions |
+
+
+# Reports & Analytics
+
+Reports provide aggregated, read-only views of attendance, presence, emergency tickets, and volunteer participation.
+
+No report endpoint modifies application data.
+
+---
+
+## GET /reports/dashboard
+
+**Purpose:** Return live dashboard statistics.
+
+**Auth required:** Yes (admin)
+
+### Optional Query Parameters
+
+- event_id
+
+### Response
+
+```json
+{
+  "success": true,
+  "message": "Dashboard retrieved successfully.",
+  "data": {
+    "inside_volunteers": 42,
+    "outside_volunteers": 3,
+    "pending_tickets": 2,
+    "approved_leaves": 4,
+    "disconnected_volunteers": 1,
+    "completed_volunteers": 35
+    }
+}
+```
+
+---
+
+## GET /reports/events/{eventId}
+
+Returns a complete report for a single event.
+
+Includes:
+
+- Event summary
+- Attendance statistics
+- Presence statistics
+- Emergency ticket summary
+- Block summary
+
+---
+
+## GET /reports/volunteers/{volunteerId}
+
+Returns the volunteer's participation history.
+
+Includes:
+
+- Events attended
+- Events completed
+- Emergency tickets
+- Block history
+- Participation statistics
+
+---
+
+## GET /reports/volunteers/me
+
+Returns the authenticated volunteer's own report.
+
+---
+
+## GET /reports/events/{eventId}/export
+
+Query Parameter
+
+```
+format=csv
+```
+
+or
+
+```
+format=xlsx
+```
+
+Downloads the selected report.
+
+---
+
+## GET /reports/volunteers/{volunteerId}/export
+
+Supports:
+
+- csv
+- xlsx
+
+---
+
+## Business Rules
+
+- Reports are generated dynamically.
+- Reports are read-only.
+- Exports support CSV and XLSX only.
+- Volunteers may only access their own report.
+
+
 ## Reports
 
 ### GET /reports/attendance.xlsx
@@ -642,6 +1247,30 @@ Every error code used across the entire API:
 | `DUPLICATE_PHOTO_TOKEN` | 409 | `/attendance/check-in` | Photo hash matches a previously submitted photo |
 | `GPS_ACCURACY_TOO_LOW` | (201, flagged) | `/attendance/check-in` | GPS accuracy > 30m, marked `pending_verification` |
 
+## Additional Phase 2 Error Codes
+
+| Error Code | HTTP Status | Description |
+|------------|-------------|-------------|
+| EVENT_NOT_ACTIVE | 422 | The event has not started or is already closed. |
+| EVENT_ALREADY_STARTED | 409 | The event has already been started. |
+| EVENT_ALREADY_ENDED | 409 | The event has already ended. |
+| INVALID_BOUNDARY | 422 | Invalid GeoJSON or captured boundary points. |
+| OUTSIDE_BOUNDARY | 422 | Volunteer is outside the permitted event boundary. |
+| GPS_SIGNAL_LOST | 422 | GPS signal is unavailable or unreliable. |
+| LOCATION_UPDATE_REQUIRED | 422 | Required location update was not received. |
+| ATTENDANCE_NOT_ACTIVE | 422 | Attendance record is not currently active. |
+| DUPLICATE_LOCATION_UPDATE | 409 | Duplicate location update received. |
+| EMERGENCY_TICKET_EXISTS | 409 | An active emergency ticket already exists. |
+| EMERGENCY_TICKET_NOT_FOUND | 404 | Emergency ticket does not exist. |
+| EMERGENCY_ALREADY_PROCESSED | 409 | Emergency ticket has already been approved, rejected, cancelled, or used. |
+| VOLUNTEER_BLOCKED | 403 | Volunteer is currently blocked from participating. |
+| BLOCK_NOT_FOUND | 404 | Block record does not exist. |
+| NOTIFICATION_NOT_FOUND | 404 | Notification does not exist. |
+| ACTIVITY_NOT_FOUND | 404 | Activity record does not exist. |
+| AUDIT_RECORD_NOT_FOUND | 404 | Audit record does not exist. |
+| REPORT_NOT_AVAILABLE | 404 | Requested report could not be generated. |
+| INVALID_EXPORT_FORMAT | 400 | Unsupported export format. |
+
 ---
 
 ## Status Enums (must match `system_architecture.md §4` exactly)
@@ -677,3 +1306,165 @@ Example changelog entry:
 - Changed POST /attendance/check-in response to include `gps_accuracy_meters` field
 - See API_contract.md § Attendance / Check-in → Response 201
 ```
+
+# Activity History
+
+Activity History records volunteer actions performed during an event.
+
+This module is read-only.
+
+---
+
+## GET /activity/me
+
+**Purpose:** Return the authenticated volunteer's activity history.
+
+**Auth required:** Yes (member)
+
+### Response
+
+```json
+{
+  "success": true,
+  "message": "Activity history retrieved successfully.",
+  "data": [
+    {
+      "id": "uuid",
+      "activity_type": "CHECK_IN",
+      "attendance_id": "uuid",
+      "timestamp": "2026-08-01T09:00:00Z",
+      "metadata": {}
+    }
+  ]
+}
+```
+
+---
+
+## GET /activity/attendance/{attendanceId}
+
+Returns every activity associated with an attendance record.
+
+---
+
+## Activity Types
+
+- CHECK_IN
+- CHECK_OUT
+- LEFT
+- RETURNED
+- PHOTO_CAPTURED
+- EMERGENCY_REQUESTED
+- EMERGENCY_APPROVED
+- EMERGENCY_REJECTED
+
+---
+
+## Business Rules
+
+- Activity records are created automatically.
+- Activity history cannot be edited.
+- Activity history cannot be deleted.
+- Volunteers can only view their own history.
+- Administrators may view any volunteer's history.
+
+
+# Audit Logs
+
+Audit Logs record administrative actions performed within the system.
+
+Audit records are immutable.
+
+---
+
+## GET /audit
+
+**Purpose:** Return administrative audit records.
+
+**Auth required:** Yes (admin)
+
+### Optional Filters
+
+- admin_id
+- action
+- resource
+- date_from
+- date_to
+
+---
+
+## GET /audit/{auditId}
+
+Returns a single audit entry.
+
+---
+
+## Audit Actions
+
+- EVENT_CREATED
+- EVENT_UPDATED
+- EVENT_STARTED
+- EVENT_ENDED
+- EMERGENCY_APPROVED
+- EMERGENCY_REJECTED
+- BLOCK_REMOVED
+
+---
+
+## Response Example
+
+```json
+{
+  "success": true,
+  "message": "Audit record retrieved successfully.",
+  "data": {
+    "id": "uuid",
+    "admin_id": "uuid",
+    "action": "EVENT_CREATED",
+    "resource": "EVENT",
+    "resource_id": "uuid",
+    "timestamp": "2026-08-01T08:15:00Z",
+    "metadata": {}
+  }
+}
+```
+
+---
+
+## Business Rules
+
+- Audit records are generated automatically.
+- Audit records cannot be modified.
+- Audit records cannot be deleted.
+- Only administrators may access audit logs.
+
+# Changelog
+
+## Version 2.0.0
+
+### Added
+
+- Event boundary configuration using GeoJSON or captured GPS points.
+- Continuous presence monitoring.
+- GPS location update endpoints.
+- Emergency ticket workflow.
+- Volunteer blocking system.
+- In-app notification APIs.
+- Dashboard reporting endpoints.
+- Volunteer activity history.
+- Administrative audit log APIs.
+- CSV and XLSX report export endpoints.
+- Standard success response envelope.
+- Extended error code reference.
+
+### Changed
+
+- Session terminology updated to Event throughout the documentation.
+- Existing Phase 1 APIs remain backward compatible.
+- API documentation expanded to support Phase 2 functionality.
+
+### Compatibility
+
+- No Phase 1 endpoint was removed.
+- Existing request and response formats remain supported.
+- Phase 2 functionality is additive and does not introduce breaking changes.
