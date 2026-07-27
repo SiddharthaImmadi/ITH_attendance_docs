@@ -1,535 +1,1565 @@
 # frontend_design_system.md — Design System & Styling
 
-> Colors, typography, spacing, and component sizing for a consistent, premium look.
+> This document defines the visual language, design tokens, layout standards, and user interface principles for the InnoTech Hub Attendance System. It provides a consistent foundation for every frontend interface while remaining independent of implementation details and frontend frameworks.
 
-## 1. Color Palette
+---
+
+# 1. Color Palette
+
+A consistent color system improves usability, accessibility, and recognition across the application.
+
+Colors should communicate interface hierarchy before they communicate status.
+
+Status colors should always be accompanied by text or icons and must never be the sole indicator of meaning.
+
+---
+
+## Primary Colors
 
 | Purpose | Color | Hex | Tailwind |
-|---|---|---|---|
-| Primary (CTA, links) | Blue | #3B82F6 | `blue-500` |
-| Success (present status) | Green | #10B981 | `emerald-500` |
-| Warning (late status) | Amber | #F59E0B | `amber-500` |
-| Error (rejected, outside radius) | Red | #EF4444 | `red-500` |
-| Info (pending verification) | Indigo | #6366F1 | `indigo-500` |
+|----------|-------|-----|-----------|
+| Primary | Blue | #3B82F6 | `blue-500` |
+| Primary Hover | Blue | #2563EB | `blue-600` |
+| Secondary | Gray | #6B7280 | `gray-500` |
 | Background | Light Gray | #F9FAFB | `gray-50` |
-| Card Background | White | #FFFFFF | `white` |
+| Surface | White | #FFFFFF | `white` |
 | Border | Gray | #E5E7EB | `gray-200` |
-| Text Primary | Dark Gray | #1F2937 | `gray-800` |
-| Text Secondary | Medium Gray | #6B7280 | `gray-500` |
-| Disabled | Light Gray | #D1D5DB | `gray-300` |
-
-**Usage:**
-- Buttons: `bg-blue-500 hover:bg-blue-600 text-white`
-- Status badges: `bg-green-100 text-green-800` (present), `bg-red-100 text-red-800` (rejected)
-- Inputs: `border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200`
-
-## 2. Typography
-
-| Element | Font | Size | Weight | Line Height |
-|---|---|---|---|---|
-| Page Title | Inter | 32px | 700 (bold) | 1.2 |
-| Section Header | Inter | 20px | 600 (semibold) | 1.3 |
-| Card Title | Inter | 16px | 600 (semibold) | 1.4 |
-| Body | Inter | 14px | 400 (normal) | 1.6 |
-| Small/Label | Inter | 12px | 500 (medium) | 1.4 |
-| Button Text | Inter | 14px | 500 (medium) | 1.4 |
-
-**Font:** Use Tailwind's default system stack (or load Inter from Google Fonts).
-
-```css
-/* src/index.css */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-
-body {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-}
-```
-
-## 3. Spacing Scale
-
-Use Tailwind's default spacing (4px base unit):
-
-| Size | Pixels | Tailwind | Usage |
-|---|---|---|---|
-| xs | 4px | `p-1` | Tight spacing in tables, inline icons |
-| sm | 8px | `p-2` | Padding in small buttons, gaps in lists |
-| md | 16px | `p-4` | Standard padding in cards, inputs |
-| lg | 24px | `p-6` | Padding in large cards, section spacing |
-| xl | 32px | `p-8` | Gap between major sections |
-| 2xl | 48px | `p-12` | Top-level page margins |
-
-**Page margins:** `px-6 py-8` (24px horizontal, 32px vertical).
-**Section gaps:** `gap-6` (24px between sections).
-
-## 4. Component Sizing
-
-| Component | Width | Height | Notes |
-|---|---|---|---|
-| Input field | 100% (in form) | 40px | `h-10` |
-| Button | Auto (padding-based) | 40px | `h-10` |
-| Card | Full width on mobile, max 600px desktop | Auto | Responsive |
-| Form | 100% (max 500px on desktop) | Auto | Responsive |
-| Modal/Dialog | 90vw (max 600px) | Auto | Centered |
-
-## 5. Button Styles
-
-### Primary Button (CTA)
-```jsx
-<button className="bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-lg transition">
-  Login
-</button>
-```
-
-### Secondary Button
-```jsx
-<button className="bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium py-2 px-4 rounded-lg transition">
-  Cancel
-</button>
-```
-
-### Danger Button
-```jsx
-<button className="bg-red-500 hover:bg-red-600 text-white font-medium py-2 px-4 rounded-lg transition">
-  Delete
-</button>
-```
-
-### Disabled Button
-```jsx
-<button disabled className="bg-gray-300 text-gray-500 font-medium py-2 px-4 rounded-lg cursor-not-allowed">
-  Unavailable
-</button>
-```
-
-## 6. Form Input Styles
-
-```jsx
-<input
-  type="email"
-  className="w-full h-10 px-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition"
-  placeholder="Enter email"
-/>
-```
-
-**States:**
-- Default: `border-gray-300`
-- Focus: `border-blue-500 ring-2 ring-blue-200`
-- Error: `border-red-500 ring-2 ring-red-200`
-- Disabled: `bg-gray-100 cursor-not-allowed`
-
-## 7. Card Styling
-
-```jsx
-<div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm hover:shadow-md transition">
-  <h3 className="text-gray-800 font-semibold mb-2">Card Title</h3>
-  <p className="text-gray-600 text-sm">Card content goes here</p>
-</div>
-```
-
-**Shadows:**
-- Subtle: `shadow-sm`
-- Hover: `hover:shadow-md`
-- Modal/dropdown: `shadow-lg`
-
-## 8. Status Badge Styling
-
-```jsx
-// Present (success)
-<span className="inline-block bg-emerald-100 text-emerald-800 text-sm font-medium px-3 py-1 rounded-full">
-  Present
-</span>
-
-// Late (warning)
-<span className="inline-block bg-amber-100 text-amber-800 text-sm font-medium px-3 py-1 rounded-full">
-  Late
-</span>
-
-// Rejected (error)
-<span className="inline-block bg-red-100 text-red-800 text-sm font-medium px-3 py-1 rounded-full">
-  Rejected
-</span>
-
-// Pending Verification (info)
-<span className="inline-block bg-indigo-100 text-indigo-800 text-sm font-medium px-3 py-1 rounded-full">
-  Pending
-</span>
-```
-
-## 9. Responsive Breakpoints
-
-Use Tailwind breakpoints (mobile-first):
-
-| Breakpoint | Width | Tailwind | Usage |
-|---|---|---|---|
-| Mobile | <640px | (default) | Full-width layouts |
-| Tablet | ≥640px | `sm:` | 2-column layouts |
-| Desktop | ≥1024px | `lg:` | 3-column, wider content |
-
-**Example:**
-```jsx
-<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-  {/* Cards stack vertically on mobile, 2 cols on tablet, 3 on desktop */}
-</div>
-```
-
-## 10. Elevation & Depth
-
-```
-Level 1 (default):    no shadow
-Level 2 (cards):      shadow-sm (subtle)
-Level 3 (hover):      shadow-md (lifted)
-Level 4 (modals):     shadow-lg (prominent)
-```
-
-## 11. Transitions & Animations
-
-```jsx
-// Fade in
-className="opacity-0 animate-fade-in"
-
-// Slide in from left
-className="translate-x-full transition-transform duration-300"
-
-// Button hover
-className="bg-blue-500 hover:bg-blue-600 transition-colors duration-200"
-
-// Loading spinner
-className="animate-spin h-5 w-5"
-```
-
-Use Framer Motion for complex animations (see `component_guidelines.md`).
-
-## 12. Dark Mode (Future)
-
-Not included in Phase 1. Add `prefers-color-scheme` support in Phase 2.
-
-## 13. Accessibility
-
-- Minimum contrast ratio 4.5:1 for text (WCAG AA)
-- Focus indicators on all interactive elements
-- Icon buttons have aria-label
-- Color not the only indicator of status (use text + icon + color)
-
-
-## 14. Phase 2 Design System Extensions
-
-Phase 2 expands the design system to support the enhanced desktop-first dashboard, live attendance monitoring, and administrator workflows.
+| Divider | Gray | #D1D5DB | `gray-300` |
 
 ---
 
-## 14.1 Layout Principles
+## Semantic Colors
 
-The application follows a **desktop-first** layout.
-
-Desktop Layout:
-
-```
-+--------------------------------------------------------------+
-| Sidebar |                Main Content                        |
-|         |----------------------------------------------------|
-|         | Page Header                                        |
-|         |----------------------------------------------------|
-|         | Cards / Tables / Timeline / Forms                  |
-|         |                                                    |
-+--------------------------------------------------------------+
-```
-
-Responsive behavior:
-
-- Desktop: Fixed sidebar
-- Tablet: Collapsible sidebar
-- Mobile: Hamburger navigation
+| Purpose | Color | Tailwind |
+|----------|-------|-----------|
+| Success | Emerald | `emerald-500` |
+| Warning | Amber | `amber-500` |
+| Error | Red | `red-500` |
+| Information | Indigo | `indigo-500` |
+| Neutral | Gray | `gray-500` |
 
 ---
 
-## 14.2 Sidebar
+## Text Colors
 
-Sidebar Width:
+| Usage | Tailwind |
+|--------|----------|
+| Primary Text | `gray-800` |
+| Secondary Text | `gray-600` |
+| Muted Text | `gray-500` |
+| Disabled Text | `gray-400` |
+| Inverse Text | `white` |
 
-- Expanded: 260px
-- Collapsed: 72px
+---
 
-Sidebar Items:
+## Attendance & Presence Status Colors
 
-- Dashboard
-- Sessions
-- History
-- Profile
-- Logout
+The application contains multiple attendance and monitoring workflows. Status colors should remain consistent throughout every screen.
 
-Active item style:
+| Status | Recommended Color |
+|----------|-------------------|
+| Event Active | Blue |
+| Attendance Confirmed | Emerald |
+| Presence OK | Emerald |
+| Returned | Emerald |
+| Late | Amber |
+| Pending Review | Amber |
+| Emergency Pending | Amber |
+| Validation Failed | Red |
+| Left Venue | Red |
+| Emergency Rejected | Red |
+| Volunteer Blocked | Red |
+| Completed | Gray |
 
-- Primary background
-- White icon
+Status styling should remain visually consistent across:
+
+- Cards
+- Tables
+- Timelines
+- Badges
+- Notifications
+- Reports
+
+---
+
+## Usage Guidelines
+
+Primary color should be used for:
+
+- Primary buttons
+- Navigation highlights
+- Active navigation
+- Links
+- Focus indicators
+
+Success colors indicate successful operations such as:
+
+- Attendance confirmed
+- Presence confirmed
+- Successful actions
+- Completed workflows
+
+Warning colors indicate situations requiring user attention, including:
+
+- Pending administrator review
+- Late attendance
+- Pending emergency requests
+
+Error colors indicate failed operations or important alerts including:
+
+- Validation failures
+- Leaving the approved event boundary
+- Administrative restrictions
+
+Neutral colors should be used for informational content, secondary actions, and completed workflows.
+
+---
+
+# 2. Typography
+
+Typography establishes visual hierarchy and improves readability across the application.
+
+The design system uses a clean sans-serif typeface suitable for dashboards, forms, tables, and reports.
+
+---
+
+## Font Family
+
+Primary Font:
+
+**Inter**
+
+Fallback:
+
+- System UI
+- Segoe UI
+- Roboto
+- Helvetica
+- Arial
+- sans-serif
+
+---
+
+## Typography Scale
+
+| Element | Size | Weight | Line Height |
+|----------|------|---------|-------------|
+| Display | 36px | 700 | 1.2 |
+| Page Title | 32px | 700 | 1.2 |
+| Section Title | 24px | 600 | 1.3 |
+| Card Title | 18px | 600 | 1.4 |
+| Body | 14px | 400 | 1.6 |
+| Caption | 12px | 500 | 1.4 |
+| Button Text | 14px | 500 | 1.4 |
+
+---
+
+## Typography Principles
+
+Typography should:
+
+- establish clear hierarchy;
+- remain consistent across pages;
+- avoid excessive font weights;
+- maintain sufficient spacing between headings and content;
+- support accessibility requirements.
+
+Avoid using more than three font weights on a single screen.
+
+---
+
+# 3. Spacing Scale
+
+Consistent spacing improves readability and creates predictable layouts.
+
+The application follows an 8-point spacing system built on Tailwind's spacing utilities.
+
+---
+
+## Spacing Tokens
+
+| Token | Pixels | Typical Usage |
+|--------|---------|---------------|
+| xs | 4px | Icons, tight spacing |
+| sm | 8px | Compact controls |
+| md | 16px | Standard padding |
+| lg | 24px | Card spacing |
+| xl | 32px | Section spacing |
+| 2xl | 48px | Page spacing |
+| 3xl | 64px | Large layout separation |
+
+---
+
+## Layout Guidelines
+
+Standard page padding:
+
+- Horizontal: 24px
+- Vertical: 32px
+
+Card padding:
+
+- 24px
+
+Modal padding:
+
+- 24px
+
+Table cell padding:
+
+- 16px
+
+Sidebar spacing:
+
+- 16–24px
+
+Header spacing:
+
+- 24px
+
+---
+
+## Component Spacing
+
+Use consistent spacing between:
+
+- labels and inputs;
+- cards within grids;
+- page sections;
+- toolbar actions;
+- navigation items;
+- dashboard widgets.
+
+Avoid introducing arbitrary spacing values that are inconsistent with the design system.
+
+---
+
+# 4. Layout & Component Sizing
+
+The application follows a responsive dashboard layout optimized primarily for desktop usage while remaining usable on tablets and mobile devices.
+
+---
+
+## Desktop Layout
+
+Desktop layout consists of four primary regions.
+
+- Sidebar
+- Header
+- Main Content
+- Optional Right Panel (future expansion)
+
+```
++-------------------------------------------------------------+
+| Sidebar | Header                                            |
+|         |---------------------------------------------------|
+|         |                                                   |
+|         |               Main Content                        |
+|         |                                                   |
+|         |                                                   |
++-------------------------------------------------------------+
+```
+
+---
+
+## Responsive Behavior
+
+### Desktop
+
+- Fixed sidebar
+- Multi-column layouts
+- Persistent navigation
+
+### Tablet
+
+- Collapsible sidebar
+- Two-column layouts where appropriate
+
+### Mobile
+
+- Drawer navigation
+- Single-column layouts
+- Full-width content
+
+---
+
+## Component Sizes
+
+| Component | Recommended Size |
+|-----------|------------------|
+| Input | Height: 40px |
+| Primary Button | Height: 40px |
+| Secondary Button | Height: 40px |
+| Search Bar | Height: 40px |
+| Status Badge | Auto |
+| Card | Responsive |
+| Modal | Maximum width: 600px |
+| Drawer | Full height |
+| Sidebar | 260px expanded / 72px collapsed |
+
+---
+
+## Card Principles
+
+Cards are the primary information container throughout the application.
+
+Every card should present information in the following order:
+
+1. Title
+2. Status
+3. Primary Information
+4. Secondary Information
+5. Actions
+
+Cards should maintain consistent spacing, border radius, and elevation across all modules.
+
+Typical examples include:
+
+- Event Summary
+- Attendance Summary
+- Presence Overview
+- Emergency Ticket
+- Volunteer Information
+- Report Summary
+- Notification Summary
+
+---
+
+## Grid Layout
+
+Dashboard content should use responsive grids.
+
+Typical layouts:
+
+- 1 column (mobile)
+- 2 columns (tablet)
+- 3–4 columns (desktop)
+
+Cards within the same row should maintain equal heights whenever practical.
+
+---
+
+## Design Principles
+
+Layout should prioritize:
+
+- readability;
+- consistency;
+- predictable navigation;
+- minimal visual clutter;
+- efficient information density;
+- responsive behavior.
+
+Every screen should maintain visual consistency regardless of feature area.
+
+---
+
+# 5. Button Design
+
+Buttons represent the primary interaction mechanism throughout the application. Their appearance should clearly communicate importance and expected user actions.
+
+---
+
+## Button Hierarchy
+
+Buttons are categorized into four levels.
+
+| Type | Purpose |
+|------|---------|
+| Primary | Main page action |
+| Secondary | Supporting actions |
+| Destructive | Irreversible actions |
+| Disabled | Unavailable actions |
+
+Only one Primary button should normally exist within a logical action group.
+
+---
+
+## Primary Button
+
+Used for the most important action on a page.
+
+Examples:
+
+- Check In
+- Submit Attendance
+- Save Event
+- Create Event
+- Approve Request
+- Submit Emergency Ticket
+- Generate Report
+
+Recommended styling:
+
+- Blue background
 - White text
+- Medium font weight
 - Rounded corners
-
-Inactive items:
-
-- Transparent background
-- Gray text
-- Blue hover background
+- Visible hover state
+- Clear keyboard focus indicator
 
 ---
 
-## 14.3 Dashboard Cards
+## Secondary Button
 
-Dashboard cards should use consistent spacing and hierarchy.
+Used for supporting actions.
 
-Card Structure:
+Examples:
 
-```
-Title
+- Cancel
+- Back
+- Close
+- Edit
+- View Details
+- Export
+- Filter
 
-Status Badge
-
-Primary Information
-
-Secondary Information
-
-Primary Action
-```
-
-Card spacing:
-
-- Padding: p-6
-- Gap: gap-6
-- Border Radius: rounded-xl
-- Shadow: shadow-sm
-- Hover: shadow-md
+Secondary buttons should never visually compete with Primary buttons.
 
 ---
 
-## 14.4 Active Session Card
+## Destructive Button
 
-The Active Session card is the highest-priority component.
+Reserved for irreversible operations.
 
-Display:
+Examples:
 
-- Session title
-- Current attendance status
-- Venue
-- Time remaining
-- Session progress
-- Open Session button
+- Delete Event
+- Remove Volunteer
+- Reject Request
+- Remove Attendance Record
 
-The card should always appear above Available Sessions.
+Destructive actions should always require user confirmation.
 
 ---
 
-## 14.5 Session Cards
+## Disabled Button
 
-Available Session cards display:
+Disabled buttons communicate that an action is currently unavailable.
 
-- Session title
+Examples:
+
+- Missing required information
+- Insufficient permissions
+- Event not yet started
+- Processing in progress
+
+Disabled buttons should remain readable while clearly indicating they cannot be interacted with.
+
+---
+
+## Button States
+
+Every button should define the following interaction states.
+
+- Default
+- Hover
+- Focus
+- Active
+- Loading
+- Disabled
+
+Visual feedback should remain consistent across the application.
+
+---
+
+## Loading Buttons
+
+When an operation is in progress:
+
+- disable repeated clicks;
+- display a loading indicator;
+- preserve the button size;
+- keep the action label visible whenever practical.
+
+Examples include:
+
+- Creating an event
+- Saving attendance
+- Uploading data
+- Exporting reports
+
+---
+
+# 6. Form Input Design
+
+Forms are used throughout the application for authentication, event management, attendance workflows, emergency requests, and administrative operations.
+
+Input components should prioritize clarity, accessibility, and consistency.
+
+---
+
+## Standard Input Fields
+
+Common input types include:
+
+- Text
+- Email
+- Password
+- Number
 - Date
 - Time
-- Venue
-- Attendance status
-- Check In button
+- Search
+- Text Area
+- Select
+- Multi-select
 
-Cards should maintain equal height within the grid.
+Each input should include:
 
----
-
-## 14.6 Timeline Component
-
-Timeline events are displayed vertically.
-
-```
-● Checked In
-│
-● Entered Venue
-│
-● Left Venue
-│
-● Returned
-│
-● Checked Out
-```
-
-Each event contains:
-
-- Status icon
-- Event title
-- Timestamp
-- Optional backend message
+- Label
+- Placeholder (optional)
+- Validation message
+- Help text (when needed)
 
 ---
 
-## 14.7 Status Colors
+## Input States
 
-Additional Phase 2 status colors:
+Every input should support the following states.
 
-| Status | Tailwind |
-|---------|----------|
-| Active Session | blue-500 |
-| Inside Venue | emerald-500 |
-| Outside Venue | red-500 |
-| Pending Approval | amber-500 |
-| Approved | emerald-500 |
-| Rejected | red-500 |
-| Completed | gray-600 |
+### Default
 
-Status indicators should always include both color and text.
+Neutral border with readable text.
 
----
+### Focus
 
-## 14.8 Progress Indicators
+Strong focus indicator using the primary color.
 
-Session progress should use a horizontal progress bar.
+### Error
 
-Examples:
+Clear validation styling using the error color.
 
-```
-████████░░ 80%
+Validation messages should explain how the user can resolve the issue.
 
-███░░░░░░░ 30%
-```
+### Disabled
 
-Use:
-
-- Rounded edges
-- Smooth animation
-- Percentage label
+Displayed when editing is not permitted.
 
 ---
 
-## 14.9 Tables
+## Validation Principles
 
-Administrator tables should include:
+Validation should be:
 
-- Sticky header
-- Hover highlight
-- Alternating row backgrounds (optional)
-- Responsive horizontal scrolling
+- immediate where appropriate;
+- clear;
+- actionable;
+- consistent.
 
-Table actions should appear in the final column.
+Avoid technical error messages.
+
+Instead of:
+
+> Invalid input.
+
+Prefer:
+
+> Event name cannot be empty.
 
 ---
 
-## 14.10 Dialogs
+## Search Inputs
 
-Dialogs are used for:
+Search fields are commonly used for:
 
-- Early Check-out Request
-- Confirmation Actions
-- Delete Confirmation
-- Session Close Confirmation
+- Events
+- Users
+- Attendance
+- Reports
+- Notifications
 
-Dialog Size:
+Search should remain responsive even for large datasets.
 
-- Max Width: 600px
+---
+
+## Date & Time Selection
+
+Date and time controls should:
+
+- use consistent formatting;
+- respect user locale when appropriate;
+- clearly distinguish date from time;
+- prevent invalid selections whenever possible.
+
+---
+
+## Dropdowns
+
+Dropdowns are appropriate for selecting predefined values such as:
+
+- Event
+- Role
+- Status
+- Attendance Type
+- Notification Category
+
+Avoid excessively long dropdown lists.
+
+Searchable dropdowns are preferred when many options exist.
+
+---
+
+## Form Layout
+
+Recommended layout:
+
+- Single-column on mobile
+- Multi-column on larger screens where readability is maintained
+
+Related inputs should be grouped together using consistent spacing.
+
+---
+
+# 7. Cards & Surface Components
+
+Cards are the primary information containers throughout the application.
+
+They should present information clearly while maintaining a clean and consistent appearance.
+
+---
+
+## Card Structure
+
+Recommended hierarchy:
+
+1. Header
+2. Status
+3. Primary Information
+4. Supporting Information
+5. Actions
+
+This hierarchy should remain consistent across all card types.
+
+---
+
+## Common Card Types
+
+Examples include:
+
+- Event Summary
+- Attendance Summary
+- Presence Overview
+- Emergency Ticket
+- Volunteer Profile
+- Notification
+- Report Summary
+- Activity Timeline
+
+Although the displayed information differs, all cards should follow the same visual structure.
+
+---
+
+## Card Styling
+
+Cards should include:
+
+- White background
 - Rounded corners
-- Shadow-lg
+- Subtle border
+- Light elevation
+- Consistent internal spacing
 
-Buttons:
-
-Primary action on the right.
-
-Cancel action on the left.
+Hover elevation may be used for interactive cards.
 
 ---
 
-## 14.11 Empty States
+## Information Hierarchy
 
-Every major page should define an empty state.
+Important information should appear first.
 
-Example:
+For example:
 
-"No active session."
+- Event Name
+- Current Status
+- Date and Time
+- Location
+- Assigned Volunteers
+- Available Actions
 
-"Join an available session to begin attendance."
-
-Provide a primary action whenever possible.
+Supporting details should never compete visually with primary information.
 
 ---
 
-## 14.12 Loading States
+## Card Actions
 
-Use skeleton loaders instead of blank pages.
+Actions should be placed consistently.
+
+Recommended placement:
+
+- Header actions
+- Bottom action row
+- Overflow menu for secondary operations
+
+Avoid scattering actions throughout the card.
+
+---
+
+## Empty Cards
+
+When no information exists, cards should communicate the situation clearly.
+
+Example messages:
+
+- No upcoming events.
+- No attendance records available.
+- No notifications found.
+- No emergency requests pending.
+
+Whenever possible, provide a clear next action.
+
+---
+
+# 8. Status Indicators & Feedback Components
+
+Status indicators provide immediate visual understanding of system state.
+
+They should always combine:
+
+- Color
+- Text
+- Optional icon
+
+Color alone must never communicate status.
+
+---
+
+## Attendance Status
+
+Typical attendance states include:
+
+| Status | Color |
+|---------|-------|
+| Checked In | Emerald |
+| Active | Blue |
+| Completed | Gray |
+| Late | Amber |
+
+---
+
+## Presence Monitoring
+
+Presence-related indicators include:
+
+| Status | Color |
+|---------|-------|
+| Presence OK | Emerald |
+| Left Venue | Red |
+| Returned | Emerald |
+| Monitoring Active | Blue |
+
+These indicators should remain consistent across dashboards, timelines, and reports.
+
+---
+
+## Emergency Ticket Status
+
+Emergency workflows use dedicated status indicators.
+
+| Status | Color |
+|---------|-------|
+| Pending Review | Amber |
+| Approved | Emerald |
+| Rejected | Red |
+| Closed | Gray |
+
+---
+
+## Volunteer Status
+
+Administrative workflows may display volunteer availability.
+
+Examples include:
+
+- Available
+- Assigned
+- Restricted
+- Blocked
+
+Each state should use a consistent visual treatment across the application.
+
+---
+
+## Progress Indicators
+
+Progress components communicate long-running operations.
+
+Examples include:
+
+- Event progress
+- Attendance completion
+- File uploads
+- Report generation
+
+Progress indicators should:
+
+- animate smoothly;
+- display percentages when meaningful;
+- avoid abrupt visual changes.
+
+---
+
+## Timeline Indicators
+
+Timeline entries should visually distinguish different event types while preserving chronological order.
+
+Each timeline item should display:
+
+- Status indicator
+- Title
+- Timestamp
+- Optional description
 
 Examples:
+
+- Checked In
+- Presence Confirmed
+- Left Venue
+- Returned
+- Emergency Ticket Submitted
+- Emergency Ticket Approved
+- Attendance Completed
+
+---
+
+## Toast Notifications
+
+Toast notifications communicate short-lived system feedback.
+
+Typical examples:
+
+- Attendance recorded successfully.
+- Event created successfully.
+- Report exported successfully.
+- Emergency request submitted.
+- Request approved.
+- Request rejected.
+- Changes saved.
+
+Notifications should disappear automatically after a reasonable duration while remaining accessible to screen readers.
+
+---
+
+# 9. Responsive Design
+
+The application is designed using a responsive, desktop-first approach while ensuring a consistent experience across tablets and mobile devices.
+
+Responsive layouts should preserve functionality, readability, and navigation regardless of screen size.
+
+---
+
+## Breakpoints
+
+The application follows Tailwind CSS default breakpoints.
+
+| Device | Width | Typical Usage |
+|----------|--------|----------------|
+| Mobile | < 640px | Single-column layout |
+| Small Tablet | ≥ 640px | Two-column layout where appropriate |
+| Large Tablet | ≥ 768px | Expanded content areas |
+| Desktop | ≥ 1024px | Full dashboard layout |
+| Large Desktop | ≥ 1280px | Wider content grids |
+
+---
+
+## Layout Behavior
+
+### Mobile
+
+The mobile interface should prioritize simplicity.
+
+Characteristics include:
+
+- Single-column layouts
+- Drawer navigation
+- Full-width cards
+- Large touch targets
+- Vertical scrolling
+- Simplified action groups
+
+---
+
+### Tablet
+
+Tablet layouts should balance readability and information density.
+
+Typical characteristics include:
+
+- Collapsible sidebar
+- Two-column grids
+- Responsive tables
+- Flexible dashboards
+
+---
+
+### Desktop
+
+Desktop is the primary operating environment for administrators.
+
+Desktop layouts should support:
+
+- Persistent sidebar navigation
+- Multi-column dashboards
+- Large data tables
+- Simultaneous information panels
+- Efficient workflows
+
+---
+
+## Responsive Components
+
+Every major component should adapt gracefully.
+
+Examples include:
 
 - Dashboard cards
-- Session Detail
-- Timeline
-- Attendance Summary
+- Data tables
+- Forms
+- Charts
+- Reports
+- Timelines
+- Notifications
+- Dialogs
+
+No component should require horizontal scrolling except large administrative tables.
+
+---
+
+## Navigation
+
+Navigation adapts according to screen size.
+
+Desktop:
+
+- Persistent sidebar
+- Fixed header
+- Breadcrumb support where appropriate
+
+Tablet:
+
+- Collapsible sidebar
+
+Mobile:
+
+- Drawer navigation
+- Compact header
+- Simplified action menu
+
+Navigation behavior should remain predictable throughout the application.
+
+---
+
+## Tables
+
+Administrative tables may contain large datasets.
+
+Responsive tables should support:
+
+- Horizontal scrolling when necessary
+- Sticky headers
+- Consistent column alignment
+- Clear row separation
+- Accessible keyboard navigation
+
+Critical actions should remain visible whenever practical.
+
+---
+
+## Forms
+
+Responsive forms should:
+
+- Stack fields vertically on smaller devices
+- Expand into multiple columns on larger displays
+- Preserve logical field grouping
+- Maintain comfortable touch spacing
+
+---
+
+## Dashboard Layout
+
+Dashboard widgets should reorganize automatically according to available space.
+
+Recommended progression:
+
+Desktop
+
+```
+4 Cards
+```
+
+Tablet
+
+```
+2 Cards
+2 Cards
+```
+
+Mobile
+
+```
+Card
+
+Card
+
+Card
+
+Card
+```
+
+Widgets should never become unreadable due to aggressive resizing.
+
+---
+
+# 10. Elevation & Visual Hierarchy
+
+Visual hierarchy helps users understand relationships between interface elements.
+
+Elevation should be subtle and purposeful.
+
+---
+
+## Elevation Levels
+
+| Level | Usage |
+|--------|--------|
+| Level 0 | Page background |
+| Level 1 | Standard surfaces |
+| Level 2 | Cards |
+| Level 3 | Hovered interactive components |
+| Level 4 | Dialogs |
+| Level 5 | Critical overlays |
+
+Avoid excessive shadows that distract from content.
+
+---
+
+## Borders
+
+Borders provide structure without creating visual clutter.
+
+Recommended usage:
+
+- Card outlines
+- Input fields
 - Tables
+- Dividers
+- Panels
 
-Loading indicators should preserve page layout.
-
----
-
-## 14.13 Notification Design
-
-Use toast notifications for:
-
-- Check-in successful
-- Check-out successful
-- Approval received
-- Request rejected
-- Session created
-- Session closed
-- API failures
-
-Toast Position:
-
-Top-right on desktop.
-
-Top-center on mobile.
+Borders should use neutral colors and consistent thickness.
 
 ---
 
-## 14.14 Icons
+## Rounded Corners
 
-Use Lucide React icons consistently.
+Corner radius should remain consistent across the application.
 
-Recommended icons:
+Suggested usage:
 
-| Action | Icon |
-|---------|------|
-| Dashboard | LayoutDashboard |
-| Session | Calendar |
-| Attendance | CheckCircle |
-| Timeline | Clock |
-| Active Session | Activity |
-| Check In | LogIn |
-| Check Out | LogOut |
-| History | History |
-| Profile | User |
-| Logout | DoorOpen |
-
-Icons should be paired with text whenever possible.
+| Component | Radius |
+|------------|---------|
+| Buttons | Medium |
+| Inputs | Medium |
+| Cards | Large |
+| Dialogs | Large |
+| Badges | Pill |
+| Avatars | Circular |
 
 ---
 
-## 14.15 Animation Guidelines
+## Information Hierarchy
 
-Animations should enhance usability without slowing interaction.
+Visual emphasis should follow this order:
 
-Recommended:
+1. Page Title
+2. Section Heading
+3. Primary Content
+4. Supporting Information
+5. Metadata
 
-- Fade between pages
-- Card hover elevation
-- Sidebar collapse animation
-- Timeline item appearance
-- Toast slide animation
-- Progress bar animation
-
-Avoid excessive motion that distracts users.
+Actions should remain visually distinct without overpowering content.
 
 ---
 
-## 14.16 Design Principles
+## Density
 
-All Phase 2 interfaces should follow these principles:
+The interface should maintain a balance between information density and readability.
 
-- Desktop-first layout
-- Clean Modern SaaS appearance
-- Consistent spacing
-- Minimal visual clutter
-- Strong information hierarchy
-- High accessibility
-- Responsive behavior across all supported devices
+Avoid:
 
+- excessive whitespace;
+- overcrowded layouts;
+- inconsistent spacing;
+- unnecessary decoration.
+
+The design should emphasize clarity over visual complexity.
+
+---
+
+# 11. Motion & Interaction Guidelines
+
+Animations should improve usability by providing meaningful feedback and reinforcing user actions.
+
+Motion should never delay task completion or distract users.
+
+---
+
+## Motion Principles
+
+Animations should be:
+
+- Fast
+- Consistent
+- Purposeful
+- Predictable
+- Accessible
+
+Recommended duration:
+
+150–300 milliseconds for most interactions.
+
+---
+
+## Appropriate Uses
+
+Motion may be used for:
+
+- Page transitions
+- Card hover effects
+- Sidebar expansion and collapse
+- Dialog appearance
+- Notification appearance
+- Loading indicators
+- Progress updates
+
+Animations should communicate changes in interface state rather than serve decorative purposes.
+
+---
+
+## Hover Feedback
+
+Interactive components should provide immediate hover feedback.
+
+Examples include:
+
+- Buttons
+- Cards
+- Navigation items
+- Table rows
+
+Hover effects should remain subtle and consistent.
+
+---
+
+## Loading States
+
+Users should always receive feedback while waiting for asynchronous operations.
+
+Preferred loading indicators include:
+
+- Skeleton loaders
+- Progress bars
+- Inline loading indicators
+- Button loading states
+
+Avoid blank pages during loading whenever possible.
+
+---
+
+## Page Transitions
+
+Transitions between pages should be smooth without creating unnecessary delays.
+
+Navigation should always feel immediate.
+
+---
+
+## Progress Feedback
+
+Progress indicators should be used for operations such as:
+
+- Report generation
+- File uploads
+- Data synchronization
+- Long-running administrative tasks
+
+Progress components should accurately represent operation status whenever possible.
+
+---
+
+## Accessibility
+
+Users with reduced motion preferences should experience minimal animation.
+
+Motion should respect operating system accessibility settings whenever possible.
+
+Animations must never interfere with keyboard navigation or screen reader functionality.
+
+---
+
+# 12. Future Enhancements
+
+The current design system establishes a stable foundation while allowing future visual enhancements without requiring major redesigns.
+
+Future additions should extend existing design principles rather than replace them.
+
+---
+
+## Theme Support
+
+Future releases may introduce additional visual themes, including:
+
+- Dark Mode
+- High Contrast Mode
+- Organization-specific branding
+
+Theme support should rely on reusable design tokens instead of component-specific styling.
+
+---
+
+## Expanded Design Tokens
+
+Future design tokens may include:
+
+- Additional semantic colors
+- Extended typography scales
+- Additional spacing values
+- Motion presets
+- Shadow presets
+- Border styles
+
+New tokens should remain backward compatible with existing components.
+
+---
+
+## Advanced Components
+
+Future interface improvements may include:
+
+- Rich data visualizations
+- Interactive dashboards
+- Advanced filtering interfaces
+- Custom analytics widgets
+- Calendar-based planning views
+- Configurable workspace layouts
+
+These enhancements should continue following the principles defined in this document.
+
+---
+
+## Design Principles
+
+Future enhancements should always preserve the following goals:
+
+- Consistency
+- Accessibility
+- Responsiveness
+- Simplicity
+- Predictability
+- Scalability
+
+The design system should evolve gradually while maintaining a familiar user experience for both administrators and members.
+
+---
+
+# 13. Accessibility
+
+Accessibility is a core requirement of the design system. Every interface should be usable by all supported users regardless of their abilities or assistive technologies.
+
+Accessibility should be considered during design rather than added after implementation.
+
+---
+
+## Accessibility Principles
+
+Every interface should be:
+
+- Perceivable
+- Operable
+- Understandable
+- Robust
+
+Design decisions should align with WCAG 2.1 AA guidelines whenever applicable.
+
+---
+
+## Color & Contrast
+
+Color should improve understanding but should never be the only way information is communicated.
+
+Status indicators should always combine:
+
+- Color
+- Text
+- Optional icon
+
+Examples:
+
+✓ Attendance Confirmed
+
+⚠ Pending Review
+
+✕ Validation Failed
+
+Recommended minimum contrast ratio:
+
+- Normal text: **4.5 : 1**
+- Large text: **3 : 1**
+
+---
+
+## Keyboard Navigation
+
+All interactive components should be fully usable using only a keyboard.
+
+Users should be able to:
+
+- Navigate through pages
+- Open menus
+- Submit forms
+- Close dialogs
+- Move between table rows
+- Activate buttons
+
+without requiring a pointing device.
+
+---
+
+## Focus Indicators
+
+Every interactive component must display a clearly visible focus state.
+
+Examples include:
+
+- Buttons
+- Links
+- Form inputs
+- Navigation items
+- Table actions
+- Dropdowns
+
+Focus indicators should remain visually consistent throughout the application.
+
+---
+
+## Forms
+
+Accessible forms should include:
+
+- Visible labels
+- Required field indicators
+- Clear validation messages
+- Helpful error descriptions
+- Logical tab order
+
+Placeholder text should never replace field labels.
+
+---
+
+## Icons
+
+Icons should support content rather than replace it.
+
+Whenever possible:
+
+- Pair icons with text.
+- Provide accessible labels for icon-only actions.
+- Maintain consistent icon usage across modules.
+
+Decorative icons should be ignored by assistive technologies.
+
+---
+
+## Tables
+
+Administrative tables should remain accessible even when displaying large datasets.
+
+Tables should provide:
+
+- Clear column headers
+- Consistent row structure
+- Keyboard accessibility
+- Responsive scrolling
+- Readable spacing
+
+Actions associated with each row should remain discoverable.
+
+---
+
+## Dialogs
+
+Dialogs should:
+
+- Move keyboard focus into the dialog when opened.
+- Trap keyboard focus until closed.
+- Restore focus to the triggering element when dismissed.
+- Provide descriptive titles.
+- Clearly identify primary and secondary actions.
+
+Dialogs should never interrupt users unnecessarily.
+
+---
+
+## Notifications
+
+Notifications should communicate important system events without disrupting user workflows.
+
+Notifications should:
+
+- Remain readable.
+- Be dismissible when appropriate.
+- Avoid covering critical interface elements.
+- Use consistent placement throughout the application.
+
+Critical notifications should require explicit acknowledgement when necessary.
+
+---
+
+## Responsive Accessibility
+
+Accessibility requirements apply equally across:
+
+- Desktop
+- Tablet
+- Mobile
+
+Touch targets should remain comfortably usable on touch devices.
+
+Text should never become unreadable because of responsive layout changes.
+
+---
+
+## Reduced Motion
+
+Users who prefer reduced motion should experience minimal interface animation.
+
+Animations should never:
+
+- delay interaction;
+- hide important information;
+- interfere with accessibility technologies.
+
+---
+
+## Readability
+
+Interfaces should prioritize readability through:
+
+- Consistent typography
+- Predictable layouts
+- Appropriate spacing
+- Clear information hierarchy
+- Concise language
+
+Content should be easy to scan without sacrificing important detail.
+
+---
+
+# 14. Design Principles
+
+The design system provides a unified visual language for every frontend module of the InnoTech Hub Attendance System.
+
+Every new screen, component, and workflow should follow these principles.
+
+---
+
+## Consistency
+
+Components should behave consistently regardless of feature area.
+
+Buttons, forms, cards, tables, dialogs, navigation, and notifications should maintain the same visual language throughout the application.
+
+---
+
+## Clarity
+
+Interfaces should communicate information clearly and avoid unnecessary complexity.
+
+Users should immediately understand:
+
+- what they are viewing;
+- what actions are available;
+- what the current system state is.
+
+---
+
+## Simplicity
+
+Interfaces should present only the information required for the current task.
+
+Avoid:
+
+- unnecessary decoration;
+- duplicated information;
+- excessive visual hierarchy;
+- overcrowded layouts.
+
+---
+
+## Scalability
+
+The design system should support future expansion without requiring redesign of existing components.
+
+New modules should reuse existing:
+
+- Colors
+- Typography
+- Spacing
+- Cards
+- Tables
+- Dialogs
+- Navigation
+- Status indicators
+
+before introducing new patterns.
+
+---
+
+## Accessibility
+
+Accessibility is a shared responsibility across every screen and component.
+
+New features should inherit the accessibility standards defined in this document instead of introducing alternative behaviors.
+
+---
+
+## Responsiveness
+
+All interfaces should adapt gracefully across supported screen sizes while maintaining consistent behavior and visual hierarchy.
+
+Layouts should optimize available space without sacrificing readability.
+
+---
+
+## Information Hierarchy
+
+Users should always be able to identify:
+
+1. Where they are.
+2. What they are viewing.
+3. What requires attention.
+4. What actions are available.
+5. What has changed.
+
+Visual hierarchy should reinforce this order throughout the application.
+
+---
+
+## Maintainability
+
+Design decisions should encourage reuse rather than duplication.
+
+Whenever a new component is introduced, designers and developers should first determine whether an existing pattern can be extended before creating a new one.
+
+This approach promotes consistency, reduces maintenance effort, and improves the overall user experience.
+
+---
+
+# Conclusion
+
+This document defines the visual foundation for the frontend of the InnoTech Hub Attendance System.
+
+It establishes consistent standards for colors, typography, spacing, layouts, components, responsiveness, motion, and accessibility while remaining independent of specific frontend frameworks or implementation details.
+
+All future frontend modules should reference this design system to ensure a cohesive, accessible, and maintainable user experience across administrator and member interfaces.
+
+As the application evolves, this design system should be extended through reusable design tokens and shared component patterns rather than introducing isolated visual styles or feature-specific conventions.

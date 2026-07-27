@@ -80,7 +80,7 @@ All error responses use this envelope:
 | 403 | Authenticated but wrong role for this action |
 | 404 | Resource not found or not visible to this user |
 | 409 | Conflict (e.g., duplicate check-in, session already closed) |
-| 422 | Business-rule rejection (e.g., outside radius, session not open, time window closed) |
+| 422 | Business-rule rejection (e.g., outside event boundary, session not open, time window closed) |
 
 ---
 
@@ -185,7 +185,7 @@ on app reload to restore session state.
 
 ### POST /sessions
 
-**Purpose:** Admin creates an attendance session by defining the venue, time window, and radius.
+**Purpose:** Business-rule rejection (e.g., outside event boundary, session not open, time window closed)
 Session starts in `scheduled` status.
 
 **Auth required:** Yes (admin only)
@@ -199,9 +199,25 @@ Session starts in `scheduled` status.
   "start_time": "2026-08-01T09:00:00Z",
   "end_time": "2026-08-01T12:00:00Z",
   "grace_period_minutes": 10,
-  "venue_lat": 12.9716,
-  "venue_lng": 77.5946,
-  "radius_meters": 50
+
+  "boundary_type": "GEOJSON",
+
+  "boundary": {
+    "type": "Polygon",
+    "coordinates": [
+      [
+        [77.5944, 12.9715],
+        [77.5951, 12.9715],
+        [77.5951, 12.9722],
+        [77.5944, 12.9722],
+        [77.5944, 12.9715]
+      ]
+    ]
+  },
+
+  "gps_update_interval": 15,
+  "outside_grace_period": 10,
+  "auto_timeout_minutes": 30
 }
 ```
 
@@ -212,9 +228,50 @@ Session starts in `scheduled` status.
 - `start_time` (ISO 8601 datetime, required) — must be before `end_time`
 - `end_time` (ISO 8601 datetime, required) — must be after `start_time`
 - `grace_period_minutes` (integer, required) — minutes after `start_time` before a check-in is marked `late` instead of `present`
-- `venue_lat` (double, required) — decimal degrees
-- `venue_lng` (double, required) — decimal degrees
-- `radius_meters` (integer, required) — must be > 0
+- `boundary_type (enum, required)
+
+Defines how the attendance boundary is created.
+
+Supported values:
+
+• GEOJSON
+• CAPTURED_POINTS
+
+---
+
+boundary (object, required)
+
+Boundary definition.
+
+If boundary_type = GEOJSON,
+this must contain a valid GeoJSON Polygon.
+
+If boundary_type = CAPTURED_POINTS,
+this contains the captured GPS boundary points collected by the client.
+
+---
+
+gps_update_interval (integer, required)
+
+Number of seconds between GPS updates while attendance monitoring is active.
+
+Must be greater than 0.
+
+---
+
+outside_grace_period (integer, required)
+
+Number of seconds a volunteer may remain outside the event boundary before being marked as LEFT.
+
+Must be zero or greater.
+
+---
+
+auto_timeout_minutes (integer, required)
+
+Number of minutes after the event ends before monitoring automatically terminates.
+
+Must be greater than 0.
 
 **Response 201 — Session created:**
 ```json
@@ -226,9 +283,24 @@ Session starts in `scheduled` status.
   "start_time": "2026-08-01T09:00:00Z",
   "end_time": "2026-08-01T12:00:00Z",
   "grace_period_minutes": 10,
-  "venue_lat": 12.9716,
-  "venue_lng": 77.5946,
-  "radius_meters": 50,
+      "boundary_type": "GEOJSON",
+
+    "boundary": {
+      "type": "Polygon",
+      "coordinates": [
+        [
+          [77.5944, 12.9715],
+          [77.5951, 12.9715],
+          [77.5951, 12.9722],
+          [77.5944, 12.9722],
+          [77.5944, 12.9715]
+        ]
+      ]
+    },
+
+    "gps_update_interval": 15,
+    "outside_grace_period": 10,
+    "auto_timeout_minutes": 30,
   "status": "scheduled",
   "created_by": "5f8d21e0-1234-4a5b-9c6d-abcdef123456",
   "created_at": "2026-07-20T10:00:00Z"
@@ -260,7 +332,7 @@ Session starts in `scheduled` status.
 {
   "error": {
     "code": "VALIDATION_ERROR",
-    "message": "radius_meters is required and must be greater than 0."
+    "message": "A valid event boundary must be provided."
   }
 }
 ```
@@ -359,9 +431,22 @@ so far. Used for the admin's live monitoring / session review screen.
   "start_time": "2026-08-01T09:00:00Z",
   "end_time": "2026-08-01T12:00:00Z",
   "grace_period_minutes": 10,
-  "venue_lat": 12.9716,
-  "venue_lng": 77.5946,
-  "radius_meters": 50,
+    "boundary_type": "GEOJSON",
+      "boundary": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [77.5944, 12.9715],
+            [77.5951, 12.9715],
+            [77.5951, 12.9722],
+            [77.5944, 12.9722],
+            [77.5944, 12.9715]
+          ]
+        ]
+      },
+    "gps_update_interval": 15,
+    "outside_grace_period": 10,
+    "auto_timeout_minutes": 30,
   "attendance_records": [
     {
       "id": "c3d4e5f6-0001-4a5b-9c6d-abcdef333333",
@@ -451,17 +536,29 @@ open session.
 
 **Server-side validation logic:**
 
-**Distance check (Haversine formula):**
-- Compute distance between (lat, lng) and session's (venue_lat, venue_lng)
-- Compare against `radius_meters`
+**Boundary Validation**
+
+The submitted GPS location is validated against the configured event boundary.
+
+Validation depends on the session's boundary_type.
+
+• GEOJSON
+  Validate the submitted coordinates against the stored GeoJSON Polygon.
+
+• CAPTURED_POINTS
+  The backend first generates and stores a GeoJSON Polygon from the captured boundary points.
+  Attendance validation is then performed against that generated polygon.
+
+The client does not need to know which boundary type is used.
+It only submits the current GPS location.
 
 **Decision table:**
+| Condition                                                         | Result                             |
+| ----------------------------------------------------------------- | ---------------------------------- |
+| Location is inside the configured boundary AND GPS accuracy ≤ 30m | ✅ Eligible for `present` or `late` |
+| Location is outside the configured boundary                       | ❌ Reject with `OUTSIDE_BOUNDARY`   |
+| GPS accuracy > 30m or location cannot be reliably verified        | ⚠️ `pending_verification`          |
 
-| Condition | Result |
-|---|---|
-| `distance <= radius_meters` AND `gps_accuracy_meters` is acceptable (≤ 30m) | ✅ Inside venue — eligible for `present` or `late` status |
-| `distance > radius_meters + 10m tolerance` AND `gps_accuracy_meters` is acceptable | ❌ Outside venue — rejected with code `OUTSIDE_RADIUS` |
-| `gps_accuracy_meters > 30m` (poor accuracy) OR reading is stale | ⚠️ Uncertain — mark as `pending_verification`, flag for admin review (don't auto-reject) |
 
 **Time window check:**
 - Must be during the session's open window
@@ -478,7 +575,7 @@ open session.
 - Cannot be a duplicate of a previously submitted photo (hash check to prevent token reuse)
 - Blurred or dark photos are NOT auto-rejected — flagged as `pending_verification` for admin review
 
-**Response 201 — Accepted (inside radius, on time):**
+**Response 201 — Accepted (inside event boundary, on time):**
 ```json
 {
   "id": "c3d4e5f6-0002-4a5b-9c6d-abcdef444444",
@@ -503,7 +600,7 @@ open session.
 }
 ```
 
-**Response 201 — Late (inside radius, but after grace period):**
+**Response 201 — Late (inside event boundary, but after grace period):**
 ```json
 {
   "id": "c3d4e5f6-0004-4a5b-9c6d-abcdef666666",
@@ -515,12 +612,12 @@ open session.
 }
 ```
 
-**Response 422 — Outside radius (with acceptable accuracy):**
+**Response 422 — Outside event boundary:**
 ```json
 {
   "error": {
-    "code": "OUTSIDE_RADIUS",
-    "message": "185m from venue, allowed radius is 50m."
+    "code": "OUTSIDE_BOUNDARY",
+    "message": "Submitted location is outside the configured event boundary."
   }
 }
 ```
@@ -1063,100 +1160,295 @@ Returns complete block details.
 
 # Reports & Analytics
 
-Reports provide aggregated, read-only views of attendance, presence, emergency tickets, and volunteer participation.
+## Overview
 
-No report endpoint modifies application data.
+The Reports & Analytics module provides aggregated attendance, presence, and volunteer participation data for administrative review and operational decision-making.
+
+Reports are read-only and do not modify application data.
+
+All report endpoints require administrator authentication.
 
 ---
 
-## GET /reports/dashboard
+# Business Rules
 
-**Purpose:** Return live dashboard statistics.
+- Reports are generated using the latest committed data.
+- Report generation must not modify attendance records.
+- Reports may be filtered using supported query parameters.
+- Reports are returned in descending chronological order unless specified otherwise.
+- Exported reports must contain the same data as the corresponding API response.
+- Volunteers cannot access administrative reports.
 
-**Auth required:** Yes (admin)
+---
 
-### Optional Query Parameters
+# Supported Reports
 
-- event_id
+| Report | Description |
+|---------|-------------|
+| Attendance Summary | Overall attendance statistics for an event |
+| Presence Summary | Presence monitoring statistics |
+| Volunteer Participation | Individual volunteer participation summary |
+| Event Summary | Overall event statistics |
 
-### Response
+---
+
+# GET /reports/attendance
+
+## Purpose
+
+Retrieve attendance statistics for one or more events.
+
+---
+
+## Authentication
+
+Required
+
+Administrator
+
+---
+
+## Query Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| event_id | UUID | No | Filter by event |
+| from | DateTime | No | Start date |
+| to | DateTime | No | End date |
+
+---
+
+## Success Response
+
+HTTP 200 OK
 
 ```json
 {
   "success": true,
-  "message": "Dashboard retrieved successfully.",
+  "message": "Attendance report generated successfully.",
   "data": {
-    "inside_volunteers": 42,
-    "outside_volunteers": 3,
-    "pending_tickets": 2,
-    "approved_leaves": 4,
-    "disconnected_volunteers": 1,
-    "completed_volunteers": 35
-    }
+    "total_registered": 120,
+    "checked_in": 110,
+    "checked_out": 104,
+    "absent": 10,
+    "pending_verification": 2
+  }
 }
 ```
 
 ---
 
-## GET /reports/events/{eventId}
+# GET /reports/presence
 
-Returns a complete report for a single event.
+## Purpose
 
-Includes:
-
-- Event summary
-- Attendance statistics
-- Presence statistics
-- Emergency ticket summary
-- Block summary
+Retrieve volunteer presence statistics.
 
 ---
 
-## GET /reports/volunteers/{volunteerId}
+## Authentication
 
-Returns the volunteer's participation history.
+Required
 
-Includes:
-
-- Events attended
-- Events completed
-- Emergency tickets
-- Block history
-- Participation statistics
+Administrator
 
 ---
 
-## GET /reports/volunteers/me
+## Query Parameters
 
-Returns the authenticated volunteer's own report.
-
----
-
-## GET /reports/events/{eventId}/export
-
-Query Parameter
-
-```
-format=csv
-```
-
-or
-
-```
-format=xlsx
-```
-
-Downloads the selected report.
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| event_id | UUID | Yes | Event identifier |
 
 ---
 
-## GET /reports/volunteers/{volunteerId}/export
+## Success Response
 
-Supports:
+```json
+{
+  "success": true,
+  "message": "Presence report generated successfully.",
+  "data": {
+    "volunteers_monitored": 110,
+    "boundary_exits": 18,
+    "successful_returns": 14,
+    "emergency_requests": 3,
+    "average_presence_percentage": 96.4
+  }
+}
+```
 
-- csv
-- xlsx
+---
 
+# GET /reports/volunteers
+
+## Purpose
+
+Retrieve volunteer participation statistics.
+
+---
+
+## Authentication
+
+Required
+
+Administrator
+
+---
+
+## Query Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| event_id | UUID | No | Event identifier |
+| user_id | UUID | No | Volunteer identifier |
+
+---
+
+## Success Response
+
+```json
+{
+  "success": true,
+  "message": "Volunteer report generated successfully.",
+  "data": [
+    {
+      "user_id": "uuid",
+      "name": "John Doe",
+      "events_attended": 8,
+      "check_in_count": 8,
+      "check_out_count": 8,
+      "boundary_exits": 2,
+      "emergency_requests": 1,
+      "completed_activities": 12,
+      "block_status": "NONE"
+    }
+  ]
+}
+```
+
+---
+
+# GET /reports/events
+
+## Purpose
+
+Retrieve summary statistics for events.
+
+---
+
+## Authentication
+
+Required
+
+Administrator
+
+---
+
+## Success Response
+
+```json
+{
+  "success": true,
+  "message": "Event report generated successfully.",
+  "data": [
+    {
+      "event_id": "uuid",
+      "event_name": "Community Cleanup",
+      "registered_volunteers": 120,
+      "checked_in": 110,
+      "checked_out": 104,
+      "presence_rate": 96.4,
+      "activities_completed": 58
+    }
+  ]
+}
+```
+
+---
+
+# Export Reports
+
+## GET /reports/export
+
+### Purpose
+
+Export report data in a supported format.
+
+---
+
+## Authentication
+
+Required
+
+Administrator
+
+---
+
+## Query Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| report | Enum | Yes | Report type |
+| format | Enum | Yes | Export format |
+
+---
+
+## Supported Report Types
+
+- ATTENDANCE
+- PRESENCE
+- VOLUNTEERS
+- EVENTS
+
+---
+
+## Supported Export Formats
+
+- CSV
+- XLSX
+
+---
+
+## Success Response
+
+HTTP 200 OK
+
+Returns the generated report file.
+
+---
+
+# Validation Rules
+
+- Only administrators may access reports.
+- Invalid event identifiers return EVENT_NOT_FOUND.
+- Unsupported export formats return VALIDATION_ERROR.
+- Empty reports return a successful response with zero records.
+
+---
+
+# Error Responses
+
+| Error Code | HTTP | Description |
+|------------|------|-------------|
+| UNAUTHORIZED | 401 | Authentication required |
+| FORBIDDEN | 403 | Administrator access required |
+| EVENT_NOT_FOUND | 404 | Event not found |
+| VALIDATION_ERROR | 422 | Invalid request parameters |
+
+---
+
+# Related Modules
+
+- Events
+- Attendance
+- Presence Monitoring
+- Emergency Tickets
+- Volunteer Blocking
+- Activity History
+- Audit Logs
+
+--
 ---
 
 ## Business Rules
@@ -1240,7 +1532,7 @@ Every error code used across the entire API:
 | `NOT_FOUND` | 404 | `/sessions/{id}`, `/reports/attendance.xlsx` | Resource not found or not owned |
 | `ALREADY_CLOSED` | 409 | `/sessions/{id}/close` | Session is already in `closed` status |
 | `SESSION_NOT_OPEN` | 422 | `/attendance/check-in` | Session is not currently open for check-in |
-| `OUTSIDE_RADIUS` | 422 | `/attendance/check-in` | GPS distance exceeds allowed radius |
+| OUTSIDE_BOUNDARY | 422 | /attendance/check-in | Submitted location is outside the configured event boundary |
 | `DUPLICATE_CHECK_IN` | 409 | `/attendance/check-in` | Member already checked in to this session |
 | `INVALID_PHOTO_TYPE` | 400 | `/attendance/check-in` | Photo is not a valid JPEG or PNG |
 | `PHOTO_TOO_LARGE` | 400 | `/attendance/check-in` | Photo exceeds 5MB size limit |
@@ -1273,47 +1565,837 @@ Every error code used across the entire API:
 
 ---
 
-## Status Enums (must match `system_architecture.md §4` exactly)
+# Status Enums
 
-**User role:**
-- `admin`
-- `member`
+These enum values are shared across the backend, frontend, database, and business rules.
 
-**Session status:**
-- `scheduled` — created, not yet open
-- `open` — members may check in
-- `closed` — admin closed it or time window passed
-
-**Attendance final_status:**
-- `present` — checked in on time, inside radius
-- `late` — checked in after grace period, inside radius
-- `pending_verification` — GPS accuracy too low or other flag, needs admin review
-- `rejected` — outside radius with acceptable accuracy, or failed validation
+Changing any enum value is considered a breaking API contract change.
 
 ---
 
-## Change Process
+## User Roles
 
-Any change to a path, field name, enum value, or status code is a **breaking contract change**.
-Before merging:
-1. Update this file on `main`.
-2. Add an entry to `changelog.md`.
-3. Notify the other developer (or leave a clear PR description) before either branch codes against
-   the new shape.
+| Value | Description |
+|--------|-------------|
+| `admin` | Organization administrator with permission to manage users, events, attendance, reports, and system configuration. |
+| `member` | Volunteer or participant authorized to attend assigned events. |
 
-Example changelog entry:
+---
+
+## Event Status
+
+| Value | Description |
+|--------|-------------|
+| `scheduled` | Event has been created but is not yet open for attendance. |
+| `open` | Event is active and accepting attendance submissions. |
+| `closed` | Event has ended or has been manually closed by an administrator. |
+
+---
+
+## Boundary Types
+
+Defines how the event boundary was created.
+
+| Value | Description |
+|--------|-------------|
+| `GEOJSON` | Administrator uploads a GeoJSON Polygon that represents the event boundary. |
+| `CAPTURED_POINTS` | Administrator captures GPS points by walking around the venue. The backend converts these points into a GeoJSON Polygon and stores both the captured points and generated polygon. |
+
+---
+
+## Attendance Final Status
+
+Represents the final outcome of a volunteer's attendance.
+
+| Value | Description |
+|--------|-------------|
+| `present` | Volunteer successfully checked in from within the configured event boundary during the allowed attendance window. |
+| `late` | Volunteer successfully checked in from within the configured event boundary after the grace period. |
+| `pending_verification` | Attendance requires administrator review due to insufficient GPS accuracy or another verification issue. |
+| `rejected` | Attendance submission was rejected because validation requirements were not satisfied. |
+
+---
+
+## Presence States
+
+Represents the volunteer's real-time participation state during an active event.
+
+| Value | Description |
+|--------|-------------|
+| `CHECK_IN` | Volunteer successfully started the attendance session. |
+| `PRESENCE_OK` | Latest location update confirms the volunteer remains inside the configured event boundary. |
+| `LEFT` | Volunteer remained outside the configured event boundary longer than the configured outside grace period. |
+| `RETURNED` | Volunteer re-entered the configured event boundary after previously leaving. |
+| `CHECK_OUT` | Volunteer completed or ended the attendance session. |
+
+---
+
+## Volunteer Block Status
+
+Represents participation restrictions applied by administrators.
+
+| Value | Description |
+|--------|-------------|
+| `ACTIVE` | Volunteer is currently blocked from joining eligible events. |
+| `LIFTED` | Block has been removed by an administrator. |
+| `EXPIRED` | Temporary block expired automatically according to policy. |
+
+---
+
+## Emergency Ticket Status
+
+| Value | Description |
+|--------|-------------|
+| `OPEN` | Emergency ticket has been created and is awaiting administrator action. |
+| `APPROVED` | Administrator approved the emergency request. |
+| `REJECTED` | Administrator rejected the emergency request. |
+| `CANCELLED` | Emergency request was cancelled before processing. |
+| `RESOLVED` | Emergency workflow has been completed successfully. |
+
+---
+
+## Notification Status
+
+| Value | Description |
+|--------|-------------|
+| `UNREAD` | Notification has not yet been viewed. |
+| `READ` | Notification has been viewed by the recipient. |
+
+---
+
+## Notification Types
+
+| Value | Description |
+|--------|-------------|
+| `CHECK_IN` | Attendance successfully started. |
+| `LEFT_BOUNDARY` | Volunteer exited the configured event boundary. |
+| `RETURNED` | Volunteer re-entered the configured event boundary. |
+| `CHECK_OUT` | Attendance session completed. |
+| `EMERGENCY` | Emergency-related notification. |
+| `BLOCKED` | Volunteer participation restriction notification. |
+| `SYSTEM` | General system notification. |
+
+---
+
+## Activity Status
+
+| Value | Description |
+|--------|-------------|
+| `PENDING` | Activity has been assigned but not started. |
+| `IN_PROGRESS` | Volunteer is actively performing the assigned activity. |
+| `COMPLETED` | Activity completed successfully. |
+| `REJECTED` | Activity submission was rejected during review. |
+
+---
+
+## Audit Action Types
+
+| Value | Description |
+|--------|-------------|
+| `CREATE` | Resource created. |
+| `UPDATE` | Resource updated. |
+| `DELETE` | Resource deleted. |
+| `LOGIN` | User logged into the system. |
+| `LOGOUT` | User logged out of the system. |
+| `CHECK_IN` | Attendance check-in recorded. |
+| `CHECK_OUT` | Attendance check-out recorded. |
+| `APPROVE` | Administrator approved a request. |
+| `REJECT` | Administrator rejected a request. |
+
+# API Contract Change Process
+
+This API Contract is the authoritative interface specification shared between frontend, backend, QA, and documentation.
+
+Any modification to this document must follow the contract management process defined below.
+
+Breaking changes must never be introduced without explicit review and approval.
+
+---
+
+# Contract Stability Rules
+
+The following items are considered part of the public API contract.
+
+Changing any of these items is a breaking change.
+
+- Endpoint path
+- HTTP method
+- Request field names
+- Response field names
+- Enum values
+- Data types
+- Required / optional fields
+- Authentication requirements
+- HTTP status codes
+- Error codes
+- Pagination structure
+- Sorting/filter parameters
+- Boundary model
+- Validation behavior
+- Business workflow that affects API behavior
+
+---
+
+# Non-Breaking Changes
+
+The following changes are generally considered safe.
+
+- Documentation improvements
+- Additional examples
+- Clarified descriptions
+- New optional request fields
+- New optional response fields
+- Additional endpoints
+- Performance improvements
+- Internal implementation changes
+
+These changes still require updating the changelog.
+
+---
+
+# Breaking Changes
+
+The following changes require explicit approval before implementation.
+
+## Endpoint Changes
+
+Changing
+
+- URL
+- HTTP method
+- Authentication requirement
+
+Example
+
 ```
-- Changed POST /attendance/check-in response to include `gps_accuracy_meters` field
-- See API_contract.md § Attendance / Check-in → Response 201
+POST /attendance/check-in
+
+↓
+
+POST /attendance/start
 ```
+
+Breaking.
+
+---
+
+## Request Changes
+
+Changing
+
+```
+latitude
+
+↓
+
+lat
+```
+
+Breaking.
+
+---
+
+Removing
+
+```
+gps_accuracy_meters
+```
+
+Breaking.
+
+---
+
+Changing a required field into another required field.
+
+Breaking.
+
+---
+
+Changing data type
+
+```
+integer
+
+↓
+
+string
+```
+
+Breaking.
+
+---
+
+## Response Changes
+
+Removing any response field.
+
+Breaking.
+
+Changing response structure.
+
+Breaking.
+
+Changing enum values.
+
+Breaking.
+
+Changing status codes.
+
+Breaking.
+
+---
+
+## Enum Changes
+
+Changing
+
+```
+present
+
+↓
+
+checked_in
+```
+
+Breaking.
+
+Changing
+
+```
+LEFT
+
+↓
+
+LEFT_VENUE
+```
+
+Breaking.
+
+Adding new enum values requires frontend review.
+
+---
+
+## Error Code Changes
+
+Changing
+
+```
+OUTSIDE_BOUNDARY
+
+↓
+
+OUTSIDE_GEOFENCE
+```
+
+Breaking.
+
+Removing an error code.
+
+Breaking.
+
+Changing HTTP status.
+
+Breaking.
+
+---
+
+## Boundary Model
+
+The finalized boundary architecture is part of the API contract.
+
+Supported boundary types are:
+
+- GEOJSON
+- CAPTURED_POINTS
+
+No additional boundary type may be introduced without updating:
+
+- API Contract
+- Database Schema
+- Backend Documentation
+- Frontend Documentation
+- Business Rules
+- QA Documentation
+
+---
+
+# Documentation Synchronization
+
+Whenever this API Contract changes, the following documents must be reviewed for consistency.
+
+- Backend API Implementation
+- Backend Architecture
+- Database Schema
+- Business Rules
+- Frontend API Documentation
+- Frontend Architecture
+- Testing Documentation
+- Changelog
+
+---
+
+# API Versioning
+
+The project currently uses a single API version.
+
+```
+/api/v1
+```
+
+Breaking changes should be avoided whenever possible.
+
+If a future change cannot remain backward compatible, a new API version should be introduced instead of modifying existing endpoints.
+
+Example
+
+```
+/api/v2/attendance/check-in
+```
+
+---
+
+# Backward Compatibility
+
+Whenever possible,
+
+- add new endpoints
+- add optional fields
+- preserve existing behavior
+
+instead of modifying existing interfaces.
+
+Existing clients should continue functioning without requiring immediate updates.
+
+---
+
+# Change Review Process
+
+Every contract modification should follow this sequence.
+
+```
+Requirement
+
+        ↓
+
+Architecture Review
+
+        ↓
+
+Business Rule Validation
+
+        ↓
+
+API Contract Update
+
+        ↓
+
+Database Review
+
+        ↓
+
+Backend Review
+
+        ↓
+
+Frontend Review
+
+        ↓
+
+QA Review
+
+        ↓
+
+Implementation
+```
+
+Implementation must never begin before the API Contract has been updated.
+
+---
+
+# Pull Request Requirements
+
+Every pull request affecting this contract must include
+
+- Purpose of the change
+- Affected endpoints
+- Backward compatibility assessment
+- Breaking change assessment
+- Required frontend changes
+- Required backend changes
+- Required database changes
+- Required QA updates
+- Changelog reference
+
+---
+
+# Changelog Requirements
+
+Every API Contract modification must be recorded in the project changelog.
+
+Each entry should include
+
+- Date
+- Version
+- Author
+- Affected module
+- Summary of changes
+- Breaking change (Yes/No)
+
+Example
+
+```
+Version: 2.0.0
+
+Module:
+Presence Monitoring
+
+Summary:
+Introduced boundary-based monitoring using stored GeoJSON.
+
+Breaking Change:
+No
+```
+
+---
+
+# Implementation Rule
+
+Backend and frontend implementations must follow this contract exactly.
+
+If implementation requirements differ from this document,
+
+implementation must stop until
+
+- the discrepancy is discussed,
+- the contract is updated,
+- documentation is synchronized,
+- approval is granted.
+
+The API Contract always takes precedence over implementation assumptions.
 
 # Activity History
 
-Activity History records volunteer actions performed during an event.
+## Overview
 
-This module is read-only.
+Activity History provides a chronological record of significant actions performed by or affecting a volunteer during an event.
+
+The module is intended for transparency, auditing, and self-service review. It allows volunteers to review their own participation history while enabling administrators to investigate attendance, presence, emergency requests, activities, and administrative actions.
+
+Activity History is read-only.
+
+No endpoint in this module creates, updates, or deletes records directly.
+
+History records are generated automatically by the system whenever supported actions occur.
 
 ---
+
+# Business Rules
+
+- Every activity history record is immutable after creation.
+- Records are created only by successful system events.
+- Records must always reference the originating module.
+- Records must be ordered using server timestamps.
+- Server time is always authoritative.
+- Records must not be deleted through the public API.
+- Administrators may archive records according to organizational retention policies.
+- Volunteers may only access their own activity history.
+- Administrators may access activity history for authorized users.
+
+---
+
+# History Categories
+
+Each record belongs to one of the following categories.
+
+| Category | Description |
+|----------|-------------|
+| ATTENDANCE | Check-in and check-out events |
+| PRESENCE | Presence monitoring events |
+| ACTIVITY | Assigned or completed volunteer activities |
+| EMERGENCY | Emergency ticket lifecycle |
+| BLOCK | Volunteer participation restrictions |
+| NOTIFICATION | Important notifications delivered to the volunteer |
+| ADMIN | Administrative actions affecting the volunteer |
+| SYSTEM | Automatically generated system events |
+
+---
+
+# Activity Types
+
+Every history record contains an activity type.
+
+Supported values include:
+
+- CHECK_IN
+- CHECK_OUT
+- PRESENCE_OK
+- LEFT
+- RETURNED
+- ACTIVITY_ASSIGNED
+- ACTIVITY_UPDATED
+- ACTIVITY_COMPLETED
+- EMERGENCY_CREATED
+- EMERGENCY_APPROVED
+- EMERGENCY_REJECTED
+- EMERGENCY_CANCELLED
+- BLOCK_APPLIED
+- BLOCK_REMOVED
+- NOTIFICATION_SENT
+- PROFILE_UPDATED
+- SESSION_JOINED
+- SESSION_COMPLETED
+
+Additional activity types may be introduced in future releases without affecting existing values.
+
+---
+
+# History Record Structure
+
+Every activity history record contains the following information.
+
+| Field | Type | Required | Description |
+|------|------|----------|-------------|
+| id | UUID | Yes | History record identifier |
+| user_id | UUID | Yes | Volunteer |
+| event_id | UUID | No | Related event |
+| attendance_id | UUID | No | Related attendance session |
+| category | Enum | Yes | History category |
+| activity_type | Enum | Yes | Activity performed |
+| title | String | Yes | Short summary |
+| description | String | Yes | Human-readable explanation |
+| created_at | DateTime | Yes | Server timestamp |
+| metadata | Object | No | Additional structured information |
+
+---
+
+# GET /activity/me
+
+## Purpose
+
+Return the authenticated volunteer's activity history.
+
+---
+
+## Authentication
+
+Required
+
+Member
+
+---
+
+## Request
+
+No request body.
+
+---
+
+## Query Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| page | Integer | No | Page number |
+| page_size | Integer | No | Number of records per page |
+| category | Enum | No | Filter by history category |
+| activity_type | Enum | No | Filter by activity type |
+| event_id | UUID | No | Filter by event |
+| from | DateTime | No | Start date |
+| to | DateTime | No | End date |
+
+---
+
+## Success Response
+
+HTTP 200 OK
+
+```json
+{
+  "success": true,
+  "message": "Activity history retrieved successfully.",
+  "data": {
+    "items": [
+      {
+        "id": "history_uuid",
+        "category": "ATTENDANCE",
+        "activity_type": "CHECK_IN",
+        "title": "Attendance Started",
+        "description": "Successfully checked in.",
+        "created_at": "2026-08-01T09:02:15Z",
+        "metadata": {
+          "event_id": "event_uuid",
+          "attendance_id": "attendance_uuid"
+        }
+      }
+    ],
+    "pagination": {
+      "page": 1,
+      "page_size": 20,
+      "total_records": 52,
+      "total_pages": 3
+    }
+  }
+}
+```
+
+---
+
+# GET /activity/{user_id}
+
+## Purpose
+
+Return activity history for a specific volunteer.
+
+---
+
+## Authentication
+
+Administrator
+
+---
+
+## Path Parameters
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| user_id | UUID | Volunteer identifier |
+
+---
+
+## Query Parameters
+
+Same as `/activity/me`.
+
+---
+
+## Success Response
+
+Same response format as `/activity/me`.
+
+---
+
+# Filtering Rules
+
+Filtering may be applied independently or combined.
+
+Supported filters include:
+
+- Category
+- Activity Type
+- Event
+- Date Range
+
+Filtering must not modify the chronological ordering.
+
+---
+
+# Sorting Rules
+
+Default sorting
+
+```
+created_at DESC
+```
+
+Newest records appear first.
+
+---
+
+# Pagination
+
+Default page size
+
+```
+20
+```
+
+Maximum page size
+
+```
+100
+```
+
+---
+
+# Metadata Examples
+
+Attendance
+
+```json
+{
+    "attendance_id":"uuid",
+    "event_id":"uuid"
+}
+```
+
+Presence
+
+```json
+{
+    "state":"LEFT",
+    "gps_accuracy_meters":12
+}
+```
+
+Emergency
+
+```json
+{
+    "ticket_id":"uuid",
+    "status":"APPROVED"
+}
+```
+
+Volunteer Block
+
+```json
+{
+    "block_id":"uuid",
+    "reason":"Repeated unauthorized exits"
+}
+```
+
+---
+
+# Validation Rules
+
+- Volunteers may only access their own history.
+- Administrators may access authorized users.
+- Unknown filters return validation errors.
+- Invalid UUIDs return 404 or validation errors as appropriate.
+- Empty history returns an empty list.
+
+---
+
+# Error Responses
+
+| Error Code | HTTP | Description |
+|------------|------|-------------|
+| UNAUTHORIZED | 401 | Authentication required |
+| FORBIDDEN | 403 | Access denied |
+| USER_NOT_FOUND | 404 | Volunteer does not exist |
+| VALIDATION_ERROR | 422 | Invalid filter values |
+
+---
+
+# Notes
+
+- History records are append-only.
+- History records cannot be modified through this API.
+- Server timestamps are authoritative.
+- The API returns records in descending chronological order.
+- Activity History is intended for review and auditing, not operational updates.
+
+---
+
+# Related Modules
+
+- Attendance
+- Presence Monitoring
+- Emergency Tickets
+- Volunteer Blocking
+- Notifications
+- Reports
+- Audit Logs
 
 ## GET /activity/me
 
@@ -1371,11 +2453,204 @@ Returns every activity associated with an attendance record.
 
 # Audit Logs
 
-Audit Logs record administrative actions performed within the system.
+## Overview
 
-Audit records are immutable.
+The Audit Logs module records security-sensitive and administrative actions performed within the system.
+
+Audit logs provide accountability, traceability, and historical records for actions that affect users, events, attendance, and system configuration.
+
+Audit records are generated automatically by the system and are immutable.
+
+Audit logs are read-only through the public API.
 
 ---
+
+# Business Rules
+
+- Every administrative action that modifies system state must generate an audit log.
+- Audit logs cannot be modified or deleted through the API.
+- Audit records are created using server timestamps.
+- Audit logs are visible only to authorized administrators.
+- Failed authorization attempts should be logged internally but are not exposed through this API.
+
+---
+
+# Logged Actions
+
+The following actions generate audit records.
+
+## Event Management
+
+- Event Created
+- Event Updated
+- Event Cancelled
+- Event Deleted
+
+---
+
+## Attendance
+
+- Manual Check-in
+- Manual Check-out
+- Attendance Verification
+- Attendance Correction
+
+---
+
+## Presence Monitoring
+
+- Presence Monitoring Started
+- Presence Monitoring Stopped
+- Manual Presence Override
+
+---
+
+## Emergency Tickets
+
+- Emergency Ticket Approved
+- Emergency Ticket Rejected
+- Emergency Ticket Closed
+
+---
+
+## Volunteer Management
+
+- Volunteer Block Applied
+- Volunteer Block Removed
+- Volunteer Assignment Updated
+
+---
+
+## Administrative Actions
+
+- User Created
+- User Updated
+- User Role Changed
+- User Deactivated
+
+---
+
+# Audit Log Structure
+
+| Field | Type | Required | Description |
+|---------|------|----------|-------------|
+| id | UUID | Yes | Audit log identifier |
+| actor_id | UUID | Yes | Administrator performing the action |
+| actor_role | Enum | Yes | Role of the acting user |
+| action | String | Yes | Action performed |
+| resource_type | String | Yes | Resource affected |
+| resource_id | UUID | No | Identifier of the affected resource |
+| description | String | Yes | Human-readable summary |
+| created_at | DateTime | Yes | Server timestamp |
+| metadata | Object | No | Additional contextual information |
+
+---
+
+# GET /audit-logs
+
+## Purpose
+
+Retrieve audit log records.
+
+---
+
+## Authentication
+
+Required
+
+Administrator
+
+---
+
+## Query Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| page | Integer | No | Page number |
+| page_size | Integer | No | Records per page |
+| actor_id | UUID | No | Filter by administrator |
+| action | String | No | Filter by action |
+| resource_type | String | No | Filter by affected resource |
+| from | DateTime | No | Start date |
+| to | DateTime | No | End date |
+
+---
+
+## Success Response
+
+HTTP 200 OK
+
+```json
+{
+  "success": true,
+  "message": "Audit logs retrieved successfully.",
+  "data": {
+    "items": [
+      {
+        "id": "audit_uuid",
+        "actor_id": "admin_uuid",
+        "actor_role": "ADMIN",
+        "action": "VOLUNTEER_BLOCK_APPLIED",
+        "resource_type": "VOLUNTEER",
+        "resource_id": "user_uuid",
+        "description": "Volunteer participation restriction applied.",
+        "created_at": "2026-08-01T11:20:45Z",
+        "metadata": {
+          "event_id": "event_uuid",
+          "reason": "Repeated unauthorized boundary exits"
+        }
+      }
+    ],
+    "pagination": {
+      "page": 1,
+      "page_size": 20,
+      "total_records": 185,
+      "total_pages": 10
+    }
+  }
+}
+```
+
+---
+
+# Validation Rules
+
+- Only administrators may access audit logs.
+- Invalid filters return VALIDATION_ERROR.
+- Unknown resources return an empty result set.
+- Audit records are immutable.
+
+---
+
+# Error Responses
+
+| Error Code | HTTP | Description |
+|------------|------|-------------|
+| UNAUTHORIZED | 401 | Authentication required |
+| FORBIDDEN | 403 | Administrator access required |
+| VALIDATION_ERROR | 422 | Invalid request parameters |
+
+---
+
+# Notes
+
+- Audit logs are append-only.
+- Audit records cannot be modified through the API.
+- Server timestamps are authoritative.
+- Audit logs are intended for compliance, investigation, and operational review.
+
+---
+
+# Related Modules
+
+- Authentication
+- Events
+- Attendance
+- Presence Monitoring
+- Emergency Tickets
+- Volunteer Blocking
+- Activity History
+- Reports & Analytics
 
 ## GET /audit
 
@@ -1437,25 +2712,300 @@ Returns a single audit entry.
 - Audit records cannot be modified.
 - Audit records cannot be deleted.
 - Only administrators may access audit logs.
+--
+```
 
-# Changelog
+# API Contract Change Process
+
+## Overview
+
+This API Contract is the authoritative specification for all frontend and backend implementations.
+
+Any modification affecting API behavior must be reviewed, approved, and documented before implementation.
+
+No implementation may intentionally deviate from this contract.
+
+---
+
+# Scope
+
+This change process applies to:
+
+- API endpoints
+- HTTP methods
+- Authentication requirements
+- Request body schemas
+- Response body schemas
+- Query parameters
+- Path parameters
+- Error responses
+- Status codes
+- Enum values
+- Business validation rules
+
+---
+
+# Change Classification
+
+API changes are classified into two categories.
+
+## Non-Breaking Changes
+
+The following changes do not affect existing API consumers.
+
+Examples:
+
+- Adding a new endpoint
+- Adding an optional request field
+- Adding an optional response field
+- Adding new documentation examples
+- Clarifying descriptions
+- Performance optimizations without changing API behavior
+
+These changes must be documented in the API Changelog.
+
+---
+
+## Breaking Changes
+
+Breaking changes modify existing API behavior and may require frontend or backend updates.
+
+Examples include:
+
+- Renaming endpoints
+- Removing endpoints
+- Changing HTTP methods
+- Renaming request fields
+- Removing request fields
+- Renaming response fields
+- Removing response fields
+- Changing data types
+- Changing enum values
+- Modifying authentication requirements
+- Changing validation behavior
+- Changing HTTP status codes
+- Removing supported functionality
+
+Breaking changes require explicit approval before implementation.
+
+---
+
+# Change Approval Process
+
+Every API modification must follow this process.
+
+1. Identify the required change.
+2. Review the impact on existing functionality.
+3. Update the API Contract.
+4. Review with frontend and backend developers.
+5. Obtain approval.
+6. Update dependent documentation.
+7. Implement the approved change.
+8. Record the change in the API Changelog.
+
+Implementation must not begin before the API Contract has been updated and approved.
+
+---
+
+# Documentation Synchronization
+
+Whenever the API Contract changes, the following documents must be reviewed for consistency.
+
+- Backend Documentation
+- Frontend Documentation
+- Database Schema
+- Business Rules
+- Testing Documentation
+- API Changelog
+
+---
+
+# Backward Compatibility
+
+Whenever possible, existing endpoints should remain compatible with current clients.
+
+Preferred approaches include:
+
+- Adding new endpoints
+- Adding optional fields
+- Extending existing functionality without modifying existing behavior
+
+Breaking changes should be avoided whenever practical.
+
+---
+
+# Versioning
+
+API Contract versions must be recorded in the API Changelog.
+
+Every approved modification must include:
+
+- Version
+- Release Date
+- Modules Affected
+- Summary of Changes
+- Breaking Change Status
+
+---
+
+# Implementation Rule
+
+Frontend and backend implementations must follow this API Contract.
+
+If implementation requirements differ from this document, implementation must stop until:
+
+- the discrepancy is identified,
+- the API Contract is updated,
+- approval is obtained, and
+- the API Changelog is updated.
+
+The approved API Contract is the single source of truth for all API behavior.
+--
+```
+
+
+# API Changelog
+
+## Overview
+
+This changelog records all approved modifications to the API Contract.
+
+Every change affecting endpoints, request or response schemas, authentication, business rules, validation behavior, error handling, or supported workflows must be documented before implementation.
+
+Historical entries must remain immutable.
+
+---
+
+# Changelog Entry Format
+
+Each changelog entry must include:
+
+| Field | Description |
+|--------|-------------|
+| Version | API Contract version |
+| Release Date | Date the contract revision was approved |
+| Author | Individual or team responsible for the change |
+| Modules Affected | List of modified modules |
+| Summary | Description of the change |
+| Breaking Change | Yes / No |
+
+---
 
 ## Version 2.0.0
 
-### Added
+| Field | Value |
+|--------|-------|
+| Version | 2.0.0 |
+| Release Date | YYYY-MM-DD |
+| Author | Project Team |
+| Breaking Change | No |
 
-- Event boundary configuration using GeoJSON or captured GPS points.
+### Modules Affected
+
+- Authentication
+- Events
+- Attendance
+- Presence Monitoring
+- Emergency Tickets
+- Volunteer Blocking
+- Notifications
+- Activity History
+- Reports & Analytics
+- Audit Logs
+
+### Summary
+
+Initial Phase 2 API Contract.
+
+Introduced:
+
+- Boundary-based attendance validation using GeoJSON.
+- Support for CAPTURED_POINTS boundary generation.
 - Continuous presence monitoring.
-- GPS location update endpoints.
+- Presence state transitions.
 - Emergency ticket workflow.
-- Volunteer blocking system.
-- In-app notification APIs.
-- Dashboard reporting endpoints.
-- Volunteer activity history.
-- Administrative audit log APIs.
-- CSV and XLSX report export endpoints.
-- Standard success response envelope.
-- Extended error code reference.
+- Volunteer participation restriction workflow.
+- Notification module.
+- Activity history.
+- Administrative reporting.
+- Audit logging.
+- Standardized response and error formats.
+
+---
+
+# Future Changes
+
+Future API Contract revisions must be appended as new entries.
+
+Existing entries must not be modified.
+
+Example:
+
+## Version X.Y.Z
+
+| Field | Value |
+|--------|-------|
+| Version | X.Y.Z |
+| Release Date | YYYY-MM-DD |
+| Author | Project Team |
+| Breaking Change | Yes / No |
+
+### Modules Affected
+
+- Module A
+- Module B
+
+### Summary
+
+Describe the approved changes introduced in this version.
+
+**Release Date**
+
+2026-08-01
+
+**Author**
+
+Project Team
+
+**Modules Affected**
+
+- Events
+- Attendance
+- Presence Monitoring
+- Emergency Tickets
+- Notifications
+- Volunteer Blocking
+- Activity History
+- Reports & Analytics
+- Audit Logs
+
+**Summary**
+
+Initial Phase 2 API Contract.
+
+Introduced:
+
+- GeoJSON event boundaries
+- Captured Points boundary generation
+- Continuous presence monitoring
+- Emergency ticket workflow
+- Volunteer participation restrictions
+- Activity history
+- Notification module
+- Reporting endpoints
+- Audit logging
+
+**Breaking Change**
+
+No
+
+---
+
+# Future Versions
+
+Subsequent releases should append new entries without modifying historical records.
+
+Older changelog entries must remain immutable.
 
 ### Changed
 

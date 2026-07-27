@@ -1,667 +1,1916 @@
-# frontend_state_management.md — State Management & Data Fetching
+# Frontend State Management
 
-> How to manage state: local component state, context for auth, React Query for server state.
+The Frontend State Management architecture defines how application state is organized, synchronized, and maintained throughout the InnoTech Hub Attendance System.
 
-## 1. State Management Strategy
+State management ensures that the user interface consistently reflects the current application state while maintaining clear separation between presentation logic, client-side interactions, and backend-managed business data.
 
-| State Type | Tool | Usage |
-|---|---|---|
-| Component local state | React `useState` | Form inputs, UI toggles, modals |
-| Auth context | React Context + custom hook | Current user, login/logout |
-| Server state (API data) | React Query (TanStack Query) | Sessions, check-ins, reports |
-| App settings | localStorage + context | Theme (future), UI preferences |
-
-## 2. Auth Context Setup
-
-```typescript
-// src/lib/auth.ts
-import { createContext, useContext, useState, useCallback, ReactNode } from 'react';
-import * as api from './api';
-
-interface User {
-  id: string;
-  full_name: string;
-  email: string;
-  role: 'admin' | 'member';
-}
-
-interface AuthContextType {
-  user: User | null;
-  isAuthenticated: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  logout: () => void;
-}
-
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(() => {
-    // Restore from localStorage if available
-    const stored = localStorage.getItem('user');
-    return stored ? JSON.parse(stored) : null;
-  });
-
-  const login = useCallback(async (email: string, password: string) => {
-    const response = await api.login(email, password);
-    localStorage.setItem('access_token', response.access_token);
-    localStorage.setItem('user', JSON.stringify(response.user));
-    setUser(response.user);
-  }, []);
-
-  const logout = useCallback(() => {
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('user');
-    setUser(null);
-  }, []);
-
-  return (
-    <AuthContext.Provider value={{ user, isAuthenticated: !!user, login, logout }}>
-      {children}
-    </AuthContext.Provider>
-  );
-}
-
-export function useAuth() {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within AuthProvider');
-  }
-  return context;
-}
-```
-
-**Wrap app with provider:**
-```typescript
-// src/main.tsx
-import { AuthProvider } from '@/lib/auth';
-
-ReactDOM.createRoot(document.getElementById('root')!).render(
-  <React.StrictMode>
-    <AuthProvider>
-      <Router>
-        <App />
-      </Router>
-    </AuthProvider>
-  </React.StrictMode>,
-);
-```
-
-## 3. React Query Setup
-
-```typescript
-// src/lib/queryClient.ts
-import { QueryClient } from '@tanstack/react-query';
-
-export const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 1000 * 60 * 5,  // 5 minutes
-      gcTime: 1000 * 60 * 10,    // 10 minutes
-      retry: 1,
-      refetchOnWindowFocus: false,
-    },
-  },
-});
-
-// src/main.tsx
-import { QueryClientProvider } from '@tanstack/react-query';
-import { queryClient } from '@/lib/queryClient';
-
-ReactDOM.createRoot(document.getElementById('root')!).render(
-  <React.StrictMode>
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <Router>
-          <App />
-        </Router>
-      </AuthProvider>
-    </QueryClientProvider>
-  </React.StrictMode>,
-);
-```
-
-## 4. Fetching Data with React Query
-
-```typescript
-// src/lib/hooks.ts
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import * as api from './api';
-
-// Query: Fetch sessions
-export function useSessions() {
-  return useQuery({
-    queryKey: ['sessions'],
-    queryFn: api.fetchSessions,
-  });
-}
-
-// Query: Fetch session detail
-export function useSession(id: string) {
-  return useQuery({
-    queryKey: ['sessions', id],
-    queryFn: () => api.fetchSession(id),
-  });
-}
-
-// Query: Fetch attendance history
-export function useAttendanceHistory() {
-  return useQuery({
-    queryKey: ['attendance', 'history'],
-    queryFn: api.fetchAttendanceHistory,
-  });
-}
-
-// Mutation: Create session
-export function useCreateSession() {
-  const queryClient = useQueryClient();
-  
-  return useMutation({
-    mutationFn: api.createSession,
-    onSuccess: () => {
-      // Invalidate sessions list so it refetches
-      queryClient.invalidateQueries({ queryKey: ['sessions'] });
-    },
-  });
-}
-
-// Mutation: Submit check-in
-export function useCheckIn() {
-  const queryClient = useQueryClient();
-  
-  return useMutation({
-    mutationFn: api.checkIn,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['attendance', 'history'] });
-    },
-  });
-}
-
-// Mutation: Close session
-export function useCloseSession() {
-  const queryClient = useQueryClient();
-  
-  return useMutation({
-    mutationFn: (sessionId: string) => api.closeSession(sessionId),
-    onSuccess: (_, sessionId) => {
-      // Invalidate this session's detail
-      queryClient.invalidateQueries({ queryKey: ['sessions', sessionId] });
-      // Invalidate sessions list
-      queryClient.invalidateQueries({ queryKey: ['sessions'] });
-    },
-  });
-}
-```
-
-## 5. Using Queries in Components
-
-```typescript
-// src/components/features/session/SessionList.tsx
-import { useSessions } from '@/lib/hooks';
-import { Spinner } from '@/components/common/Spinner';
-
-export function SessionList() {
-  const { data: sessions, isLoading, error } = useSessions();
-
-  if (isLoading) return <Spinner />;
-  if (error) return <div className="text-red-500">Error loading sessions</div>;
-  if (!sessions?.length) return <p>No sessions available</p>;
-
-  return (
-    <div className="grid gap-4">
-      {sessions.map(session => (
-        <SessionCard key={session.id} session={session} />
-      ))}
-    </div>
-  );
-}
-```
-
-## 6. Using Mutations in Components
-
-```typescript
-// src/pages/CreateSessionPage.tsx
-import { useCreateSession } from '@/lib/hooks';
-import { useNavigate } from 'react-router-dom';
-import { SessionForm } from '@/components/forms/SessionForm';
-
-export default function CreateSessionPage() {
-  const navigate = useNavigate();
-  const { mutate: createSession, isPending } = useCreateSession();
-
-  const handleSubmit = (data: SessionCreateData) => {
-    createSession(data, {
-      onSuccess: () => {
-        navigate('/admin/dashboard');
-      },
-      onError: (error) => {
-        console.error('Failed to create session:', error);
-      },
-    });
-  };
-
-  return (
-    <SessionForm
-      onSubmit={handleSubmit}
-      isLoading={isPending}
-    />
-  );
-}
-```
-
-## 7. Form State Management
-
-```typescript
-// src/components/forms/SessionForm.tsx
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-
-const sessionSchema = z.object({
-  title: z.string().min(1, 'Title is required'),
-  purpose: z.string().optional(),
-  date: z.string().refine(d => new Date(d) > new Date()),
-  start_time: z.string(),
-  end_time: z.string(),
-  grace_period_minutes: z.number().min(0),
-  venue_lat: z.number(),
-  venue_lng: z.number(),
-  radius_meters: z.number().min(1),
-});
-
-type SessionFormData = z.infer<typeof sessionSchema>;
-
-interface SessionFormProps {
-  onSubmit: (data: SessionFormData) => void;
-  isLoading: boolean;
-}
-
-export function SessionForm({ onSubmit, isLoading }: SessionFormProps) {
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-    watch,
-  } = useForm<SessionFormData>({
-    resolver: zodResolver(sessionSchema),
-  });
-
-  const startTime = watch('start_time');
-
-  return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-      {/* Form fields */}
-      <input {...register('title')} type="text" placeholder="Session title" />
-      {errors.title && <span className="text-red-500">{errors.title.message}</span>}
-
-      <input {...register('date')} type="date" />
-      {errors.date && <span className="text-red-500">{errors.date.message}</span>}
-
-      <input {...register('start_time')} type="time" />
-      <input {...register('end_time')} type="time" min={startTime} />
-
-      <button type="submit" disabled={isLoading}>
-        {isLoading ? 'Creating...' : 'Create Session'}
-      </button>
-    </form>
-  );
-}
-```
-
-## 8. Optimistic Updates (Advanced)
-
-```typescript
-// In a mutation, update UI before server responds
-export function useCheckIn() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: api.checkIn,
-    onMutate: async (checkInData) => {
-      // Cancel in-flight queries
-      await queryClient.cancelQueries({ queryKey: ['attendance', 'history'] });
-
-      // Get old data
-      const oldData = queryClient.getQueryData(['attendance', 'history']);
-
-      // Optimistically update
-      queryClient.setQueryData(['attendance', 'history'], (old: any) => [
-        ...old,
-        {
-          ...checkInData,
-          final_status: 'present', // Optimistic assumption
-          check_in_time: new Date().toISOString(),
-        },
-      ]);
-
-      return { oldData };
-    },
-    onError: (err, _, context) => {
-      // Revert on error
-      if (context?.oldData) {
-        queryClient.setQueryData(['attendance', 'history'], context.oldData);
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['attendance', 'history'] });
-    },
-  });
-}
-```
-
-## 9. Persisting Auth Across Sessions
-
-```typescript
-// src/lib/auth.ts
-// On app load, restore auth from localStorage
-
-export function useAuthPersist() {
-  const { user, setUser } = useAuth();
-
-  useEffect(() => {
-    const token = localStorage.getItem('access_token');
-    const userData = localStorage.getItem('user');
-
-    if (token && userData) {
-      setUser(JSON.parse(userData));
-    }
-  }, []);
-}
-
-// In App.tsx, call once on mount
-import { useAuthPersist } from '@/lib/auth';
-
-function App() {
-  useAuthPersist();
-  return <Routes>{/* ... */}</Routes>;
-}
-```
-
-## 10. Error Handling & Retry
-
-```typescript
-// API client with retry logic
-import axios from 'axios';
-
-const apiClient = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL,
-});
-
-// Add auth token to requests
-apiClient.interceptors.request.use(config => {
-  const token = localStorage.getItem('access_token');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
-
-// Handle 401 — logout user
-apiClient.interceptors.response.use(
-  response => response,
-  error => {
-    if (error.response?.status === 401) {
-      // Clear auth and redirect to login
-      localStorage.removeItem('access_token');
-      window.location.href = '/login';
-    }
-    return Promise.reject(error);
-  }
-);
-
-export default apiClient;
-```
-
-## 11. Query Invalidation Patterns
-
-```typescript
-// Manual invalidation when needed
-const queryClient = useQueryClient();
-
-// Invalidate specific query
-queryClient.invalidateQueries({ queryKey: ['sessions', sessionId] });
-
-// Invalidate all queries with a prefix
-queryClient.invalidateQueries({ queryKey: ['sessions'] });
-
-// Invalidate with a predicate
-queryClient.invalidateQueries({
-  predicate: query => query.queryKey[0] === 'sessions',
-});
-```
-
-## 12. State Management Summary
-
-| Use Case | Tool | Example |
-|---|---|---|
-| Form input state | `useState` | Email input in LoginForm |
-| Auth context | Context API + localStorage | Current user, login/logout |
-| API data | React Query | Sessions, check-ins |
-| UI toggles | `useState` | Modal open/close |
-| Complex local state | `useReducer` (Phase 2) | Multi-step check-in flow |
-
-
-## 13. Phase 2 State Management
-
-Phase 2 extends the existing state management strategy by introducing continuous attendance monitoring, live session updates, and administrator approval workflows.
+This document describes the architectural approach to frontend state management and intentionally avoids implementation-specific details.
 
 ---
 
-### 13.1 Active Session State
+# 1. Overview
 
-The currently active attendance session should be managed using React Query.
+The frontend manages multiple categories of state that differ in ownership, lifetime, synchronization requirements, and scope.
 
-The Active Session state includes:
+Proper separation of these state categories improves maintainability, reduces duplication, and ensures that the backend remains the authoritative source for business decisions.
 
-- Session information
-- Current attendance status
-- Presence status
-- Session progress
-- Check-in information
-- Check-out availability
+The frontend is responsible for:
 
-The backend remains the authoritative source for all attendance information.
+- presenting application data;
+- managing user interactions;
+- synchronizing with backend services;
+- maintaining temporary interface state;
+- preserving authenticated user sessions.
 
----
-
-### 13.2 Live Attendance Monitoring
-
-Attendance data changes while a session is active.
-
-Use React Query polling to refresh attendance information automatically.
-
-Recommended query:
-
-```typescript
-export function useActiveSession(sessionId: string) {
-  return useQuery({
-    queryKey: ['active-session', sessionId],
-    queryFn: () => api.fetchActiveSession(sessionId),
-    refetchInterval: 15000,
-    refetchOnWindowFocus: true,
-  });
-}
-```
-
-The polling interval may be adjusted based on backend performance.
+Business decisions remain exclusively within the backend.
 
 ---
 
-### 13.3 Presence Timeline
+## 1.1 Objectives
 
-Presence history should be fetched independently from the Active Session data.
+The frontend state management architecture is designed to:
 
-```typescript
-export function usePresenceTimeline(sessionId: string) {
-  return useQuery({
-    queryKey: ['presence-timeline', sessionId],
-    queryFn: () => api.fetchPresenceTimeline(sessionId),
-    refetchInterval: 15000,
-  });
-}
-```
+- maintain a single source of truth for application data;
+- minimize duplicate state;
+- synchronize efficiently with backend services;
+- support responsive user interactions;
+- simplify application maintenance;
+- provide predictable data flow.
 
-Timeline events are displayed exactly as returned by the backend.
-
-The frontend must not reorder or modify event timestamps.
+Every piece of state should have a clearly defined owner and lifecycle.
 
 ---
 
-### 13.4 Early Check-out Request
+## 1.2 State Ownership
 
-Submitting an early check-out request should use a mutation.
+Application state is divided according to ownership.
 
-```typescript
-export function useEarlyCheckoutRequest() {
-  return useMutation({
-    mutationFn: api.requestEarlyCheckout,
-  });
-}
-```
+Primary ownership categories include:
 
-After a successful request:
+- Backend-managed state
+- Frontend-managed state
+- Temporary UI state
 
-- Refresh Active Session.
-- Refresh approval status.
+Each category follows different synchronization and persistence requirements.
 
 ---
 
-### 13.5 Approval Status
+## 1.3 Backend Authority
 
-Members should automatically receive administrator decisions.
-
-```typescript
-export function useApprovalStatus(sessionId: string) {
-  return useQuery({
-    queryKey: ['approval-status', sessionId],
-    queryFn: () => api.fetchApprovalStatus(sessionId),
-    refetchInterval: 10000,
-  });
-}
-```
-
-When approval status changes, the UI should update automatically.
-
----
-
-### 13.6 Complete Check-out
-
-Once administrator approval is received, members complete check-out using a mutation.
-
-```typescript
-export function useCompleteCheckout() {
-  return useMutation({
-    mutationFn: api.completeCheckout,
-  });
-}
-```
-
-After successful completion:
-
-Invalidate:
-
-- Active Session
-- Attendance History
-- Attendance Summary
-
----
-
-### 13.7 Attendance Summary
-
-Attendance Summary should be fetched using React Query.
-
-```typescript
-export function useAttendanceSummary(sessionId: string) {
-  return useQuery({
-    queryKey: ['attendance-summary', sessionId],
-    queryFn: () => api.fetchAttendanceSummary(sessionId),
-  });
-}
-```
-
----
-
-### 13.8 Administrator Monitoring
-
-Administrator monitoring requires additional queries.
+Business information originates from the backend.
 
 Examples include:
 
-```typescript
-useLiveAttendance(sessionId)
+- authenticated user information;
+- event availability;
+- attendance status;
+- presence state;
+- emergency ticket status;
+- volunteer block status;
+- notifications;
+- activity history.
 
-usePendingCheckoutRequests(sessionId)
-
-usePresenceTimeline(sessionId)
-```
-
-Monitoring data should refresh automatically during active sessions.
-
----
-
-### 13.9 Query Invalidation
-
-After major attendance actions, invalidate affected queries.
-
-| Action | Queries to Invalidate |
-|---------|-----------------------|
-| Check In | Active Session, Attendance History |
-| Presence Update | Active Session, Presence Timeline |
-| Early Check-out Request | Active Session, Approval Status |
-| Approval Decision | Active Session, Approval Status |
-| Complete Check-out | Active Session, Attendance History, Attendance Summary |
-| Session Close | Active Session, Session Detail, Reports |
+The frontend presents backend information but does not independently determine business outcomes.
 
 ---
 
-### 13.10 Cache Organization
+## 1.4 Frontend Responsibilities
 
-Recommended query keys:
+The frontend is responsible for:
+
+- rendering application data;
+- collecting user input;
+- managing temporary interaction state;
+- coordinating navigation;
+- synchronizing backend updates.
+
+Frontend state should never contradict backend state.
+
+---
+
+## 1.5 State Lifecycle
+
+Every state object progresses through a predictable lifecycle.
+
+Typical lifecycle:
 
 ```text
-['sessions']
+Created
 
-['session', sessionId]
+↓
 
-['active-session', sessionId]
+Retrieved
 
-['presence-timeline', sessionId]
+↓
 
-['attendance-history']
+Displayed
 
-['attendance-summary', sessionId]
+↓
 
-['approval-status', sessionId]
+Updated
 
-['pending-checkout-requests', sessionId]
+↓
+
+Synchronized
+
+↓
+
+Disposed
 ```
 
-Maintain consistent query keys throughout the application.
+State should exist only for as long as it provides value to the current user experience.
 
 ---
 
-### 13.11 Performance Guidelines
+## 1.6 Design Principles
 
-- Prefer React Query cache over duplicate local state.
-- Poll only during active sessions.
-- Stop polling after attendance completion.
-- Refresh only affected queries.
-- Avoid duplicate requests from multiple components.
-- Reuse cached server state whenever possible.
+State management follows these principles:
+
+- single source of truth;
+- predictable updates;
+- minimal duplication;
+- backend authority;
+- efficient synchronization;
+- maintainable architecture.
+
+# 2. State Management Principles
+
+The frontend organizes state according to responsibility rather than technology.
+
+Each category exists for a specific purpose and should remain independent whenever practical.
 
 ---
 
-### 13.12 State Management Summary
+## 2.1 Single Source of Truth
 
-| State | Tool |
-|--------|------|
-| Authentication | React Context |
-| Form State | React Hook Form |
-| UI State | useState / useReducer |
-| Server State | React Query |
-| Active Session | React Query |
-| Presence Timeline | React Query |
-| Approval Status | React Query |
-| Attendance Summary | React Query |
-| Administrator Monitoring | React Query |
+Every piece of application data should have exactly one authoritative owner.
 
-Phase 2 continues the Phase 1 architecture by keeping React Query as the single source of truth for all server-side state while React Context manages authentication and local component state remains responsible only for transient UI interactions.
+Duplicating business information across multiple locations increases the risk of inconsistency.
+
+Whenever possible, application state should reference existing data rather than creating additional copies.
+
+---
+
+## 2.2 Separation of Responsibilities
+
+Different categories of state serve different purposes.
+
+Examples include:
+
+- authentication;
+- server data;
+- interface state;
+- navigation state;
+- temporary form state.
+
+These categories should remain independent while cooperating through clearly defined interactions.
+
+---
+
+## 2.3 Backend Synchronization
+
+Business information should remain synchronized with backend services.
+
+The frontend should avoid making assumptions about:
+
+- attendance decisions;
+- event eligibility;
+- presence validation;
+- emergency ticket outcomes;
+- volunteer participation.
+
+Whenever backend state changes, the frontend should update accordingly.
+
+---
+
+## 2.4 Predictable Updates
+
+State updates should follow consistent patterns.
+
+Every update should clearly identify:
+
+- what changed;
+- why it changed;
+- which interfaces are affected.
+
+Predictable updates simplify maintenance and debugging.
+
+---
+
+## 2.5 Minimize Duplicate State
+
+Duplicate state should be avoided whenever practical.
+
+Information that already exists elsewhere should be referenced instead of copied.
+
+This reduces synchronization complexity.
+
+---
+
+## 2.6 Temporary vs Persistent State
+
+Temporary state exists only while users interact with a specific interface.
+
+Persistent state survives navigation and supports long-running workflows.
+
+Understanding this distinction simplifies application behavior.
+
+---
+
+## 2.7 Performance
+
+State management should minimize unnecessary work.
+
+The architecture should avoid:
+
+- repeated network requests;
+- redundant rendering;
+- duplicate processing;
+- unnecessary synchronization.
+
+Performance improvements should never compromise correctness.
+
+---
+
+## 2.8 Design Principles
+
+State management should remain:
+
+- predictable;
+- maintainable;
+- scalable;
+- synchronized;
+- efficient.
+
+# 3. State Categories
+
+Application state is organized into logical categories based on responsibility, ownership, and lifecycle.
+
+Each category supports a different aspect of the user experience.
+
+---
+
+## 3.1 Authentication State
+
+Authentication State identifies the currently authenticated user.
+
+This state determines:
+
+- authentication status;
+- user identity;
+- user role;
+- session availability.
+
+Authentication State is shared throughout the application.
+
+---
+
+## 3.2 User State
+
+User State contains profile information associated with the authenticated user.
+
+Examples include:
+
+- profile details;
+- preferences;
+- role-specific information.
+
+User State changes infrequently during normal application usage.
+
+---
+
+## 3.3 Event State
+
+Event State represents attendance events available to the current user.
+
+Examples include:
+
+- available events;
+- active events;
+- completed events;
+- event details.
+
+Event State changes as event lifecycle progresses.
+
+---
+
+## 3.4 Attendance State
+
+Attendance State represents the participant's relationship with an event.
+
+Examples include:
+
+- check-in status;
+- attendance progress;
+- attendance completion.
+
+Attendance State receives frequent updates while an event is active.
+
+---
+
+## 3.5 Presence Monitoring State
+
+Presence Monitoring State represents the participant's current presence within an active event.
+
+Examples include:
+
+- current presence state;
+- presence timeline;
+- synchronization status.
+
+This state changes throughout active attendance.
+
+---
+
+## 3.6 Emergency Ticket State
+
+Emergency Ticket State tracks emergency ticket requests and their lifecycle.
+
+Examples include:
+
+- submission status;
+- review status;
+- administrator decisions.
+
+---
+
+## 3.7 Volunteer Block State
+
+Volunteer Block State represents temporary participation restrictions applied by administrators.
+
+This state primarily affects participant eligibility.
+
+---
+
+## 3.8 Notification State
+
+Notification State manages user notifications generated by backend events.
+
+Notifications may change independently of the currently visible screen.
+
+---
+
+## 3.9 Activity History State
+
+Activity History records significant historical events associated with the authenticated user.
+
+Historical information is read-only.
+
+---
+
+## 3.10 UI State
+
+UI State represents temporary interface information.
+
+Examples include:
+
+- dialog visibility;
+- selected tabs;
+- expanded sections;
+- temporary filters.
+
+UI State exists only to support interaction.
+
+---
+
+## 3.11 Design Principles
+
+Each state category should:
+
+- have a clearly defined owner;
+- have a predictable lifecycle;
+- minimize dependencies;
+- synchronize appropriately;
+- remain independent whenever practical.
+
+# 4. State Architecture
+
+The State Architecture defines how different categories of application state interact while maintaining clear ownership and predictable data flow.
+
+The architecture separates business data from interface behavior, ensuring that backend-managed information remains authoritative while the frontend manages presentation and user interactions.
+
+---
+
+## 4.1 Architectural Overview
+
+Application state is organized into multiple layers based on responsibility.
+
+```text
+                Backend Services
+                       │
+                       │
+        ┌──────────────┴──────────────┐
+        │                             │
+        ▼                             ▼
+  Server State                 Authentication State
+        │                             │
+        └──────────────┬──────────────┘
+                       ▼
+              Application State
+        ┌──────────────┼──────────────┐
+        ▼              ▼              ▼
+   Event State   Attendance State   User State
+        │              │              │
+        └──────┬───────┴───────┬──────┘
+               ▼               ▼
+      Presence Monitoring   Notifications
+               │
+               ▼
+         Presentation Layer
+               │
+               ▼
+           User Interface
+```
+
+Each layer has a clearly defined responsibility and should communicate through predictable state updates.
+
+---
+
+## 4.2 State Ownership
+
+Every category of state has a single owner.
+
+| State Category | Primary Owner |
+|----------------|---------------|
+| Authentication | Frontend |
+| User | Backend |
+| Events | Backend |
+| Attendance | Backend |
+| Presence Monitoring | Backend |
+| Emergency Tickets | Backend |
+| Volunteer Blocks | Backend |
+| Notifications | Backend |
+| Activity History | Backend |
+| UI State | Frontend |
+
+The frontend may cache backend information but does not become its authoritative owner.
+
+---
+
+## 4.3 State Flow
+
+State should move through the application in a single direction.
+
+```text
+Backend
+
+↓
+
+State Synchronization
+
+↓
+
+Application State
+
+↓
+
+UI Components
+
+↓
+
+User Interaction
+
+↓
+
+Backend Request
+
+↓
+
+Updated Backend State
+
+↓
+
+Synchronization
+```
+
+This predictable flow simplifies debugging and reduces inconsistent application behavior.
+
+---
+
+## 4.4 Shared State
+
+Some state is shared across multiple screens.
+
+Examples include:
+
+- authenticated user;
+- notifications;
+- active attendance;
+- current event.
+
+Shared state should remain globally accessible where appropriate.
+
+---
+
+## 4.5 Screen-Specific State
+
+Certain state exists only while a screen is active.
+
+Examples include:
+
+- search filters;
+- selected tabs;
+- expanded sections;
+- dialog visibility;
+- temporary form values.
+
+Screen-specific state should be discarded once it is no longer required.
+
+---
+
+## 4.6 Derived State
+
+Some interface values can be calculated from existing state.
+
+Examples include:
+
+- event progress;
+- attendance duration;
+- unread notification count;
+- dashboard summaries.
+
+Derived values should be computed from existing state rather than stored independently.
+
+---
+
+## 4.7 State Lifetime
+
+Different categories of state have different lifetimes.
+
+Examples include:
+
+| State | Typical Lifetime |
+|---------|------------------|
+| Authentication | Entire session |
+| User Profile | Entire session |
+| Event Data | Until refreshed |
+| Active Attendance | Active event |
+| Notifications | Until updated |
+| UI Dialog | Current interaction |
+
+State should persist only for as long as necessary.
+
+---
+
+## 4.8 Design Principles
+
+The state architecture should emphasize:
+
+- clear ownership;
+- predictable flow;
+- minimal duplication;
+- efficient synchronization;
+- maintainability.
+
+# 5. Authentication State
+
+Authentication State represents the user's authenticated session within the application.
+
+It enables access to protected resources and determines the user's available interface.
+
+---
+
+## 5.1 Purpose
+
+Authentication State is responsible for:
+
+- identifying authenticated users;
+- determining authentication status;
+- exposing user role;
+- maintaining session continuity.
+
+Authentication does not determine business permissions beyond user identity.
+
+---
+
+## 5.2 Managed Information
+
+Authentication State includes information such as:
+
+- authentication status;
+- authenticated user identifier;
+- user role;
+- session validity.
+
+Sensitive authentication information should never be exposed unnecessarily within the user interface.
+
+---
+
+## 5.3 Lifecycle
+
+Authentication State follows a predictable lifecycle.
+
+```text
+Application Starts
+
+↓
+
+Authentication Check
+
+↓
+
+Login
+
+↓
+
+Authenticated Session
+
+↓
+
+Logout
+
+↓
+
+Authentication Cleared
+```
+
+Session restoration should occur automatically whenever appropriate.
+
+---
+
+## 5.4 Synchronization
+
+Authentication State should remain synchronized with backend authentication status.
+
+If authentication becomes invalid:
+
+- protected information should no longer be accessible;
+- the user should return to the authentication experience;
+- application state should be reset appropriately.
+
+---
+
+## 5.5 Scope
+
+Authentication State is global.
+
+Every protected screen depends upon it.
+
+Authentication information should remain available throughout the authenticated session.
+
+---
+
+## 5.6 Design Principles
+
+Authentication State should emphasize:
+
+- security;
+- consistency;
+- reliability;
+- predictable lifecycle.
+
+# 6. User State
+
+User State represents profile information associated with the authenticated user.
+
+Unlike Authentication State, which identifies the user, User State provides information used throughout the application experience.
+
+---
+
+## 6.1 Purpose
+
+User State supports personalization and role-aware user experiences.
+
+It provides information required by multiple application features without duplicating backend data.
+
+---
+
+## 6.2 Managed Information
+
+Examples include:
+
+- profile information;
+- display name;
+- assigned role;
+- user preferences;
+- profile settings.
+
+User State should contain only information relevant to the current user.
+
+---
+
+## 6.3 Synchronization
+
+User information originates from the backend.
+
+Whenever profile information changes, User State should synchronize with the latest backend data.
+
+The frontend should avoid maintaining conflicting profile information.
+
+---
+
+## 6.4 Scope
+
+User State is shared across all authenticated screens.
+
+Multiple interfaces may reference User State simultaneously.
+
+---
+
+## 6.5 Lifetime
+
+User State remains available throughout the authenticated session.
+
+It is cleared when authentication ends.
+
+---
+
+## 6.6 Design Principles
+
+User State should emphasize:
+
+- consistency;
+- minimal duplication;
+- backend synchronization;
+- efficient access.
+
+# 6. User State
+
+User State represents profile information associated with the authenticated user.
+
+Unlike Authentication State, which identifies the user, User State provides information used throughout the application experience.
+
+---
+
+## 6.1 Purpose
+
+User State supports personalization and role-aware user experiences.
+
+It provides information required by multiple application features without duplicating backend data.
+
+---
+
+## 6.2 Managed Information
+
+Examples include:
+
+- profile information;
+- display name;
+- assigned role;
+- user preferences;
+- profile settings.
+
+User State should contain only information relevant to the current user.
+
+---
+
+## 6.3 Synchronization
+
+User information originates from the backend.
+
+Whenever profile information changes, User State should synchronize with the latest backend data.
+
+The frontend should avoid maintaining conflicting profile information.
+
+---
+
+## 6.4 Scope
+
+User State is shared across all authenticated screens.
+
+Multiple interfaces may reference User State simultaneously.
+
+---
+
+## 6.5 Lifetime
+
+User State remains available throughout the authenticated session.
+
+It is cleared when authentication ends.
+
+---
+
+## 6.6 Design Principles
+
+User State should emphasize:
+
+- consistency;
+- minimal duplication;
+- backend synchronization;
+- efficient access.
+
+# 8. Attendance State
+
+Attendance State represents a participant's involvement in an event.
+
+It is one of the most dynamic categories of application state and changes throughout the attendance lifecycle.
+
+---
+
+## 8.1 Purpose
+
+Attendance State supports:
+
+- attendance initiation;
+- attendance progress;
+- attendance completion;
+- attendance summaries.
+
+It provides participants and administrators with accurate attendance information throughout an event.
+
+---
+
+## 8.2 Managed Information
+
+Examples include:
+
+- attendance status;
+- check-in information;
+- attendance duration;
+- attendance completion;
+- attendance timeline.
+
+Attendance decisions always originate from the backend.
+
+---
+
+## 8.3 Attendance Lifecycle
+
+```text
+Not Started
+
+↓
+
+Check-In
+
+↓
+
+Active Attendance
+
+↓
+
+Attendance Completed
+```
+
+Attendance State should always reflect the participant's latest backend status.
+
+---
+
+## 8.4 Synchronization
+
+Attendance State should synchronize automatically while attendance remains active.
+
+Synchronization frequency should balance responsiveness with efficient resource usage.
+
+---
+
+## 8.5 Scope
+
+Attendance State is shared between:
+
+- Member Dashboard;
+- Active Attendance;
+- Attendance Summary;
+- Administrator Monitoring.
+
+All interfaces should display consistent attendance information.
+
+---
+
+## 8.6 State Transitions
+
+Attendance transitions should occur only after backend confirmation.
+
+The frontend should never independently determine attendance outcomes.
+
+---
+
+## 8.7 Design Principles
+
+Attendance State should emphasize:
+
+- accuracy;
+- consistency;
+- real-time synchronization;
+- backend authority.
+
+# 9. Presence Monitoring State
+
+Presence Monitoring State represents a participant's real-time location status during an active attendance.
+
+Unlike Attendance State, which tracks participation within an event, Presence Monitoring State reflects whether the participant is currently satisfying the event's presence requirements.
+
+---
+
+## 9.1 Purpose
+
+Presence Monitoring State supports:
+
+- continuous attendance awareness;
+- participant status updates;
+- boundary monitoring;
+- administrative visibility;
+- participant guidance.
+
+Presence Monitoring exists only while attendance remains active.
+
+---
+
+## 9.2 Managed Information
+
+Examples include:
+
+- current presence state;
+- last synchronization time;
+- current monitoring status;
+- recent presence events;
+- monitoring availability.
+
+Presence information should always reflect the latest backend state.
+
+---
+
+## 9.3 Lifecycle
+
+Presence Monitoring follows the active attendance lifecycle.
+
+```text
+Attendance Starts
+
+↓
+
+Monitoring Active
+
+↓
+
+Presence Updates
+
+↓
+
+Monitoring Ends
+
+↓
+
+Attendance Completed
+```
+
+Monitoring should automatically begin and end according to the attendance lifecycle.
+
+---
+
+## 9.4 Synchronization
+
+Presence Monitoring requires frequent synchronization while attendance is active.
+
+The frontend should:
+
+- receive updated presence information;
+- refresh affected interfaces;
+- avoid unnecessary synchronization after attendance completion.
+
+Synchronization frequency should balance responsiveness and resource usage.
+
+---
+
+## 9.5 Scope
+
+Presence Monitoring State is shared by:
+
+- Active Attendance;
+- Member Dashboard;
+- Administrator Live Monitoring.
+
+Every interface should display consistent presence information.
+
+---
+
+## 9.6 Design Principles
+
+Presence Monitoring State should emphasize:
+
+- continuous synchronization;
+- accuracy;
+- minimal latency;
+- backend authority.
+
+# 10. Emergency Ticket State
+
+Emergency Ticket State represents participant requests submitted during an active attendance that require administrative review.
+
+This state tracks the complete lifecycle of an emergency ticket from submission through final decision.
+
+---
+
+## 10.1 Purpose
+
+Emergency Ticket State supports:
+
+- ticket creation;
+- submission tracking;
+- administrator review;
+- participant updates.
+
+The frontend facilitates communication without evaluating ticket validity.
+
+---
+
+## 10.2 Managed Information
+
+Examples include:
+
+- ticket status;
+- submission time;
+- associated event;
+- participant information;
+- administrator response.
+
+Ticket decisions originate exclusively from the backend.
+
+---
+
+## 10.3 Lifecycle
+
+```text
+Not Created
+
+↓
+
+Submitted
+
+↓
+
+Pending Review
+
+↓
+
+Approved / Rejected
+
+↓
+
+Completed
+```
+
+The frontend should present the current lifecycle stage without modifying backend decisions.
+
+---
+
+## 10.4 Synchronization
+
+Emergency Ticket State should synchronize whenever:
+
+- tickets are submitted;
+- administrator decisions become available;
+- ticket status changes.
+
+Relevant screens should update automatically.
+
+---
+
+## 10.5 Scope
+
+Emergency Ticket State is shared between:
+
+- Active Attendance;
+- Emergency Ticket screen;
+- Notifications;
+- Administrator Review.
+
+All interfaces should present consistent ticket information.
+
+---
+
+## 10.6 Design Principles
+
+Emergency Ticket State should emphasize:
+
+- transparency;
+- synchronization;
+- predictable lifecycle;
+- backend authority.
+
+# 11. Volunteer Block State
+
+Volunteer Block State represents temporary participation restrictions applied by administrators.
+
+This state determines whether a participant is currently eligible to participate in volunteer activities.
+
+---
+
+## 11.1 Purpose
+
+Volunteer Block State supports:
+
+- participation eligibility;
+- administrative restrictions;
+- participant awareness;
+- operational oversight.
+
+Eligibility decisions remain the responsibility of the backend.
+
+---
+
+## 11.2 Managed Information
+
+Examples include:
+
+- block status;
+- effective period;
+- associated participant;
+- administrative history.
+
+The frontend should present volunteer block information without modifying it.
+
+---
+
+## 11.3 Lifecycle
+
+```text
+No Restriction
+
+↓
+
+Volunteer Block Applied
+
+↓
+
+Restriction Active
+
+↓
+
+Restriction Removed
+```
+
+Changes should become visible as soon as backend state is updated.
+
+---
+
+## 11.4 Synchronization
+
+Volunteer Block State should synchronize whenever:
+
+- a restriction is created;
+- a restriction is removed;
+- participant eligibility changes.
+
+Only affected interfaces should refresh.
+
+---
+
+## 11.5 Scope
+
+Volunteer Block State is primarily consumed by:
+
+- Administrator Dashboard;
+- Volunteer Block Management;
+- Member Dashboard.
+
+Participant-facing interfaces should clearly communicate eligibility where applicable.
+
+---
+
+## 11.6 Design Principles
+
+Volunteer Block State should emphasize:
+
+- consistency;
+- backend authority;
+- predictable synchronization;
+- operational visibility.
+
+# 12. Notification State
+
+Notification State manages user notifications generated by backend events.
+
+Notifications communicate important attendance and administrative updates to users.
+
+---
+
+## 12.1 Purpose
+
+Notification State supports:
+
+- timely communication;
+- user awareness;
+- workflow continuity;
+- administrative updates.
+
+Notifications should help users remain informed without disrupting their current task.
+
+---
+
+## 12.2 Managed Information
+
+Examples include:
+
+- notification content;
+- notification category;
+- read status;
+- creation time;
+- delivery status.
+
+Notification content originates from the backend.
+
+---
+
+## 12.3 Lifecycle
+
+```text
+Generated
+
+↓
+
+Delivered
+
+↓
+
+Unread
+
+↓
+
+Read
+
+↓
+
+Archived
+```
+
+Notification lifecycle should remain synchronized across all interfaces.
+
+---
+
+## 12.4 Synchronization
+
+Notification State should synchronize whenever:
+
+- new notifications arrive;
+- notification status changes;
+- notifications are acknowledged.
+
+The application should refresh notification indicators automatically.
+
+---
+
+## 12.5 Scope
+
+Notification State is shared across:
+
+- Member Dashboard;
+- Notifications;
+- Active Attendance;
+- Administrator interfaces where applicable.
+
+Notification indicators should remain consistent throughout the application.
+
+---
+
+## 12.6 Design Principles
+
+Notification State should emphasize:
+
+- timeliness;
+- consistency;
+- discoverability;
+- synchronization.
+
+# 13. Activity History State
+
+Activity History State maintains a historical record of significant application events associated with the authenticated user.
+
+This information provides users with a chronological view of their participation history.
+
+---
+
+## 13.1 Purpose
+
+Activity History State supports:
+
+- historical review;
+- attendance tracking;
+- participant transparency;
+- administrative reference.
+
+Historical records are informational and cannot be modified through the frontend.
+
+---
+
+## 13.2 Managed Information
+
+Examples include:
+
+- attendance activities;
+- event participation;
+- emergency ticket activity;
+- administrative actions affecting the participant;
+- significant attendance milestones.
+
+Activities should appear in chronological order.
+
+---
+
+## 13.3 Lifecycle
+
+```text
+Activity Occurs
+
+↓
+
+Recorded
+
+↓
+
+Retrieved
+
+↓
+
+Displayed
+
+↓
+
+Archived
+```
+
+Historical records remain available according to backend retention policies.
+
+---
+
+## 13.4 Synchronization
+
+Activity History should synchronize whenever new historical records become available.
+
+Synchronization does not require continuous updates while no new activity occurs.
+
+---
+
+## 13.5 Scope
+
+Activity History is consumed by:
+
+- Activity History screen;
+- Member Dashboard;
+- Attendance Summary.
+
+Historical information should remain consistent across all interfaces.
+
+---
+
+## 13.6 Design Principles
+
+Activity History State should emphasize:
+
+- chronological accuracy;
+- consistency;
+- readability;
+- backend authority.
+
+# 14. Report State
+
+Report State represents administrative reporting information available within the application.
+
+Unlike operational state, which changes frequently during active events, Report State primarily supports historical analysis and administrative decision-making.
+
+Reports are generated from backend data and presented by the frontend without modification.
+
+---
+
+## 14.1 Purpose
+
+Report State supports:
+
+- attendance reporting;
+- event summaries;
+- administrative analysis;
+- historical review;
+- operational insights.
+
+Reports are informational and do not modify application data.
+
+---
+
+## 14.2 Managed Information
+
+Examples include:
+
+- generated reports;
+- report summaries;
+- report metadata;
+- report generation status;
+- report availability.
+
+Report contents originate from the backend.
+
+---
+
+## 14.3 Lifecycle
+
+```text
+Report Requested
+
+↓
+
+Report Generated
+
+↓
+
+Available
+
+↓
+
+Viewed
+
+↓
+
+Archived
+```
+
+Reports should remain available according to backend retention policies.
+
+---
+
+## 14.4 Synchronization
+
+Report State should synchronize whenever:
+
+- reports are generated;
+- report availability changes;
+- report metadata is updated.
+
+Previously generated reports should remain accessible whenever possible.
+
+---
+
+## 14.5 Scope
+
+Report State is primarily consumed by:
+
+- Reports;
+- Event Detail;
+- Administrator Dashboard.
+
+Participant interfaces should not consume administrative reporting state.
+
+---
+
+## 14.6 Design Principles
+
+Report State should emphasize:
+
+- reliability;
+- consistency;
+- historical accuracy;
+- backend authority.
+
+# 15. UI State
+
+UI State represents temporary interface information required to support user interactions.
+
+Unlike business data, UI State exists solely to improve the user experience and has no meaning outside the current interface.
+
+---
+
+## 15.1 Purpose
+
+UI State supports:
+
+- interface interactions;
+- temporary selections;
+- visual presentation;
+- navigation context.
+
+UI State should never contain business decisions.
+
+---
+
+## 15.2 Managed Information
+
+Examples include:
+
+- dialog visibility;
+- selected tabs;
+- expanded sections;
+- search filters;
+- sorting preferences;
+- current page;
+- temporary form values.
+
+UI State should remain local whenever practical.
+
+---
+
+## 15.3 Lifecycle
+
+```text
+User Interaction
+
+↓
+
+UI State Created
+
+↓
+
+Updated
+
+↓
+
+Consumed
+
+↓
+
+Discarded
+```
+
+UI State should exist only while it improves the current interaction.
+
+---
+
+## 15.4 Scope
+
+Most UI State is screen-specific.
+
+Only interface state that benefits multiple screens should be shared.
+
+---
+
+## 15.5 Persistence
+
+Temporary interface state should normally be discarded after navigation.
+
+Only user preferences intended to improve future interactions should persist between sessions.
+
+---
+
+## 15.6 Design Principles
+
+UI State should emphasize:
+
+- simplicity;
+- locality;
+- predictability;
+- minimal persistence.
+
+# 16. Server State
+
+Server State represents business information retrieved from backend services.
+
+It forms the foundation of the application's operational data and should always be treated as the authoritative source of business information.
+
+---
+
+## 16.1 Purpose
+
+Server State supports:
+
+- business workflows;
+- attendance operations;
+- administrative decisions;
+- participant experiences.
+
+The frontend consumes Server State but does not own it.
+
+---
+
+## 16.2 Characteristics
+
+Server State differs from UI State because it:
+
+- originates from backend services;
+- changes independently of the current screen;
+- may be shared across multiple interfaces;
+- requires synchronization.
+
+---
+
+## 16.3 Examples
+
+Server State includes:
+
+- authenticated user information;
+- events;
+- attendance;
+- presence monitoring;
+- emergency tickets;
+- volunteer blocks;
+- notifications;
+- activity history;
+- reports.
+
+---
+
+## 16.4 Synchronization
+
+Server State should remain synchronized with backend services throughout the application lifecycle.
+
+Synchronization strategies should prioritize:
+
+- correctness;
+- efficiency;
+- consistency.
+
+---
+
+## 16.5 Design Principles
+
+Server State should emphasize:
+
+- backend authority;
+- consistency;
+- efficient synchronization;
+- predictable updates.
+
+# 17. State Synchronization
+
+State Synchronization ensures that frontend state accurately reflects backend information throughout the application.
+
+Synchronization should occur automatically whenever business data changes.
+
+---
+
+## 17.1 Purpose
+
+Synchronization maintains consistency between:
+
+- backend services;
+- frontend state;
+- user interface.
+
+Users should rarely need to manually refresh information.
+
+---
+
+## 17.2 Synchronization Triggers
+
+Examples include:
+
+- successful authentication;
+- event updates;
+- attendance changes;
+- presence changes;
+- emergency ticket decisions;
+- notification updates;
+- report generation.
+
+Only affected state should be synchronized whenever practical.
+
+---
+
+## 17.3 Synchronization Strategy
+
+Synchronization should:
+
+- minimize unnecessary requests;
+- update only changed information;
+- preserve interface responsiveness;
+- avoid duplicate processing.
+
+---
+
+## 17.4 Conflict Resolution
+
+If frontend and backend state differ, backend information always takes precedence.
+
+The frontend should discard outdated local information and synchronize with the latest backend state.
+
+---
+
+## 17.5 Design Principles
+
+Synchronization should emphasize:
+
+- consistency;
+- efficiency;
+- backend authority;
+- predictable updates.
+
+# 18. Cache Management
+
+Cache Management improves application responsiveness by temporarily storing recently retrieved backend information.
+
+Caching should reduce unnecessary network requests without compromising data accuracy.
+
+---
+
+## 18.1 Purpose
+
+Caching supports:
+
+- improved responsiveness;
+- reduced backend load;
+- smoother navigation;
+- efficient data reuse.
+
+---
+
+## 18.2 Cached Information
+
+Examples include:
+
+- event lists;
+- event details;
+- attendance summaries;
+- notifications;
+- activity history;
+- reports.
+
+Only backend-managed information should be cached.
+
+---
+
+## 18.3 Cache Refresh
+
+Cached information should refresh whenever:
+
+- underlying backend data changes;
+- user actions modify business state;
+- cached information becomes outdated.
+
+---
+
+## 18.4 Cache Invalidation
+
+Outdated cached information should be discarded promptly after significant business operations.
+
+Examples include:
+
+- attendance completion;
+- event updates;
+- notification changes;
+- report generation.
+
+---
+
+## 18.5 Design Principles
+
+Cache Management should emphasize:
+
+- efficiency;
+- consistency;
+- freshness;
+- predictable behavior.
+
+# 19. Background Updates
+
+Background Updates keep important application information current without interrupting user interactions.
+
+They improve operational awareness while reducing manual refresh requirements.
+
+---
+
+## 19.1 Purpose
+
+Background Updates support:
+
+- active attendance;
+- presence monitoring;
+- notifications;
+- administrative monitoring.
+
+Updates should occur without disrupting the current workflow.
+
+---
+
+## 19.2 Continuous Updates
+
+Examples include:
+
+- attendance progress;
+- presence changes;
+- notification delivery;
+- emergency ticket decisions.
+
+Only information requiring timely updates should synchronize continuously.
+
+---
+
+## 19.3 Resource Management
+
+Background activity should:
+
+- avoid unnecessary network usage;
+- suspend when no longer required;
+- resume automatically when appropriate.
+
+Resource efficiency is an important architectural consideration.
+
+---
+
+## 19.4 Design Principles
+
+Background Updates should emphasize:
+
+- responsiveness;
+- efficiency;
+- minimal interruption;
+- automatic synchronization.
+
+# 20. Error Recovery
+
+Error Recovery defines how state should behave when synchronization or backend communication fails.
+
+Recovery strategies should preserve user confidence while restoring normal application behavior as quickly as possible.
+
+---
+
+## 20.1 Purpose
+
+Error Recovery supports:
+
+- synchronization recovery;
+- communication failures;
+- temporary backend unavailability;
+- state restoration.
+
+---
+
+## 20.2 Recovery Strategy
+
+Whenever possible, the application should:
+
+- preserve previously available information;
+- retry failed operations appropriately;
+- communicate recovery progress;
+- avoid unnecessary user intervention.
+
+---
+
+## 20.3 State Restoration
+
+Recovered state should accurately reflect the latest backend information.
+
+The frontend should discard inconsistent local state whenever backend synchronization succeeds.
+
+---
+
+## 20.4 Design Principles
+
+Error Recovery should emphasize:
+
+- resilience;
+- transparency;
+- consistency;
+- backend authority.
+
+# 21. Performance Considerations
+
+Efficient state management contributes directly to application responsiveness and scalability.
+
+Performance improvements should simplify the user experience without compromising correctness.
+
+---
+
+## 21.1 Objectives
+
+State management should strive to:
+
+- minimize unnecessary rendering;
+- reduce duplicate state;
+- avoid redundant synchronization;
+- reuse existing information whenever appropriate.
+
+---
+
+## 21.2 Efficient Updates
+
+Only information affected by a business operation should be refreshed.
+
+Large-scale state updates should be avoided unless required.
+
+---
+
+## 21.3 Resource Utilization
+
+State management should make efficient use of:
+
+- network resources;
+- browser memory;
+- processing time.
+
+Application responsiveness should remain a primary objective.
+
+---
+
+## 21.4 Scalability
+
+The architecture should support future application growth without requiring fundamental changes to state organization.
+
+New business features should integrate into existing state categories whenever practical.
+
+---
+
+## 21.5 Design Principles
+
+Performance should emphasize:
+
+- efficiency;
+- scalability;
+- maintainability;
+- predictable behavior.
+
+# 22. Conclusion
+
+The Frontend State Management architecture defines how application state is organized, synchronized, and maintained throughout the InnoTech Hub Attendance System.
+
+It establishes clear ownership boundaries between frontend-managed state and backend-managed business data while promoting predictable data flow, efficient synchronization, and maintainable application architecture.
+
+This document defines:
+
+- state categories;
+- state ownership;
+- synchronization strategy;
+- cache management;
+- background updates;
+- performance considerations;
+- error recovery.
+
+Implementation-specific details, including framework APIs, hooks, context providers, and data-fetching libraries, are intentionally documented separately to preserve this document as a long-term architectural reference.
+
+Together with the Frontend UI Specification, Routing Architecture, Component Guidelines, and Design System, this document provides the foundation for building a scalable, consistent, and maintainable frontend application.
+

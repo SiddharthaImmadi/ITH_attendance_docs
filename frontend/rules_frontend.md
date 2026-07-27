@@ -1,251 +1,1004 @@
 # rules_frontend.md — Frontend Development Rules
 
-> For the frontend developer and any agent (Claude Code, Kiro) writing frontend code in
-> `/frontend`. The product goal for this UI is explicitly a **rich, premium feel** — not a bare
-> functional form. These rules exist to get there consistently while staying learnable for a
-> first-time frontend developer.
+This document defines the mandatory development standards for all frontend contributors and AI development agents working on the InnoTech Hub Attendance System.
 
-## 1. Project layout
+Its purpose is to ensure the frontend remains consistent, maintainable, performant, and aligned with the approved API contract, backend implementation, business rules, and overall system architecture.
 
-Follow `system_architecture.md §6`. Route-level views go in `src/pages/`, reusable pieces in
-`src/components/`, API/auth helpers in `src/lib/`.
+All frontend implementation should comply with these rules unless an approved architectural change supersedes them.
 
-## 2. Stack conventions
+---
 
-| Concern | Convention |
-|---|---|
-| Framework | React + TypeScript, built with Vite |
-| Styling | Tailwind CSS utility classes; no separate hand-written CSS files unless truly necessary |
-| Component library | shadcn/ui (Radix-based) for buttons, dialogs, forms, cards, tables — don't hand-roll a component shadcn already provides |
-| Motion/polish | Framer Motion for transitions (page transitions, status changes, check-in confirmation) — used deliberately, not on every element |
-| State/data fetching | TanStack Query (React Query) for all API calls — gives you loading/error states and caching for free, important since beginners often forget to handle these |
-| Forms | React Hook Form + Zod for validation, matching the shapes in `API_contract.md` |
+# 1. Project Structure
+
+The frontend project should follow the architecture defined in `system_architecture.md`.
+
+Organize code by responsibility rather than by individual pages.
+
+Recommended structure:
+
+```
+src/
+ ├── components/
+ ├── pages/
+ ├── hooks/
+ ├── lib/
+ ├── services/
+ ├── contexts/
+ ├── layouts/
+ ├── types/
+ ├── utils/
+ └── assets/
+```
+
+General guidelines:
+
+- Pages compose features.
+- Components remain reusable.
+- Business logic belongs in hooks or services.
+- API communication belongs in shared client modules.
+- Utility functions remain framework-independent whenever practical.
+
+Avoid deeply nested component hierarchies when simpler composition is possible.
+
+---
+
+# 2. Technology Standards
+
+The approved frontend technology stack is summarized below.
+
+| Concern | Standard |
+|----------|----------|
+| Framework | React + TypeScript |
+| Build Tool | Vite |
+| Styling | Tailwind CSS |
+| UI Components | shadcn/ui |
 | Routing | React Router |
-| Icons | lucide-react (pairs with shadcn/ui) |
+| Forms | React Hook Form + Zod |
+| Server State | TanStack Query |
+| Icons | lucide-react |
+| Animation | Framer Motion (purposeful use only) |
 
-## 3. "Premium feel" — concrete guidance, not vibes
+These technologies are considered project standards.
 
-Because "make it look premium" is subjective, here's what that means concretely for Phase 1:
-
-- Consistent spacing scale (use Tailwind's default scale — don't invent arbitrary pixel values).
-- One accent color + neutral grays; don't use more than 2-3 colors total in the UI.
-- Every async action (login, check-in submit, export) has a visible loading state — no dead
-  buttons or silent waits.
-- Every error is shown as a real message from `API_contract.md`'s error shape, never a raw
-  console error or blank screen.
-- Empty states (no sessions yet, no check-ins yet) are designed, not left blank.
-- Live camera capture (see §5) gets a deliberate, camera-app-like UI — this is the most visible
-  "premium" moment in the whole app since it's the one place using the device hardware directly.
-
-## 4. Non-negotiable rules (from the Rulebook — do not work around these)
-
-1. **No gallery/file upload for check-in photos.** The check-in photo must come from
-   `getUserMedia` (live camera stream) captured in-app, never `<input type="file">`. This is a
-   direct anti-fraud requirement (Rulebook §7.2), not a style choice — do not add a "upload from
-   gallery" fallback even if it seems more convenient for testing.
-2. **Never let the client compute or submit `final_status`.** The client may show an optimistic
-   "Submitting..." state, but the authoritative status always comes back from the API response.
-3. **Location must come from the device's live GPS** (`navigator.geolocation.getCurrentPosition`),
-   not a manually-entered lat/long field, for the member check-in flow.
-4. **Show the user what's being collected and why** before requesting camera/GPS permission
-   (Rulebook §11.1 — privacy notice before collection) — a short explanatory line before the
-   permission prompt is enough for Phase 1.
-
-## 5. Check-in flow UX (specific to this app)
-
-1. Member opens an open session → sees venue name, time window, and a short "what happens on
-   check-in" note.
-2. Tap "Check In" → request GPS permission (if not granted) → request camera permission → open
-   live camera view.
-3. Capture photo → show a confirm/retake step (matches Working Book §5.2 "Live photo / OTP / QR").
-4. Submit → loading state → success (shows returned `final_status`, distance) or a clear rejection
-   reason from the API error shape.
-
-## 6. API integration pattern
-
-- One typed API client module in `src/lib/api.ts` wrapping `fetch`, attaching the JWT from storage
-  automatically, and throwing a typed error matching `API_contract.md §1`.
-- Types for requests/responses live alongside the API client and must mirror `API_contract.md`
-  exactly — if the contract changes, update the types in the same PR, not later.
-- No component calls `fetch` directly — always through the API client + a React Query hook.
-
-## 7. Testing
-
-- Vitest + React Testing Library for component tests.
-- At minimum, cover: login form validation, check-in success path, check-in rejection (outside
-  radius) rendering the correct error message, duplicate check-in message.
-
-## 8. Git / commit conventions (frontend branch)
-
-- Work happens on the `frontend` branch; PR into `main` when a feature is complete.
-- Commit messages: `type(scope): summary`, e.g. `feat(checkin): add live camera capture flow`.
-- Any PR that assumes a specific API response shape should link the relevant section of
-  `API_contract.md`.
-
-## 9. When you (the agent) notice something worth changing
-
-Don't silently switch component libraries, state managers, or restructure folders because it seems
-cleaner. Log the suggestion in `enhancements.md` with rationale and wait for developer approval,
-unless it's a trivial non-behavioral fix.
-
-## 10. Explicitly out of scope for Phase 1 frontend
-
-No offline/PWA support, no left-venue/returned live monitoring UI, no activity submission screens,
-no correction/dispute UI, no admin analytics charts beyond a simple check-in list. These are
-Phase 2+ (see `PRD.md §3`, `development_roadmap.md`). Also: **no Flutter/mobile work** — Phase 1 is
-web-only.
-
-## 11. Phase 2 Frontend Rules
-
-Phase 2 extends the Phase 1 web application by introducing attendance monitoring throughout an
-active session. All rules from Sections 1–10 remain applicable unless explicitly superseded here.
-
-### 11.1 Attendance Monitoring
-
-The frontend is responsible for presenting attendance information clearly but never deciding
-attendance outcomes.
-
-Responsibilities include:
-
-- Displaying the member's current attendance state.
-- Showing live session status.
-- Displaying presence history received from the backend.
-- Showing leave and return events.
-- Initiating member check-out.
-- Displaying final attendance summaries.
-
-The frontend must never calculate attendance duration or attendance status itself.
+Do not introduce additional UI libraries, styling frameworks, or state-management solutions without prior approval.
 
 ---
 
-### 11.2 Live Data
+## Styling
 
-Attendance information changes during an active session.
+Follow a utility-first approach using Tailwind CSS.
 
-The frontend should refresh monitoring data using the agreed API strategy (polling or another
-approved approach).
+Guidelines:
 
-Avoid excessive requests.
-
-The backend remains the single source of truth.
+- Prefer utility classes over custom CSS.
+- Keep spacing consistent using the shared spacing scale.
+- Reuse design tokens defined in `frontend_design_system.md`.
+- Avoid inline styles except for dynamic values.
+- Create reusable components before duplicating UI patterns.
 
 ---
 
-### 11.3 Presence Timeline
+## Components
 
-Presence history should be presented chronologically.
+Use shadcn/ui whenever an equivalent component already exists.
+
+Typical examples include:
+
+- Buttons
+- Dialogs
+- Cards
+- Forms
+- Tables
+- Dropdowns
+- Navigation
+- Toast notifications
+
+Do not recreate components solely for stylistic differences.
+
+Extend existing components when necessary.
+
+---
+
+## Forms
+
+All user input should be managed using:
+
+- React Hook Form
+- Zod validation
+
+Validation rules should mirror the API contract whenever possible.
+
+The frontend should provide immediate validation feedback while relying on the backend for authoritative validation.
+
+---
+
+## Server State
+
+All backend communication should use TanStack Query.
+
+Benefits include:
+
+- Request caching
+- Background refresh
+- Loading states
+- Error handling
+- Automatic synchronization
+
+Avoid custom data-fetching patterns unless a specific use case requires them.
+
+---
+
+## Motion
+
+Animations should improve usability rather than decorate the interface.
+
+Appropriate examples include:
+
+- Page transitions
+- Dialog transitions
+- Loading indicators
+- Status updates
+- Notification appearance
+
+Avoid excessive or distracting animations.
+
+---
+
+# 3. User Experience Standards
+
+The application should provide a professional, responsive, and trustworthy user experience.
+
+Visual quality should support usability rather than distract from it.
+
+---
+
+## Consistency
+
+Maintain consistent:
+
+- Typography
+- Spacing
+- Colors
+- Component behavior
+- Navigation
+- Status indicators
+
+Users should not encounter different interaction patterns for similar actions.
+
+---
+
+## Feedback
+
+Every user action should receive visible feedback.
 
 Examples include:
 
-- Checked In
-- Left Venue
-- Returned
-- Checked Out
+- Loading indicators
+- Success messages
+- Validation feedback
+- Error notifications
+- Empty states
 
-The frontend displays events exactly as received from the backend without modifying timestamps or
-event order.
-
----
-
-### 11.4 Leave and Return Experience
-
-If a member temporarily leaves the venue:
-
-- Clearly indicate that they are outside the permitted area.
-- Display any warnings returned by the backend.
-- Update the UI immediately when the member returns.
-
-Do not automatically assume attendance failure because the member left the venue.
-
-Attendance decisions always come from backend validation.
+Never leave users uncertain whether an operation is still in progress.
 
 ---
 
-### 11.5 Check-out Flow
+## Error Handling
 
-The check-out experience should be as polished as the check-in experience.
+Frontend errors should communicate meaningful information.
 
-The flow should include:
+Display backend validation messages whenever available.
 
-1. Member initiates check-out.
-2. Submit the request.
-3. Display loading state.
-4. Display attendance summary returned by the backend.
-5. Clearly indicate successful session completion.
+Avoid exposing:
 
-Never calculate attendance duration on the client.
+- Stack traces
+- Raw exceptions
+- Debug information
+- Generic "Something went wrong" messages without context
 
----
-
-### 11.6 Administrator Monitoring
-
-Administrator pages should support live monitoring of active sessions.
-
-The interface should clearly distinguish:
-
-- Members currently present.
-- Members temporarily outside.
-- Members who have completed check-out.
-- Members requiring attention.
-
-Large tables should remain readable and responsive.
+Errors should help users understand the next appropriate action.
 
 ---
 
-### 11.7 Performance Guidelines
+## Empty States
 
-Phase 2 introduces more frequently changing information.
+Design meaningful empty states for situations such as:
 
-Frontend code should:
+- No events available
+- No attendance history
+- No notifications
+- No assigned activities
+- No search results
 
-- Minimize unnecessary re-renders.
-- Refresh only data that changes.
-- Reuse cached data where appropriate.
-- Avoid repeated API requests from multiple components.
-- Continue using React Query for server state management.
-
-Performance improvements must never compromise correctness.
+Whenever possible, guide users toward the next available action.
 
 ---
 
-### 11.8 Error Handling
+## Accessibility
 
-All monitoring-related failures should present meaningful feedback.
+Frontend development should follow the accessibility standards defined in `frontend_design_system.md`.
+
+Every interactive component should support:
+
+- Keyboard navigation
+- Visible focus indicators
+- Screen reader compatibility
+- Appropriate color contrast
+
+Accessibility should be treated as a core quality requirement rather than an enhancement.
+
+---
+
+# 4. Frontend Responsibilities
+
+The frontend is responsible for presenting information, collecting user input, and communicating with the backend.
+
+Business decisions remain the responsibility of the backend.
+
+---
+
+## Source of Truth
+
+The backend is the authoritative source for:
+
+- Attendance status
+- Presence status
+- Event state
+- Validation results
+- Permission decisions
+- Report calculations
+- Business rules
+
+The frontend must never attempt to reproduce backend business logic.
+
+---
+
+## Client Responsibilities
+
+The frontend is responsible for:
+
+- Displaying backend data accurately.
+- Collecting required user input.
+- Validating basic input formats.
+- Managing user interaction.
+- Presenting loading and error states.
+- Rendering timelines, reports, dashboards, and notifications.
+
+---
+
+## Business Logic
+
+Do not calculate or infer backend decisions.
 
 Examples include:
 
-- Unable to refresh attendance data.
-- Check-out request failed.
-- Monitoring information temporarily unavailable.
+- Final attendance status
+- Attendance duration
+- Presence compliance
+- Permission decisions
+- Volunteer restrictions
+- Administrative approvals
 
-Never leave the user without feedback during background operations.
-
----
-
-### 11.9 Testing
-
-In addition to Phase 1 tests, verify:
-
-- Presence timeline rendering.
-- Leave event display.
-- Return event display.
-- Check-out workflow.
-- Attendance summary display.
-- Monitoring page refresh.
-- Error handling during monitoring.
-- Loading states throughout long-running operations.
+The frontend displays the values returned by the backend exactly as provided.
 
 ---
 
-### 11.10 Phase 2 Scope
+## Data Integrity
 
-Phase 2 frontend includes:
+Do not modify backend responses to fit UI expectations.
 
-- Attendance monitoring
-- Presence timeline
-- Leave/Return visualization
-- Check-out workflow
-- Enhanced attendance reporting
-- Live administrator monitoring
+Instead:
 
-Features planned for later phases remain out of scope unless the project documentation is updated.
+- Update the UI to match the API.
+- Raise API inconsistencies through the approved development process.
+- Record improvement suggestions in `enhancements.md` when appropriate.
+
+Consistency between frontend and backend is more important than temporary UI convenience.
+
+---
+
+## Security Responsibilities
+
+Frontend code must never:
+
+- Expose secrets.
+- Embed API keys.
+- Store sensitive information insecurely.
+- Trust client-side validation alone.
+- Assume authorization without backend verification.
+
+Authentication and authorization decisions always remain server-side.
+
+---
+
+# 5. API Integration Standards
+
+All communication with the backend must follow the approved API contract.
+
+The frontend should never bypass the shared API layer or communicate with backend endpoints directly from UI components.
+
+---
+
+## API Client
+
+Maintain a single shared API client responsible for:
+
+- Authentication
+- Request configuration
+- Authorization headers
+- Error normalization
+- Response parsing
+
+Recommended location:
+
+```
+src/lib/api.ts
+```
+
+All frontend modules should use this shared client.
+
+---
+
+## Type Safety
+
+Request and response models must accurately mirror the API contract.
+
+Guidelines:
+
+- Keep request and response types centralized.
+- Update types whenever the API contract changes.
+- Avoid duplicate interface definitions.
+- Prefer shared reusable models over page-specific types.
+
+Frontend types should never intentionally diverge from the approved API contract.
+
+---
+
+## Data Fetching
+
+Components should not perform direct network requests.
+
+Instead:
+
+- Create reusable query hooks.
+- Encapsulate API logic within service modules.
+- Keep presentation components focused on rendering.
+
+Typical pattern:
+
+```
+UI Component
+      ↓
+Custom Hook
+      ↓
+API Service
+      ↓
+Shared API Client
+      ↓
+Backend
+```
+
+This separation improves maintainability and testing.
+
+---
+
+## Authentication
+
+The shared API layer should automatically:
+
+- Attach authentication tokens.
+- Handle token expiration.
+- Normalize authentication failures.
+- Redirect unauthenticated users when appropriate.
+
+Authentication behavior should remain consistent throughout the application.
+
+---
+
+## Error Handling
+
+API errors should be translated into meaningful user feedback.
+
+Avoid exposing:
+
+- Internal exception messages
+- Stack traces
+- Database errors
+- Framework-specific error details
+
+Display only information intended for end users.
+
+---
+
+## API Contract Compliance
+
+The frontend must treat `API_contract.md` as the authoritative specification.
+
+If an implementation differs from the documented contract:
+
+1. Verify the discrepancy.
+2. Do not silently work around it.
+3. Raise the issue with the development team.
+4. Update documentation only through the approved process.
+
+Never "guess" API behavior.
+
+---
+
+# 6. Attendance & Event Workflows
+
+The frontend is responsible for guiding users through attendance workflows while allowing the backend to make all attendance decisions.
+
+---
+
+## Attendance Lifecycle
+
+Frontend workflows should accurately represent the lifecycle exposed by the backend.
+
+Typical stages include:
+
+- Event discovery
+- Check-in
+- Active participation
+- Presence monitoring
+- Leave and return events
+- Check-out
+- Attendance summary
+
+The frontend should always reflect the current backend state.
+
+---
+
+## Check-In Experience
+
+The check-in experience should be clear, predictable, and trustworthy.
+
+Typical flow:
+
+1. Display event information.
+2. Explain required permissions.
+3. Request required device permissions.
+4. Collect required evidence.
+5. Submit attendance request.
+6. Display progress.
+7. Display backend result.
+
+The frontend should never assume a successful outcome before the backend confirms it.
+
+---
+
+## Presence Monitoring
+
+When attendance monitoring is active:
+
+- Display current monitoring status.
+- Present presence history chronologically.
+- Clearly indicate leave and return events.
+- Refresh monitoring information using the approved synchronization strategy.
+
+Presence information should always originate from backend responses.
+
+---
+
+## Check-Out Experience
+
+Check-out should provide the same level of clarity as check-in.
+
+Recommended flow:
+
+1. Initiate check-out.
+2. Submit request.
+3. Display progress.
+4. Display attendance summary.
+5. Return user to the appropriate post-event experience.
+
+Attendance calculations remain server-side.
+
+---
+
+## Administrative Interfaces
+
+Administrative views should prioritize operational awareness.
+
+Typical information includes:
+
+- Active events
+- Current attendance
+- Presence status
+- Members requiring attention
+- Notifications
+- Reports
+
+Administrative dashboards should remain readable even when displaying large datasets.
+
+---
+
+## Real-Time Updates
+
+The frontend should synchronize changing information efficiently.
+
+Guidelines:
+
+- Refresh only changing data.
+- Reuse cached information whenever possible.
+- Avoid duplicate polling from multiple components.
+- Keep refresh intervals appropriate for the feature.
+
+Real-time behavior should balance responsiveness and performance.
+
+---
+
+# 7. Testing Standards
+
+Testing helps ensure frontend reliability as the application evolves.
+
+Testing should cover both user interactions and integration with backend workflows.
+
+---
+
+## Unit Testing
+
+Use:
+
+- Vitest
+- React Testing Library
+
+Unit tests should focus on:
+
+- Components
+- Custom hooks
+- Utility functions
+- Validation logic
+
+---
+
+## Workflow Testing
+
+Verify important user workflows including:
+
+- Authentication
+- Event browsing
+- Check-in
+- Presence monitoring
+- Check-out
+- Attendance history
+- Notifications
+- Administrative dashboards
+
+---
+
+## Error Scenarios
+
+Test situations including:
+
+- Network failures
+- Validation failures
+- Authentication expiration
+- Missing permissions
+- Backend rejection
+- Empty responses
+
+Users should always receive meaningful feedback.
+
+---
+
+## Loading States
+
+Verify that asynchronous operations display:
+
+- Loading indicators
+- Disabled actions where appropriate
+- Progress feedback
+- Successful completion
+
+The interface should never appear unresponsive during background operations.
+
+---
+
+## Regression Testing
+
+When adding new features, verify that existing functionality continues to operate correctly.
+
+Particular attention should be given to:
+
+- Authentication
+- Navigation
+- Shared components
+- API integration
+- Attendance workflows
+
+---
+
+# 8. Development Workflow
+
+Consistent development practices improve collaboration and maintainability.
+
+---
+
+## Branch Strategy
+
+Development should follow the project's approved Git workflow.
+
+Feature work should be isolated into appropriate branches before merging into the main branch through code review.
+
+---
+
+## Commit Messages
+
+Use consistent commit messages.
+
+Recommended format:
+
+```
+type(scope): short summary
+```
+
+Examples:
+
+```
+feat(attendance): add attendance summary page
+
+fix(auth): handle expired access token
+
+refactor(events): simplify event filters
+
+docs(frontend): update component guidelines
+```
+
+---
+
+## Pull Requests
+
+Every pull request should:
+
+- Clearly describe the change.
+- Reference affected documentation where appropriate.
+- Identify related API contract updates.
+- Include testing performed.
+- Remain focused on a single logical change.
+
+Avoid combining unrelated features into a single pull request.
+
+---
+
+## Documentation
+
+Whenever frontend behavior changes:
+
+Review whether updates are required for:
+
+- API Contract
+- Frontend Documentation
+- Design System
+- Component Guidelines
+- TODO documentation
+- Development roadmap
+
+Documentation should evolve alongside implementation.
+
+---
+
+## Code Reviews
+
+Reviews should verify:
+
+- Architectural consistency
+- API compliance
+- Accessibility
+- Performance
+- Reusability
+- Maintainability
+- Documentation updates
+
+Review comments should prioritize long-term code quality over personal coding preferences.
+
+---
+
+# 9. Agent Responsibilities & Change Management
+
+These rules apply to AI development agents and frontend contributors working on the project.
+
+The objective is to maintain architectural consistency while preventing undocumented or incompatible changes.
+
+---
+
+## Respect the Approved Architecture
+
+Frontend implementation must remain consistent with the approved project architecture.
+
+Do not independently:
+
+- Replace approved libraries.
+- Introduce new architectural patterns.
+- Reorganize project structure.
+- Change routing conventions.
+- Replace state-management solutions.
+- Modify authentication flow.
+- Introduce incompatible UI frameworks.
+
+Architectural decisions require explicit approval.
+
+---
+
+## Respect the API Contract
+
+The frontend must always implement the published API contract.
+
+Do not:
+
+- Assume undocumented fields exist.
+- Ignore required request fields.
+- Invent response properties.
+- Hardcode values that belong to the backend.
+
+If implementation and documentation disagree:
+
+1. Stop.
+2. Verify the discrepancy.
+3. Report the issue.
+4. Wait for clarification before continuing.
+
+The API contract remains the single source of truth for frontend-backend communication.
+
+---
+
+## Respect Backend Business Logic
+
+Business rules belong to the backend.
+
+The frontend must never duplicate logic such as:
+
+- Attendance calculation
+- Presence validation
+- Event eligibility
+- Approval decisions
+- Volunteer restrictions
+- Administrative permissions
+- Report calculations
+
+The frontend presents backend decisions without modification.
+
+---
+
+## Documentation First
+
+Before implementing a significant feature, review the relevant project documentation.
+
+Typical references include:
+
+- API_contract.md
+- system_architecture.md
+- frontend_design_system.md
+- frontend_component_guidelines.md
+- backend_api_implementation.md
+- backend_database_schema.md
+
+Implementation should remain consistent with approved documentation.
+
+---
+
+## Incremental Development
+
+Large features should be implemented incrementally.
+
+Recommended approach:
+
+1. Explain the implementation plan.
+2. Wait for approval when required.
+3. Implement a logical milestone.
+4. Verify functionality.
+5. Update documentation if necessary.
+6. Continue with the next milestone.
+
+Avoid introducing multiple unrelated changes simultaneously.
+
+---
+
+# 10. Enhancements & Proposed Improvements
+
+Improvement ideas are encouraged but should follow the project's approval process.
+
+---
+
+## Recording Suggestions
+
+When a contributor identifies a possible improvement that is outside the current scope:
+
+- Do not silently implement it.
+- Record the proposal in `enhancements.md`.
+- Explain the rationale.
+- Describe expected benefits.
+- Identify any architectural impact.
+
+Implementation should occur only after approval.
+
+---
+
+## Examples
+
+Examples include:
+
+- Introducing a new component library
+- Changing routing architecture
+- Replacing state management
+- Modifying project folder structure
+- Significant UI redesign
+- Performance optimizations requiring architectural changes
+
+Minor bug fixes and non-behavioral refactoring do not require enhancement proposals.
+
+---
+
+## Backward Compatibility
+
+Whenever possible:
+
+- Extend existing components.
+- Preserve existing APIs.
+- Avoid unnecessary breaking changes.
+- Maintain compatibility with approved documentation.
+
+Breaking changes require explicit review and approval.
+
+---
+
+# 11. Scope Management
+
+This document defines ongoing frontend engineering standards rather than phase-specific implementation rules.
+
+Individual project milestones determine which features are implemented, while these rules govern *how* they are implemented.
+
+---
+
+## Current Scope
+
+Frontend implementation may include features described in the approved project documentation, including:
+
+- Authentication
+- Event management
+- Attendance workflows
+- Presence monitoring
+- Administrative dashboards
+- Reports
+- Notifications
+- Activity management
+- Shared UI components
+
+Only implement features that have been approved for the current development milestone.
+
+---
+
+## Future Features
+
+Future capabilities should not be partially implemented in advance.
+
+Examples include:
+
+- Experimental interfaces
+- Placeholder workflows
+- Unapproved administrative tools
+- Unsupported backend functionality
+
+If backend support does not yet exist, avoid creating incomplete frontend implementations.
+
+---
+
+## Consistency Across Modules
+
+Every new module should follow the same standards for:
+
+- Component structure
+- API integration
+- Error handling
+- Loading states
+- Accessibility
+- Testing
+- Documentation
+
+Avoid creating feature-specific conventions that differ from the rest of the application.
+
+---
+
+# 12. Core Engineering Principles
+
+The following principles guide all frontend development.
+
+---
+
+## Consistency
+
+Prefer extending existing patterns over introducing new ones.
+
+Reusable components and shared design patterns improve maintainability.
+
+---
+
+## Simplicity
+
+Choose the simplest implementation that satisfies project requirements.
+
+Avoid unnecessary abstraction or premature optimization.
+
+---
+
+## Maintainability
+
+Write code that is easy to understand, review, test, and extend.
+
+Favor readability over clever implementations.
+
+---
+
+## Performance
+
+Optimize thoughtfully.
+
+Prioritize:
+
+- Efficient rendering
+- Appropriate caching
+- Reduced unnecessary requests
+- Lazy loading where appropriate
+- Shared state reuse
+
+Performance improvements should never compromise correctness.
+
+---
+
+## Accessibility
+
+Accessibility is a mandatory quality requirement.
+
+Every feature should support:
+
+- Keyboard navigation
+- Screen readers
+- Focus management
+- Adequate color contrast
+- Responsive layouts
+
+Accessibility should be considered throughout development rather than added afterward.
+
+---
+
+## Reliability
+
+Frontend behavior should remain predictable even when backend operations fail.
+
+Users should always receive:
+
+- Clear feedback
+- Meaningful error messages
+- Appropriate loading indicators
+- Recoverable workflows
+
+Unexpected failures should degrade gracefully rather than leaving the application in an inconsistent state.
+
+---
+
+## Collaboration
+
+Frontend development is part of a larger system.
+
+Implementation decisions should remain aligned with:
+
+- Backend architecture
+- API contract
+- Business rules
+- Design system
+- Shared documentation
+
+Successful collaboration depends on consistency across the entire project.
+
+---
+
+# Conclusion
+
+This document establishes the engineering standards for frontend development within the InnoTech Hub Attendance System.
+
+It defines expectations for project structure, technology choices, API integration, user experience, development workflow, testing, documentation, and collaboration.
+
+All contributors should follow these standards to ensure the frontend remains consistent, maintainable, accessible, and aligned with the project's approved architecture and documentation.
+
+As the application evolves, these rules should be refined through the project's documentation process while preserving architectural consistency and long-term maintainability.
+

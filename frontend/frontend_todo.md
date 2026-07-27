@@ -1,405 +1,730 @@
-# Frontend Development To-Do List — Phase 1
+# Frontend Development Roadmap
 
-## Milestone 0: Environment & Scaffolding
+This document serves as the implementation roadmap for the frontend of the InnoTech Hub Attendance System.
 
-- [ ] Create Vite project with React + TypeScript template
-- [ ] Install and configure Tailwind CSS
-- [ ] Install and configure shadcn/ui
-- [ ] Set up React Router v6
-- [ ] Install dependencies: react-query, react-hook-form, zod, axios, framer-motion, lucide-react
-- [ ] Create project folder structure (src/pages, src/components, src/lib, etc.)
-- [ ] Set up environment variables file (.env.local with VITE_API_BASE_URL)
-- [ ] Create API client (src/lib/api.ts) with mock mode toggle
-- [ ] Verify frontend runs locally on localhost:5173
-- [ ] Verify backend health endpoint can be reached (test CORS)
-
-## Milestone 1: Authentication (Login & Session Restore)
-
-### Login Page
-- [ ] Create LoginPage component (src/pages/LoginPage.tsx)
-- [ ] Build login form with email and password fields
-- [ ] Add form validation with Zod schema
-- [ ] Create error message display
-- [ ] Add loading state on submit button
-- [ ] Implement form submission with mock API (shows loading, then success/error)
-- [ ] Style with Tailwind and shadcn/ui button, input components
-- [ ] Ensure responsive layout (mobile-first)
-
-### Authentication Logic
-- [ ] Create AuthContext (src/lib/auth.ts) with login/logout functions
-- [ ] Wrap app with AuthProvider in main.tsx
-- [ ] Implement JWT storage in localStorage
-- [ ] Create useAuth() custom hook for accessing auth state
-- [ ] Add session persistence (restore from localStorage on app load)
-- [ ] Create ProtectedRoute component to guard admin/member routes
-
-### Get Current User Endpoint
-- [ ] Create useGetMe hook that calls GET /me
-- [ ] Implement session restore flow (on app mount, fetch /me to refresh user)
-- [ ] Store user profile in AuthContext
-- [ ] Handle 401 errors (token expired, redirect to login)
-
-### Role-Based Routing
-- [ ] Create AdminDashboard placeholder page
-- [ ] Create MemberDashboard placeholder page
-- [ ] Implement routing logic: if admin, go to /admin/dashboard; if member, go to /member/dashboard
-- [ ] Test login flow end-to-end with mocks
-- [ ] Create logout button in header
-- [ ] Test logout clears token and redirects to login
-
-## Milestone 2: Session Management (Admin Side)
-
-### Admin Dashboard
-- [ ] Create AdminDashboard page (src/pages/AdminDashboard.tsx)
-- [ ] Add welcome header with user name
-- [ ] Add logout button
-- [ ] Create "Create Session" CTA button
-- [ ] Build sessions list component
-- [ ] Implement useSessionsList hook (mock data initially)
-- [ ] Display sessions as cards (title, status, date/time)
-- [ ] Add "View" button on each session card
-
-### Create Session Form
-- [ ] Create CreateSessionPage (src/pages/CreateSessionPage.tsx)
-- [ ] Build session creation form with all required fields
-- [ ] Add form validation (title, date, start/end time, venue, radius)
-- [ ] Implement "Use My Location" button (use navigator.geolocation)
-- [ ] Add date/time pickers
-- [ ] Implement form submission with useCreateSession hook
-- [ ] Add error display for validation failures
-- [ ] Add loading state on submit button
-- [ ] Redirect to dashboard on success
-- [ ] Style form for premium feel
-
-### Session Detail & Check-ins
-- [ ] Create SessionDetail page (src/pages/SessionDetail.tsx)
-- [ ] Display session information (title, date, time, venue, radius)
-- [ ] Show check-in summary (Present, Late, Pending, Rejected counts)
-- [ ] Build check-ins table with member names, check-in times, distances, statuses
-- [ ] Implement status badges (green for present, yellow for late, red for rejected)
-- [ ] Add "Close Session" button
-- [ ] Add "Export Excel" button (disabled for now, placeholder)
-- [ ] Implement useSession hook to fetch session detail
-- [ ] Add back navigation
-
-### Session List Filtering (Optional for Phase 1)
-- [ ] Add status filter (All, Scheduled, Open, Closed)
-- [ ] Add search by session title
-- [ ] Add sorting (by date, by status)
-
-## Milestone 3: Member Check-in Flow
-
-### Member Dashboard
-- [ ] Create MemberDashboard page
-- [ ] Display "Available Sessions" (open sessions only)
-- [ ] Show session cards with title, date/time, "Check In" button
-- [ ] Display "My Check-in History" section below
-- [ ] Implement useSessionsList hook (filtered for members)
-- [ ] Add logout button
-
-### Check-in Flow (Multi-Step)
-
-#### Step 1: Permission Request Screen
-- [ ] Create CheckinFlow page (src/pages/CheckinFlow.tsx)
-- [ ] Display session information
-- [ ] Show "Ready to check in?" message
-- [ ] List what's needed (GPS location, camera access)
-- [ ] Add "Enable & Continue" button
-- [ ] Add "Cancel" button
-
-#### Step 2: Live Camera Capture
-- [ ] Create CameraCapture component (src/components/features/attendance/CameraCapture.tsx)
-- [ ] Request camera permission (navigator.mediaDevices.getUserMedia)
-- [ ] Display live video stream from camera
-- [ ] Request GPS location (navigator.geolocation.getCurrentPosition)
-- [ ] Display current location and distance from venue
-- [ ] Add "Capture Photo" button
-- [ ] Show GPS accuracy and distance dynamically
-
-#### Step 3: Photo Confirmation
-- [ ] Show captured photo preview
-- [ ] Display "Retake Photo" and "Submit" buttons
-- [ ] Show GPS location and distance to venue
-- [ ] Add loading state on submit
-
-#### Step 4: Success/Error Response
-- [ ] Display success screen with status (Present/Late/Pending)
-- [ ] Show check-in time and distance
-- [ ] Add "Back to Dashboard" button for success
-- [ ] Display error screen if check-in fails (outside radius, duplicate, etc.)
-- [ ] Show clear error message with reason
-- [ ] Add "Try Again" button for errors
-
-### Check-in API Integration
-- [ ] Create useCheckIn hook
-- [ ] Implement multipart form data submission (lat, lng, accuracy, photo)
-- [ ] Handle success responses (final_status, distance, check_in_time)
-- [ ] Handle error responses (OUTSIDE_RADIUS, DUPLICATE_CHECK_IN, SESSION_NOT_OPEN, etc.)
-- [ ] Test with real backend once available
-
-### Attendance History
-- [ ] Create AttendanceHistory page (src/pages/AttendanceHistory.tsx)
-- [ ] Implement useAttendanceHistory hook
-- [ ] Display list of past check-ins (session name, check-in time, status)
-- [ ] Show status badges with appropriate colors
-- [ ] Sort by most recent first
-- [ ] Add back navigation
-
-## Milestone 4: Reporting (Admin Only)
-
-### Excel Export
-- [ ] Add "Export Excel" button to SessionDetail page
-- [ ] Implement useExportReport hook
-- [ ] Trigger download of .xlsx file
-- [ ] Handle export errors
-- [ ] Show loading state during export
-- [ ] Test exported file opens correctly in Excel/Sheets
-
-## Milestone 5: Polish & Premium Feel
-
-### UI Polish
-- [ ] Add loading spinners on all async operations
-- [ ] Implement smooth page transitions (Framer Motion)
-- [ ] Add success/error toast notifications
-- [ ] Ensure all status badges have correct colors (green/yellow/red/indigo)
-- [ ] Add icons to buttons (from lucide-react)
-- [ ] Review spacing and alignment (use design_system.md spacing scale)
-- [ ] Add hover effects on clickable elements
-- [ ] Test responsive layout on mobile, tablet, desktop
-
-### Error Handling
-- [ ] Display user-friendly error messages for all API failures
-- [ ] Handle network errors (offline)
-- [ ] Handle 401 unauthorized (redirect to login)
-- [ ] Handle 403 forbidden (show permission error)
-- [ ] Handle 404 not found (show resource error)
-- [ ] Handle 422 validation errors (show specific field errors)
-
-### Form Improvements
-- [ ] Clear forms after successful submission
-- [ ] Disable submit buttons while loading
-- [ ] Show validation errors on blur (not just submit)
-- [ ] Add success message after form submission
-
-### Browser Testing
-- [ ] Test on Chrome (latest)
-- [ ] Test on Firefox (latest)
-- [ ] Test on Safari (latest)
-- [ ] Test on mobile browsers (iOS Safari, Android Chrome)
-- [ ] Verify geolocation works on all browsers
-- [ ] Verify camera access works on all browsers
-
-### Performance
-- [ ] Lazy load pages (code splitting)
-- [ ] Optimize images (if added)
-- [ ] Check bundle size (should be <200KB gzipped)
-- [ ] Test Core Web Vitals
-
-### Accessibility
-- [ ] Ensure all form inputs have labels
-- [ ] Verify focus indicators visible on all elements
-- [ ] Test with keyboard navigation (Tab through all pages)
-- [ ] Add aria-labels to icon-only buttons
-- [ ] Test with screen reader (if possible)
-
-## Integration Testing (Before Merge)
-
-- [ ] Test full login flow (with real backend)
-- [ ] Test session creation flow (create, see in list)
-- [ ] Test session detail view (shows check-ins)
-- [ ] Test check-in flow end-to-end (permission → camera → submit)
-- [ ] Test duplicate check-in error
-- [ ] Test outside radius rejection
-- [ ] Test attendance history display
-- [ ] Test Excel export
-- [ ] Test logout
-- [ ] Test mobile responsiveness
-
-## Documentation
-
-- [ ] Verify all components follow component_guidelines.md
-- [ ] Verify all styling follows design_system.md
-- [ ] Verify all routing follows routing.md
-- [ ] Verify all state management follows state_management.md
-- [ ] Update progress.md with completion status
-- [ ] Add entry to changelog.md for Phase 1 completion
-
-# Frontend Development To-Do List — Phase 2
-
-## Milestone 6: Enhanced Member Dashboard
-
-### Dashboard Layout
-- [ ] Upgrade Member Dashboard to Phase 2 design
-- [ ] Implement sidebar navigation
-- [ ] Display Active Session card
-- [ ] Display Available Sessions as responsive cards
-- [ ] Enhance Attendance History section
-- [ ] Add session progress indicator
-- [ ] Implement responsive sidebar (desktop/tablet/mobile)
-
-### Navigation
-- [ ] Create sidebar navigation component
-- [ ] Add Dashboard navigation
-- [ ] Add Sessions navigation
-- [ ] Add History navigation
-- [ ] Add Profile navigation
-- [ ] Add Logout action
-- [ ] Highlight current navigation item
+Tasks are organized by functional area rather than project phase. This allows new features to be added without restructuring the roadmap and keeps implementation aligned with the current backend architecture and API contract.
 
 ---
 
-## Milestone 7: Attendance Lifecycle
+# 1. Foundation
 
-### Active Session Page
-- [ ] Create ActiveSessionPage
-- [ ] Display session information
-- [ ] Display current attendance status
-- [ ] Display presence status (Inside/Outside Venue)
-- [ ] Display session progress
-- [ ] Add Open Session navigation
-- [ ] Add Check Out button
+## Project Setup
 
-### Live Attendance
-- [ ] Implement automatic attendance refresh
-- [ ] Display live attendance updates
-- [ ] Display attendance status changes
-- [ ] Handle monitoring failures gracefully
-
-### Presence Timeline
-- [ ] Create PresenceTimeline component
-- [ ] Display attendance events chronologically
-- [ ] Display event timestamps
-- [ ] Display backend messages when available
-- [ ] Auto-refresh timeline
+- [ ] Create React + TypeScript project using Vite
+- [ ] Configure Tailwind CSS
+- [ ] Configure shadcn/ui
+- [ ] Configure React Router
+- [ ] Configure TanStack Query
+- [ ] Configure React Hook Form
+- [ ] Configure Zod
+- [ ] Configure Framer Motion
+- [ ] Configure lucide-react
+- [ ] Configure ESLint and formatting tools
 
 ---
 
-## Milestone 8: Early Check-out Workflow
+## Project Structure
 
-### Check-out Request
-- [ ] Create EarlyCheckOutDialog component
-- [ ] Add reason input
-- [ ] Validate reason before submission
-- [ ] Submit request to backend
+- [ ] Create project folder structure
+- [ ] Configure layouts
+- [ ] Configure reusable component folders
+- [ ] Configure hooks
+- [ ] Configure API services
+- [ ] Configure shared utilities
+- [ ] Configure shared types
+- [ ] Configure authentication context
+
+---
+
+## Environment
+
+- [ ] Configure environment variables
+- [ ] Configure API base URL
+- [ ] Configure development environment
+- [ ] Verify backend connectivity
+- [ ] Verify CORS configuration
+
+---
+
+## Shared Infrastructure
+
+- [ ] Create shared API client
+- [ ] Configure request interceptors
+- [ ] Configure authentication handling
+- [ ] Configure centralized error handling
+- [ ] Configure React Query provider
+- [ ] Configure application routing
+- [ ] Configure protected routes
+
+---
+
+# 2. Authentication
+
+## Login
+
+- [ ] Create Login page
+- [ ] Build authentication form
+- [ ] Implement validation
+- [ ] Implement loading states
+- [ ] Display backend validation messages
+- [ ] Handle authentication failures
+- [ ] Support responsive layouts
+
+---
+
+## Authentication State
+
+- [ ] Create authentication context
+- [ ] Store access tokens securely
+- [ ] Restore authenticated sessions
+- [ ] Fetch current user profile
+- [ ] Handle expired authentication
+- [ ] Support logout
+- [ ] Protect authenticated routes
+
+---
+
+## Authorization
+
+- [ ] Configure role-based routing
+- [ ] Create administrator layouts
+- [ ] Create member layouts
+- [ ] Restrict unauthorized pages
+- [ ] Handle permission failures
+
+---
+
+# 3. Event Management
+
+## Event Dashboard
+
+- [ ] Create administrator dashboard
+- [ ] Display event overview
+- [ ] Display upcoming events
+- [ ] Display active events
+- [ ] Display completed events
+- [ ] Display event statistics
+
+---
+
+## Event Management
+
+- [ ] Create event creation page
+- [ ] Create event editing page
+- [ ] Display event details
+- [ ] Validate event information
+- [ ] Submit event updates
+- [ ] Display backend validation errors
+
+---
+
+## Event Listing
+
+- [ ] Display searchable event list
+- [ ] Filter by event status
+- [ ] Filter by date
+- [ ] Sort events
+- [ ] Support pagination where appropriate
+
+---
+
+## Event Details
+
+- [ ] Display event information
+- [ ] Display attendance summary
+- [ ] Display assigned members
+- [ ] Display event timeline
+- [ ] Display administrative actions
+
+---
+
+## Boundary Configuration
+
+- [ ] Display configured attendance boundary
+- [ ] Support approved boundary visualization
+- [ ] Display boundary metadata
+- [ ] Validate boundary configuration before submission
+
+---
+
+## Member Event View
+
+- [ ] Display available events
+- [ ] Display active event
+- [ ] Display completed events
+- [ ] Display event schedule
+- [ ] Display participation history
+
+---
+
+# 4. Attendance Management
+
+Attendance is the core workflow of the application. All attendance information displayed by the frontend must originate from backend responses.
+
+---
+
+## Check-In Experience
+
+### Check-In Preparation
+
+- [ ] Display event information before check-in
+- [ ] Explain required permissions
+- [ ] Display privacy notice before requesting device access
+- [ ] Validate event eligibility
+- [ ] Display attendance requirements
+
+---
+
+### Device Permissions
+
+- [ ] Request location permission
+- [ ] Request camera permission
+- [ ] Handle permission denial gracefully
+- [ ] Allow retry after denied permissions
+- [ ] Display permission guidance
+
+---
+
+### Attendance Capture
+
+- [ ] Capture live device location
+- [ ] Capture required attendance evidence
+- [ ] Display captured information before submission
+- [ ] Allow recapture when applicable
+- [ ] Validate required inputs before submission
+
+---
+
+### Attendance Submission
+
+- [ ] Submit attendance request
 - [ ] Display loading state
-
-### Pending Approval
-- [ ] Display pending approval message
-- [ ] Continue monitoring active session
-- [ ] Refresh approval status automatically
-
-### Approval Handling
-- [ ] Display approval notification
-- [ ] Display rejection notification
-- [ ] Display administrator remarks (if provided)
-- [ ] Enable Complete Check-out after approval
+- [ ] Prevent duplicate submissions
+- [ ] Handle network failures
+- [ ] Handle backend validation failures
+- [ ] Display successful attendance confirmation
+- [ ] Display backend rejection reasons
 
 ---
 
-## Milestone 9: Attendance Summary
+## Attendance Status
 
-### Attendance Summary Page
-- [ ] Create AttendanceSummaryPage
-- [ ] Display session information
-- [ ] Display check-in time
-- [ ] Display check-out time
-- [ ] Display attendance duration
-- [ ] Display final attendance status
-- [ ] Display attendance timeline
-- [ ] Add Return to Dashboard button
+- [ ] Display current attendance status
+- [ ] Display attendance timestamps
+- [ ] Display backend status messages
+- [ ] Display attendance history
+- [ ] Display attendance summary
 
 ---
 
-## Milestone 10: Admin Live Monitoring
+## Attendance History
 
-### Live Monitoring
-- [ ] Display live attendance summary
+- [ ] Display chronological attendance records
+- [ ] Filter attendance history
+- [ ] Search attendance history
+- [ ] Display attendance details
+- [ ] Display attendance outcomes
+- [ ] Support pagination where appropriate
+
+---
+
+## Attendance Administration
+
+- [ ] Display participant attendance list
+- [ ] Display attendance statistics
+- [ ] Filter attendance by status
+- [ ] Search participants
+- [ ] Display attendance details
+- [ ] Refresh attendance information
+- [ ] Support attendance exports
+
+---
+
+# 5. Presence Monitoring
+
+Presence monitoring provides continuous visibility into participant status during active events.
+
+The frontend displays monitoring information while the backend remains responsible for all attendance decisions.
+
+---
+
+## Active Event
+
+- [ ] Display active event information
+- [ ] Display monitoring status
+- [ ] Display current presence state
+- [ ] Display monitoring indicators
+- [ ] Display event progress
+
+---
+
+## Presence Timeline
+
+- [ ] Create reusable Presence Timeline component
+- [ ] Display events chronologically
+- [ ] Display timestamps
+- [ ] Display backend messages
+- [ ] Group related timeline events where appropriate
+- [ ] Support automatic refresh
+
+---
+
+## Leave & Return
+
+- [ ] Display leave events
+- [ ] Display return events
+- [ ] Display backend warnings
+- [ ] Display monitoring status changes
+- [ ] Display current participant state
+- [ ] Display administrative remarks when available
+
+---
+
+## Presence Synchronization
+
+- [ ] Refresh monitoring data using approved synchronization strategy
+- [ ] Avoid duplicate refresh requests
+- [ ] Refresh only active monitoring information
+- [ ] Reuse cached monitoring data
+- [ ] Recover automatically after temporary failures
+
+---
+
+## Monitoring Dashboard
+
 - [ ] Display members currently present
-- [ ] Display members outside venue
-- [ ] Display members checked out
-- [ ] Auto-refresh monitoring data
-
-### Early Check-out Requests
-- [ ] Display pending requests
-- [ ] Display member reason
-- [ ] Approve request
-- [ ] Reject request
-- [ ] Refresh request list after decision
-
-### Enhanced Session Detail
-- [ ] Integrate monitoring into Session Detail page
-- [ ] Display live attendance statistics
-- [ ] Display presence timeline
-- [ ] Improve session overview
+- [ ] Display members temporarily outside
+- [ ] Display members awaiting action
+- [ ] Display members who completed attendance
+- [ ] Display monitoring summary
+- [ ] Display monitoring alerts
+- [ ] Support filtering and search
 
 ---
 
-## Milestone 11: Reporting Enhancements
+## Attendance Completion
 
-### Attendance Reports
-- [ ] Display attendance duration
-- [ ] Display leave/return events
+- [ ] Initiate attendance completion
+- [ ] Display confirmation dialog
+- [ ] Submit completion request
+- [ ] Display loading state
+- [ ] Display attendance summary
+- [ ] Return user to appropriate dashboard
+
+---
+
+## Attendance Summary
+
+- [ ] Display attendance overview
+- [ ] Display event information
+- [ ] Display check-in details
+- [ ] Display check-out details
 - [ ] Display attendance timeline
-- [ ] Enhance attendance summaries
-
-### Export
-- [ ] Include Phase 2 attendance information
-- [ ] Include attendance duration
-- [ ] Include leave/return history
-- [ ] Include final attendance status
+- [ ] Display backend attendance outcome
+- [ ] Display administrative remarks when applicable
 
 ---
 
-## Milestone 12: Phase 2 Polish
+## Monitoring Error Handling
 
-### UI Polish
-- [ ] Animate attendance status changes
-- [ ] Animate timeline updates
-- [ ] Improve dashboard transitions
-- [ ] Review spacing and alignment
-- [ ] Ensure consistent card layouts
+- [ ] Handle monitoring refresh failures
+- [ ] Handle synchronization failures
+- [ ] Handle connectivity interruptions
+- [ ] Display meaningful recovery messages
+- [ ] Retry failed refresh operations when appropriate
+- [ ] Preserve existing monitoring information during temporary failures
 
-### Error Handling
-- [ ] Handle monitoring failures
-- [ ] Handle approval failures
-- [ ] Handle check-out failures
-- [ ] Handle refresh failures
+---
 
-### Performance
-- [ ] Optimize dashboard refresh
+## Monitoring Performance
+
 - [ ] Prevent unnecessary re-renders
-- [ ] Optimize live monitoring
-- [ ] Verify responsive performance
+- [ ] Optimize dashboard refresh
+- [ ] Optimize timeline rendering
+- [ ] Reuse cached monitoring data
+- [ ] Avoid duplicate polling
+- [ ] Verify performance with large participant lists
 
-### Accessibility
-- [ ] Verify sidebar accessibility
-- [ ] Verify timeline keyboard navigation
-- [ ] Verify live region announcements
+---
+
+# 6. Activity Management
+
+Activity management enables members to participate in event-related tasks while giving administrators visibility into progress and submissions.
+
+---
+
+## Member Activities
+
+- [ ] Display assigned activities
+- [ ] Display activity details
+- [ ] Display activity priority
+- [ ] Display due dates where applicable
+- [ ] Display activity status
+- [ ] Display submission history
+
+---
+
+## Activity Details
+
+- [ ] Create Activity Details page
+- [ ] Display activity instructions
+- [ ] Display supporting information
+- [ ] Display attachments provided by the backend
+- [ ] Display submission requirements
+- [ ] Display activity timeline
+
+---
+
+## Activity Submission
+
+- [ ] Create activity submission workflow
+- [ ] Validate required inputs
+- [ ] Support approved attachment types
+- [ ] Display upload progress where applicable
+- [ ] Prevent duplicate submissions
+- [ ] Display submission confirmation
+- [ ] Display backend validation messages
+
+---
+
+## Activity Review
+
+- [ ] Display submission status
+- [ ] Display administrator feedback
+- [ ] Display review history
+- [ ] Display resubmission requirements when permitted
+
+---
+
+# 7. Reporting
+
+Reporting provides administrators with clear summaries while relying entirely on backend-generated data.
+
+---
+
+## Attendance Reports
+
+- [ ] Display attendance summaries
+- [ ] Display participant statistics
+- [ ] Display attendance outcomes
+- [ ] Display attendance timelines
+- [ ] Display event summaries
+- [ ] Display report filters
+
+---
+
+## Report Details
+
+- [ ] Display detailed report information
+- [ ] Display participant breakdown
+- [ ] Display attendance history
+- [ ] Display backend-generated metrics
+- [ ] Support pagination for large reports
+
+---
+
+## Report Export
+
+- [ ] Export supported report formats
+- [ ] Display export progress
+- [ ] Handle export failures
+- [ ] Display successful export confirmation
+- [ ] Verify exported data integrity
+
+---
+
+# 8. Notifications
+
+Notifications keep members and administrators informed of important system events.
+
+---
+
+## Notification Center
+
+- [ ] Create Notification Center
+- [ ] Display notification list
+- [ ] Display unread notifications
+- [ ] Mark notifications as read
+- [ ] Support notification filtering
+- [ ] Support notification search
+
+---
+
+## Notification Types
+
+- [ ] Attendance notifications
+- [ ] Event notifications
+- [ ] Administrative announcements
+- [ ] Activity notifications
+- [ ] Approval notifications
+- [ ] Reminder notifications
+- [ ] System notifications
+
+---
+
+## Notification Experience
+
+- [ ] Display toast notifications
+- [ ] Display persistent notifications when required
+- [ ] Support notification badges
+- [ ] Group related notifications
+- [ ] Navigate users to relevant pages
+
+---
+
+# 9. Administrative Dashboard
+
+Administrative interfaces should provide operational visibility while remaining responsive and easy to navigate.
+
+---
+
+## Dashboard Overview
+
+- [ ] Display summary cards
+- [ ] Display active events
+- [ ] Display attendance overview
+- [ ] Display monitoring overview
+- [ ] Display pending administrative actions
+- [ ] Display recent activity
+
+---
+
+## Event Administration
+
+- [ ] View event details
+- [ ] Manage event lifecycle
+- [ ] Monitor attendance
+- [ ] Review participant information
+- [ ] Access event reports
+
+---
+
+## Attendance Monitoring
+
+- [ ] Display live attendance summary
+- [ ] Display participant statuses
+- [ ] Display members requiring attention
+- [ ] Display attendance timeline
+- [ ] Refresh monitoring information
+
+---
+
+## Administrative Actions
+
+- [ ] Review pending requests
+- [ ] Display supporting information
+- [ ] Approve eligible requests
+- [ ] Reject requests with backend-supported responses
+- [ ] Refresh administrative data after actions
+
+---
+
+## Dashboard Performance
+
+- [ ] Lazy load dashboard modules
+- [ ] Optimize large tables
+- [ ] Optimize filtering
+- [ ] Optimize searching
+- [ ] Minimize unnecessary refresh operations
+- [ ] Verify dashboard responsiveness on large datasets
+
+---
+
+# 10. Quality Assurance
+
+Quality assurance ensures that every frontend feature is reliable, maintainable, and consistent with the approved architecture.
+
+---
+
+## User Experience Validation
+
+- [ ] Verify all pages follow the design system
+- [ ] Verify consistent spacing and typography
+- [ ] Verify responsive layouts
+- [ ] Verify consistent navigation
+- [ ] Verify reusable component usage
+- [ ] Verify loading states across the application
+- [ ] Verify empty states
+- [ ] Verify success and error feedback
+
+---
+
+## Error Handling
+
+- [ ] Verify network error handling
+- [ ] Verify authentication failures
+- [ ] Verify authorization failures
+- [ ] Verify validation errors
+- [ ] Verify API timeout handling
+- [ ] Verify unexpected backend failures
+- [ ] Verify graceful recovery where appropriate
+
+---
+
+## Performance
+
+- [ ] Enable route-based code splitting
+- [ ] Lazy load large modules
+- [ ] Optimize images and static assets
+- [ ] Minimize unnecessary component re-renders
+- [ ] Optimize React Query caching
+- [ ] Verify bundle size
+- [ ] Verify Core Web Vitals
+- [ ] Verify dashboard performance with large datasets
+
+---
+
+## Accessibility
+
+- [ ] Verify keyboard navigation
+- [ ] Verify visible focus indicators
+- [ ] Verify screen reader compatibility
+- [ ] Verify semantic HTML usage
+- [ ] Verify accessible form validation
+- [ ] Verify icon accessibility
+- [ ] Verify dialog accessibility
+- [ ] Verify notification accessibility
 - [ ] Verify responsive accessibility
 
 ---
 
-## Phase 2 Integration Testing
+## Browser Compatibility
 
-- [ ] Test complete attendance lifecycle
-- [ ] Test Active Session page
-- [ ] Test live attendance updates
-- [ ] Test presence timeline
-- [ ] Test early check-out request
-- [ ] Test administrator approval workflow
-- [ ] Test administrator rejection workflow
-- [ ] Test attendance summary
-- [ ] Test live monitoring dashboard
-- [ ] Test reporting enhancements
-- [ ] Test responsive layouts
-- [ ] Test full frontend/backend integration
+- [ ] Test latest Chrome
+- [ ] Test latest Firefox
+- [ ] Test latest Safari
+- [ ] Test latest Microsoft Edge
+- [ ] Test Android Chrome
+- [ ] Test iOS Safari
+- [ ] Verify camera functionality where required
+- [ ] Verify location services where required
+- [ ] Verify responsive layouts across devices
 
 ---
 
-## Documentation
+# 11. Testing
 
-- [ ] Verify implementation follows frontend_ui_spec.md
-- [ ] Verify implementation follows component_guidelines.md
-- [ ] Verify implementation follows rules_frontend.md
-- [ ] Update progress.md with Phase 2 completion status
-- [ ] Add Phase 2 entry to changelog.md
+Testing should validate both individual components and complete user workflows.
+
+---
+
+## Unit Testing
+
+- [ ] Test reusable components
+- [ ] Test custom hooks
+- [ ] Test utility functions
+- [ ] Test form validation
+- [ ] Test shared services
+
+---
+
+## Integration Testing
+
+- [ ] Verify authentication workflow
+- [ ] Verify event management workflow
+- [ ] Verify attendance workflow
+- [ ] Verify presence monitoring workflow
+- [ ] Verify activity workflow
+- [ ] Verify reporting workflow
+- [ ] Verify notification workflow
+- [ ] Verify administrator workflow
+
+---
+
+## End-to-End Validation
+
+- [ ] Verify complete member journey
+- [ ] Verify complete administrator journey
+- [ ] Verify frontend and backend integration
+- [ ] Verify API contract compliance
+- [ ] Verify route protection
+- [ ] Verify permission handling
+- [ ] Verify application recovery after failures
+
+---
+
+## Regression Testing
+
+- [ ] Verify existing functionality after changes
+- [ ] Verify shared components remain compatible
+- [ ] Verify API integrations remain functional
+- [ ] Verify reusable hooks remain stable
+- [ ] Verify navigation remains consistent
+- [ ] Verify dashboard functionality
+
+---
+
+# 12. Documentation & Project Maintenance
+
+Documentation should evolve together with implementation.
+
+Whenever frontend functionality changes, review whether project documentation also requires updates.
+
+---
+
+## Documentation Review
+
+- [ ] Verify API contract alignment
+- [ ] Verify frontend UI specification
+- [ ] Verify component guidelines
+- [ ] Verify design system
+- [ ] Verify routing documentation
+- [ ] Verify state management documentation
+- [ ] Verify frontend rules
+- [ ] Verify system architecture references
+
+---
+
+## Project Tracking
+
+- [ ] Update project progress
+- [ ] Update changelog
+- [ ] Record implementation notes where appropriate
+- [ ] Record approved enhancement proposals
+- [ ] Archive completed roadmap items
+
+---
+
+## Final Verification
+
+Before completing a major feature or milestone, verify:
+
+- [ ] Documentation is current
+- [ ] Tests pass
+- [ ] Accessibility requirements are satisfied
+- [ ] Performance remains acceptable
+- [ ] API contract compliance is maintained
+- [ ] Backend integration is verified
+- [ ] UI consistency is preserved
+- [ ] Code review feedback has been addressed
+
+---
+
+# Completion Guidelines
+
+A roadmap item should only be marked complete when:
+
+- The implementation is finished.
+- The feature complies with the approved API contract.
+- The implementation follows the frontend architecture.
+- Appropriate testing has been completed.
+- Documentation has been updated where necessary.
+- The feature is ready for review or release.
+
+Avoid marking work as complete based solely on implementation. A feature is considered complete only after it satisfies the project's quality, testing, and documentation standards.
+
+---
+
+# Roadmap Principles
+
+This roadmap is intended to be a living development document.
+
+As the project evolves:
+
+- Add new functional areas instead of creating separate phase-specific roadmaps.
+- Archive completed work rather than deleting it.
+- Keep tasks aligned with the latest approved architecture and API contract.
+- Update roadmap items whenever new approved features are introduced.
+- Maintain a feature-oriented structure to support long-term project growth.
+
+The roadmap should remain the primary reference for frontend implementation progress and should evolve alongside the project's documentation and architecture.

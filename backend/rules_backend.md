@@ -1,299 +1,1924 @@
-# rules_backend.md — Backend Development Rules
+# Backend Business Rules
 
-> For the backend developer and any agent (Claude Code, Kiro) writing backend code in `/backend`.
-> These rules exist to keep a beginner-authored codebase consistent and to enforce the
-> non-negotiable security/compliance rules from the Rulebook.
+## 1. Overview
 
-## 1. Project layout
+This document defines the business rules governing the backend implementation of the InnoTech Hub Attendance System.
 
-Follow the structure in `system_architecture.md §6`. Don't add new top-level folders under
-`backend/app/` without updating that doc.
+These rules ensure consistent behavior across all backend services regardless of client implementation.
 
-## 2. Non-negotiable rules (from the Rulebook — do not "optimize" these away)
+The backend is the single source of truth for authentication, event management, attendance tracking, presence monitoring, emergency ticket processing, volunteer participation restrictions, notifications, activity history, and administrative auditing.
 
-1. **Server time only.** Never use a client-submitted timestamp for check-in validation. Read the
-   time on the server when the request arrives. (Rulebook §7.3)
-2. **No trusting client-computed status.** The client may show a preview, but `final_status` is
-   always computed server-side from stored coordinates/time, never accepted as input. (Working
-   Book §13.1: "never trust client-only decisions.")
-3. **Duplicate check-in is a database-level constraint**, not just an application check (unique
-   constraint on `session_id + member_id` — see `system_architecture.md §3`). Application-level
-   checks can race; the DB constraint can't.
-4. **Passwords are hashed** (bcrypt or argon2 via `passlib`), never logged, never returned in any
-   API response.
-5. **Photo evidence must be a live capture.** The backend cannot enforce "was this photo really
-   just taken," but it must reject anything that isn't a valid image upload accompanying a
-   check-in request, and the frontend must never offer a file-picker fallback (see
-   `rules_frontend.md`).
-6. **GPS accuracy matters as much as distance.** A check-in with poor accuracy should not be
-   silently accepted or rejected — mark it `pending_verification` (Working Book §6.2). Don't
-   collapse this into a binary inside/outside check.
-
-## 3. Tech conventions
-
-| Concern | Convention |
-|---|---|
-| Framework | FastAPI, async route handlers where they touch the DB |
-| ORM | SQLAlchemy 2.x (declarative models in `app/models/`) |
-| Validation | Pydantic schemas in `app/schemas/` — one `Create`, one `Read` (and `Update` if needed) per resource, never reuse ORM models directly as response models |
-| Migrations | Alembic — every model change ships with a migration in the same commit |
-| Config/secrets | `pydantic-settings`, values from environment variables only (`.env` for local dev, **never committed** — see §5) |
-| Business logic | Lives in `app/services/`, not in route handlers — route handlers parse input, call a service, return the response |
-| Distance calc | Haversine formula, implemented once in `app/services/geo.py`, unit-tested with known coordinate pairs |
-| Linting/formatting | `ruff` + `black`, run before every commit |
-| Testing | `pytest`, at minimum one test per acceptance criterion in `PRD.md §7` (F01–F04, F10) |
-
-## 4. API discipline
-
-- Every endpoint must match `API_contract.md` exactly (path, method, request/response shape,
-  status codes). If you need to deviate, update the contract file first, in the same PR.
-- Use FastAPI's automatic OpenAPI docs (`/docs`) to sanity-check your implementation against the
-  contract — they should never drift.
-- Return the standard error shape from `API_contract.md §1` for every error path; don't let
-  unhandled exceptions leak stack traces to the client.
-
-## 5. Secrets & environment
-
-- `DATABASE_URL`, `JWT_SECRET_KEY`, and any other secret live in `backend/.env` (git-ignored).
-- Commit a `backend/.env.example` with placeholder values so the other developer/agent knows what
-  variables are needed, per `deployment_guide.md`.
-- Never put real secrets in Repo A (public docs repo) — not even in an example.
-
-## 6. Git / commit conventions (backend branch)
-
-- Work happens on the `backend` branch (see `system_architecture.md §7`); open a PR into `main`
-  when a feature is complete and tested.
-- Commit messages: `type(scope): summary`, e.g. `feat(attendance): add duplicate check-in guard`,
-  `fix(auth): correct JWT expiry`.
-- Every PR into `main` that touches an endpoint must link to (or restate) the relevant section of
-  `API_contract.md`.
-- If a migration is included, say so explicitly in the PR description (`Includes Alembic
-  migration: yes/no`).
-
-## 7. When you (the agent) notice something worth changing
-
-If you spot a better approach than what's specified here — e.g., a different validation library,
-a different status-calculation order — don't just implement it silently. Add an entry to
-`enhancements.md` describing the suggestion and rationale, and only implement it after the
-developer approves, unless it's a trivial non-behavioral fix (typo, formatting).
-
-## 8. Explicitly out of scope for Phase 1 backend
-
-Do not build, even if it seems easy to add "while you're in there": offline sync endpoints,
-presence/left-venue tracking, activity endpoints, correction/approval workflow, audit log table,
-multi-role permission matrix beyond admin/member. These are documented in `PRD.md §3` and
-`development_roadmap.md` for later phases.
-
-## 9. Phase 2 Backend Rules
-
-> Phase 2 extends the attendance system with continuous attendance monitoring, early check-out approval, and attendance summaries. These rules supplement the Phase 1 rules and do not replace them.
-
-### 9.1 Attendance Lifecycle
-
-The backend is the single source of truth for the attendance lifecycle.
-
-Attendance progresses through backend-controlled states only.
-
-Example lifecycle:
-
-```
-Check-in
-
-↓
-
-Active Attendance
-
-↓
-
-(Optional) Early Check-out Request
-
-↓
-
-Administrator Decision
-
-↓
-
-Approved → Complete Check-out
-
-OR
-
-Rejected → Continue Attendance
-
-↓
-
-Attendance Completed
-```
-
-The frontend must never determine attendance state transitions.
+All backend implementations must comply with these rules.
 
 ---
 
-### 9.2 Presence Monitoring
+## 2. Core Principles
 
-Presence monitoring must be calculated by the backend.
+The following principles apply to every backend feature.
+
+### 2.1 Backend Authority
+
+The backend is the authoritative source of truth.
+
+Clients may request operations, but they never determine business outcomes.
 
 The backend is responsible for:
 
-- determining whether a member is inside or outside the attendance area;
-- recording presence events;
-- maintaining chronological attendance history.
-
-The frontend is responsible only for displaying backend results.
+- validating requests;
+- enforcing business rules;
+- calculating attendance outcomes;
+- maintaining data integrity;
+- generating system events.
 
 ---
 
-### 9.3 Attendance Timeline
+### 2.2 Server-Controlled Decisions
 
-All attendance events must be recorded chronologically.
+Business decisions must always be calculated by the backend.
 
 Examples include:
 
-- Check In
-- Entered Venue
-- Left Venue
-- Returned
-- Early Check-out Requested
-- Early Check-out Approved
-- Early Check-out Rejected
-- Check Out
+- attendance status;
+- presence state;
+- event participation eligibility;
+- emergency ticket decisions;
+- volunteer restrictions;
+- notification generation.
 
-Timeline records must be generated by backend services rather than reconstructed by the frontend.
+Client-computed values must never be trusted.
 
 ---
 
-### 9.4 Early Check-out Approval
+### 2.3 Server Time
 
-Early check-out requests require administrator approval.
+All timestamps used for business decisions must be generated by the server.
 
-Rules:
-
-- Members must provide a reason.
-- Approval decisions are made only by administrators.
-- Members cannot complete early check-out until approval is granted.
-- Rejected requests return the member to Active Attendance.
-
-The backend must enforce these rules regardless of frontend behavior.
+Client-provided timestamps may be stored for informational purposes if required but must never influence backend decisions.
 
 ---
 
-### 9.5 Attendance Completion
+### 2.4 Data Integrity
 
-Attendance is considered complete only after the backend successfully processes check-out.
+All persistent data must satisfy database constraints and business rules.
 
-The backend must calculate:
+Validation must occur before database modifications are committed.
+
+Invalid operations must be rejected without partially updating system state.
+
+---
+
+### 2.5 Single Responsibility
+
+Business logic belongs within the service layer.
+
+Route handlers are responsible only for:
+
+- request validation;
+- authentication;
+- authorization;
+- invoking services;
+- returning responses.
+
+Business logic must never be implemented directly within API route handlers.
+
+---
+
+### 2.6 Consistency
+
+Equivalent operations must always produce consistent results.
+
+Business rules must not depend on:
+
+- client platform;
+- browser behavior;
+- device manufacturer;
+- operating system version.
+
+---
+
+### 2.7 Auditability
+
+Significant system actions must be traceable.
+
+Administrative actions, approval workflows, attendance changes, and security-sensitive operations must generate appropriate audit records.
+
+---
+
+### 2.8 Historical Preservation
+
+Historical records must not be modified unless explicitly required by business rules.
+
+Examples include:
+
+- attendance history;
+- presence logs;
+- activity history;
+- audit logs;
+- notifications.
+
+Historical data provides traceability and reporting and should remain immutable wherever practical.
+
+---
+
+### 2.9 API Contract Compliance
+
+Backend implementations must conform to the published API Contract.
+
+Changes to API behavior require corresponding updates to:
+
+- API Contract;
+- Database Schema (if applicable);
+- Business Rules (if applicable).
+
+Implementation must never diverge from documented behavior.
+
+---
+
+### 2.10 Security by Default
+
+Backend services must assume all client input is untrusted.
+
+Every request must be validated before processing.
+
+Authentication and authorization must be enforced before executing protected operations.
+
+Sensitive information must never be exposed through API responses, logs, or error messages.
+
+# 3. Authentication Rules
+
+## Purpose
+
+Authentication verifies the identity of users before allowing access to protected system resources.
+
+The backend is solely responsible for authentication, token generation, token validation, and authorization enforcement.
+
+---
+
+## 3.1 User Authentication
+
+Users must authenticate using their registered email address and password.
+
+Authentication is required before accessing protected endpoints.
+
+Unauthenticated requests must be rejected.
+
+---
+
+## 3.2 Password Security
+
+Passwords must never be stored in plain text.
+
+The backend must:
+
+- store only securely hashed passwords;
+- verify passwords using the configured hashing algorithm;
+- never expose password hashes through API responses;
+- never write passwords to logs.
+
+---
+
+## 3.3 JWT Authentication
+
+After successful authentication, the backend issues a JSON Web Token (JWT).
+
+Protected endpoints require a valid JWT.
+
+Expired, invalid, or malformed tokens must be rejected.
+
+---
+
+## 3.4 Authorization
+
+Authentication identifies the user.
+
+Authorization determines whether the authenticated user may perform the requested operation.
+
+Every protected endpoint must validate the user's role before executing privileged operations.
+
+---
+
+## 3.5 User Roles
+
+The system supports the following roles:
+
+- Administrator
+- Member
+
+Administrator permissions include:
+
+- managing events;
+- reviewing emergency tickets;
+- managing volunteer restrictions;
+- accessing administrative reports;
+- viewing audit logs.
+
+Member permissions include:
+
+- viewing assigned events;
+- checking in and checking out;
+- participating in presence monitoring;
+- submitting emergency tickets;
+- viewing personal notifications;
+- viewing personal activity history.
+
+---
+
+## 3.6 Token Validation
+
+Every protected request must validate:
+
+- token signature;
+- token expiration;
+- user existence;
+- user authorization.
+
+Requests failing validation must be rejected before business logic executes.
+
+---
+
+## 3.7 Session Management
+
+Authentication establishes an authenticated user session through the issued JWT.
+
+The backend remains stateless.
+
+Session state is derived from the authenticated token and current database state rather than server memory.
+
+---
+
+## 3.8 Authentication Errors
+
+Authentication failures include, but are not limited to:
+
+- invalid credentials;
+- expired token;
+- invalid token;
+- missing authentication token;
+- insufficient permissions.
+
+Error responses must follow the standard API error format.
+
+---
+
+## 3.9 Security Requirements
+
+Authentication services must:
+
+- validate all input;
+- use HTTPS in production;
+- never expose sensitive information;
+- prevent unauthorized access to protected resources;
+- minimize information disclosure during authentication failures.
+
+---
+
+## 3.10 Audit Requirements
+
+Significant authentication events should generate audit log records where appropriate.
+
+Examples include:
+
+- successful login;
+- failed authentication attempts (when configured);
+- logout;
+- administrative authentication events.
+
+# 4. User Rules
+
+## Purpose
+
+User rules define how user accounts are managed and how users interact with the attendance system.
+
+The backend is responsible for enforcing user permissions, validating user operations, and maintaining user data integrity.
+
+---
+
+## 4.1 User Identity
+
+Each user must have a unique identity within the system.
+
+Every user account must contain:
+
+- unique email address;
+- encrypted password;
+- assigned role;
+- creation timestamp.
+
+Duplicate user accounts using the same email address are not permitted.
+
+---
+
+## 4.2 User Roles
+
+Every user is assigned exactly one role.
+
+Supported roles are:
+
+- Administrator
+- Member
+
+Roles determine which backend operations the user is authorized to perform.
+
+---
+
+## 4.3 Administrator Responsibilities
+
+Administrators may:
+
+- create, update, and manage events;
+- review emergency tickets;
+- approve or reject emergency requests;
+- apply or remove volunteer restrictions;
+- access reports and analytics;
+- view audit logs;
+- manage attendance operations.
+
+Administrative operations require successful authorization before execution.
+
+---
+
+## 4.4 Member Responsibilities
+
+Members may:
+
+- authenticate using their registered credentials;
+- participate in active events;
+- check in and check out of events;
+- participate in presence monitoring;
+- submit emergency tickets;
+- view personal notifications;
+- view personal activity history.
+
+Members must not access administrative functionality.
+
+---
+
+## 4.5 User Validation
+
+Before processing any request, the backend must verify that:
+
+- the authenticated user exists;
+- the user account is valid;
+- the requested operation is permitted for the user's role.
+
+Unauthorized operations must be rejected.
+
+---
+
+## 4.6 Data Ownership
+
+Members may access only their own data unless explicitly authorized.
+
+Examples include:
+
+- attendance history;
+- emergency tickets;
+- notifications;
+- activity history.
+
+Administrators may access additional data required for system management.
+
+---
+
+## 4.7 Account Integrity
+
+User information must remain consistent throughout the system.
+
+Relationships between users and other entities must maintain referential integrity.
+
+Deleting or modifying user records must not compromise historical data.
+
+---
+
+## 4.8 User Activity
+
+Significant user actions may generate:
+
+- notifications;
+- activity history records;
+- audit log entries.
+
+Generation of these records is handled automatically by backend services.
+
+---
+
+## 4.9 Error Handling
+
+User-related operations must return appropriate business-level errors.
+
+Examples include:
+
+- user not found;
+- duplicate email address;
+- insufficient permissions;
+- unauthorized access.
+
+Responses must follow the standard API error format.
+
+---
+
+## 4.10 Security Requirements
+
+User operations must:
+
+- validate all input;
+- enforce authentication;
+- enforce authorization;
+- prevent privilege escalation;
+- protect sensitive user information.
+
+Security checks must occur before executing business logic.
+
+# 5. Event Rules
+
+## Purpose
+
+Event rules define how attendance events are created, managed, activated, and completed.
+
+An event represents a scheduled attendance activity created by an administrator. All attendance, presence monitoring, emergency ticket processing, notifications, and reporting occur within the context of an event.
+
+---
+
+## 5.1 Event Ownership
+
+Events may only be created and managed by administrators.
+
+Members cannot create, modify, activate, complete, or delete events.
+
+---
+
+## 5.2 Event Lifecycle
+
+Every event progresses through the following lifecycle.
+
+```
+DRAFT
+
+↓
+
+SCHEDULED
+
+↓
+
+ACTIVE
+
+↓
+
+COMPLETED
+
+OR
+
+↓
+
+CANCELLED
+```
+
+The backend is responsible for enforcing valid state transitions.
+
+---
+
+## 5.3 Event Creation
+
+Before creating an event, the backend must validate:
+
+- event title;
+- event schedule;
+- boundary configuration;
+- administrator authorization.
+
+Invalid event data must be rejected.
+
+---
+
+## 5.4 Event Schedule
+
+Each event must define:
+
+- start time;
+- end time.
+
+The backend must ensure:
+
+- start time occurs before end time;
+- completed events cannot be reactivated;
+- cancelled events cannot accept attendance.
+
+---
+
+## 5.5 Event Boundary
+
+Every event must contain exactly one attendance boundary.
+
+Supported boundary types are:
+
+- GeoJSON
+- Captured GPS Points
+
+Boundary validation is performed by the backend.
+
+Attendance and presence monitoring must use the configured boundary for the event.
+
+---
+
+## 5.6 Event Activation
+
+Only active events may accept:
+
+- check-ins;
+- presence monitoring;
+- emergency ticket submissions.
+
+Requests referencing inactive events must be rejected.
+
+---
+
+## 5.7 Event Completion
+
+An event is considered completed when its lifecycle reaches the `COMPLETED` state.
+
+After completion:
+
+- new check-ins are not permitted;
+- presence monitoring stops;
+- emergency ticket creation is no longer permitted;
+- attendance summaries become available.
+
+The backend may automatically finalize remaining active attendance records according to system configuration.
+
+---
+
+## 5.8 Event Modification
+
+Administrators may modify an event only when permitted by business rules.
+
+Updates that would invalidate existing attendance records or compromise data integrity must be rejected.
+
+Significant modifications should generate audit log entries.
+
+---
+
+## 5.9 Event Deletion
+
+Events should not be permanently deleted through normal application operations.
+
+When an event is no longer required, it should transition to the `CANCELLED` state rather than being removed from the database.
+
+Historical event data should be preserved for reporting and auditing purposes.
+
+---
+
+## 5.10 Related System Behavior
+
+Events act as the parent entity for:
+
+- attendance records;
+- presence logs;
+- emergency tickets;
+- notifications;
+- activity history;
+- audit logs.
+
+Backend services must maintain referential integrity between events and their related records.
+
+---
+
+## 5.11 Validation Rules
+
+The backend must reject operations when:
+
+- the event does not exist;
+- the event is not active;
+- the boundary configuration is invalid;
+- the authenticated user lacks sufficient permissions.
+
+Validation must occur before executing business logic.
+
+---
+
+## 5.12 Audit Requirements
+
+The following event operations should generate audit log records where appropriate:
+
+- event creation;
+- event modification;
+- event activation;
+- event completion;
+- event cancellation.
+
+These records provide administrative traceability and system accountability.
+
+# 6. Attendance Rules
+
+## Purpose
+
+Attendance rules define how volunteers participate in an event from check-in until attendance completion.
+
+The backend is solely responsible for validating attendance requests, managing attendance state transitions, calculating attendance outcomes, and maintaining attendance records.
+
+---
+
+## 6.1 Attendance Eligibility
+
+A volunteer may check in only if all of the following conditions are satisfied:
+
+- the user is authenticated;
+- the user has the Member role;
+- the event exists;
+- the event is in the `ACTIVE` state;
+- the volunteer is not currently restricted from participation;
+- the volunteer has not already checked in for the event;
+- the volunteer satisfies the event boundary validation requirements.
+
+If any validation fails, the backend must reject the check-in request.
+
+---
+
+## 6.2 Attendance Lifecycle
+
+Attendance progresses through the following lifecycle.
+
+```
+CHECK_IN
+
+↓
+
+PRESENCE_OK
+
+↓
+
+(Optional)
+
+LEFT
+
+↓
+
+RETURNED
+
+↓
+
+(Optional)
+
+EMERGENCY TICKET
+
+↓
+
+CHECK_OUT
+
+↓
+
+ATTENDANCE COMPLETED
+```
+
+The backend controls all attendance state transitions.
+
+Clients must never determine attendance state.
+
+---
+
+## 6.3 Check-In
+
+A successful check-in creates a new attendance record.
+
+The backend must:
+
+- validate the authenticated user;
+- validate the event;
+- validate the attendance boundary;
+- validate participation eligibility;
+- record the server timestamp;
+- record the submitted location;
+- store the check-in evidence;
+- initialize attendance monitoring.
+
+Exactly one attendance record may exist per volunteer per event.
+
+---
+
+## 6.4 Duplicate Attendance
+
+A volunteer may not check in more than once for the same event.
+
+This rule must be enforced by:
+
+- backend validation;
+- database constraints.
+
+Database constraints remain the final safeguard against duplicate attendance records.
+
+---
+
+## 6.5 Attendance Monitoring
+
+Attendance monitoring begins immediately after successful check-in.
+
+The backend is responsible for:
+
+- tracking presence state;
+- recording presence events;
+- updating attendance state;
+- generating related notifications;
+- recording activity history;
+- generating audit records where applicable.
+
+---
+
+## 6.6 Check-Out
+
+Only volunteers with an active attendance record may check out.
+
+Before completing check-out, the backend must verify:
+
+- attendance exists;
+- attendance has not already been completed;
+- attendance state permits check-out.
+
+Successful check-out updates the existing attendance record rather than creating a new one.
+
+---
+
+## 6.7 Attendance Completion
+
+Attendance is completed only after successful backend processing.
+
+Upon completion, the backend must calculate:
 
 - attendance duration;
 - final attendance status;
-- check-out timestamp;
-- attendance summary.
+- check-out timestamp.
 
-These values must never be supplied by the client.
+These values are generated by the backend and must never be accepted from the client.
 
 ---
 
-### 9.6 Business Logic Location
+## 6.8 Automatic Attendance Completion
 
-All attendance-related business logic belongs in `app/services/`.
+If an event ends while attendance remains active, the backend may automatically complete remaining attendance records according to system configuration.
+
+Automatic completion must:
+
+- preserve attendance history;
+- update attendance status;
+- generate appropriate activity history;
+- generate appropriate audit records.
+
+---
+
+## 6.9 Attendance Integrity
+
+Attendance records must accurately represent volunteer participation.
+
+Attendance history must remain consistent throughout the attendance lifecycle.
+
+Historical attendance data should not be modified except where explicitly required by business rules.
+
+---
+
+## 6.10 Attendance Validation
+
+Attendance operations must reject requests when:
+
+- the event is not active;
+- attendance already exists;
+- attendance has already been completed;
+- the volunteer is restricted;
+- required validation fails.
+
+Validation must occur before modifying persistent data.
+
+---
+
+## 6.11 Related System Actions
+
+Attendance operations may automatically generate:
+
+- presence log entries;
+- notifications;
+- activity history records;
+- audit log records.
+
+These records are generated by backend services and require no client interaction.
+
+---
+
+## 6.12 Error Handling
+
+Attendance-related errors must return clear business-level responses.
 
 Examples include:
 
-- attendance monitoring;
-- presence evaluation;
-- early check-out validation;
-- attendance summary generation;
-- administrator approval workflow.
+- event not active;
+- attendance already exists;
+- attendance not found;
+- attendance already completed;
+- volunteer participation restricted;
+- attendance validation failed.
 
-Route handlers should only:
+Responses must follow the standard API error format.
 
-- validate requests;
-- call services;
-- return responses.
+# 7. Presence Monitoring Rules
+
+## Purpose
+
+Presence monitoring ensures that volunteers remain within the configured event boundary throughout their attendance.
+
+The backend is responsible for evaluating location updates, determining presence state transitions, recording presence history, and triggering related system actions.
+
+The client is responsible only for submitting location updates.
 
 ---
 
-### 9.7 Query Efficiency
+## 7.1 Monitoring Start
 
-Attendance monitoring endpoints may be called frequently.
+Presence monitoring begins immediately after a successful check-in.
+
+Monitoring continues until one of the following occurs:
+
+- the volunteer successfully checks out;
+- attendance is automatically completed;
+- the event is completed.
+
+Presence monitoring must not begin before attendance has been successfully created.
+
+---
+
+## 7.2 Monitoring Responsibility
+
+The backend is responsible for:
+
+- validating received locations;
+- evaluating the configured event boundary;
+- determining presence state transitions;
+- recording presence history;
+- updating the current attendance state;
+- generating notifications when required;
+- generating activity history;
+- generating audit records where appropriate.
+
+Clients must never determine presence status.
+
+---
+
+## 7.3 Location Updates
+
+Location updates submitted by volunteers must include:
+
+- latitude;
+- longitude;
+- GPS accuracy.
+
+The backend must validate submitted location data before processing.
+
+Invalid or incomplete location updates must be rejected.
+
+---
+
+## 7.4 Presence State Transitions
+
+The backend manages the following presence states:
+
+```
+CHECK_IN
+
+↓
+
+PRESENCE_OK
+
+↓
+
+LEFT
+
+↓
+
+RETURNED
+
+↓
+
+CHECK_OUT
+```
+
+State transitions occur only after backend validation.
+
+Clients must not directly modify presence state.
+
+---
+
+## 7.5 Boundary Evaluation
+
+Every received location update must be evaluated against the configured event boundary.
+
+The backend determines whether the volunteer is:
+
+- inside the boundary;
+- outside the boundary.
+
+Boundary evaluation must use the event's configured boundary definition.
+
+---
+
+## 7.6 Presence History
+
+Every significant presence state transition must create a presence log entry.
+
+Examples include:
+
+- successful check-in;
+- leaving the boundary;
+- returning to the boundary;
+- successful check-out.
+
+Presence history provides the complete chronological timeline of volunteer movement during an event.
+
+---
+
+## 7.7 Attendance Updates
+
+Presence monitoring may update:
+
+- current presence state;
+- attendance status;
+- related notifications;
+- activity history;
+- audit logs.
+
+The attendance record always reflects the volunteer's current state.
+
+---
+
+## 7.8 Monitoring Completion
+
+Presence monitoring ends when attendance is completed.
+
+After monitoring has ended:
+
+- additional location updates must not affect attendance;
+- no new presence log entries should be created;
+- attendance history remains unchanged except where explicitly required by business rules.
+
+---
+
+## 7.9 Validation Rules
+
+Presence monitoring requests must be rejected when:
+
+- attendance does not exist;
+- attendance has already been completed;
+- the referenced event is not active;
+- required location information is missing;
+- submitted data fails validation.
+
+---
+
+## 7.10 Performance Requirements
+
+Presence monitoring may generate a large number of requests.
 
 Backend implementations should:
 
 - minimize unnecessary database queries;
-- return only required fields;
-- paginate large collections where appropriate;
-- avoid N+1 query patterns.
+- update only required records;
+- avoid duplicate presence log entries;
+- maintain efficient processing without changing business behavior.
 
-Performance improvements must not change API behavior.
-
----
-
-### 9.8 API Consistency
-
-All new Phase 2 endpoints must follow the existing API conventions.
-
-Requirements:
-
-- consistent request validation;
-- consistent response models;
-- standard error format;
-- predictable HTTP status codes.
-
-Update `API_contract.md` before implementing any new endpoint.
+Performance optimizations must never alter attendance outcomes.
 
 ---
 
-### 9.9 Error Handling
+## 7.11 Related System Actions
 
-Attendance workflow errors should return clear business-level error responses.
+Presence monitoring may automatically generate:
+
+- presence log entries;
+- notifications;
+- activity history records;
+- audit log records.
+
+These records are created by backend services without client involvement.
+
+---
+
+## 7.12 Error Handling
+
+Presence monitoring failures must return clear business-level responses.
 
 Examples include:
 
+- attendance not found;
+- monitoring unavailable;
+- invalid location data;
 - attendance already completed;
-- approval pending;
-- approval rejected;
-- invalid attendance state;
-- session not active;
-- monitoring unavailable.
+- event not active.
 
-Avoid exposing internal implementation details.
+Responses must follow the standard API error format.
 
----
+# 8. Boundary Validation Rules
 
-### 9.10 Database Changes
+## Purpose
 
-Every new attendance feature requiring persistent storage must include:
+Boundary validation determines whether a volunteer is within the configured attendance area for an event.
 
-- SQLAlchemy model updates;
-- Alembic migration;
-- updated schemas;
-- updated service layer;
-- corresponding tests.
+The backend is solely responsible for evaluating all location updates against the event boundary and determining the volunteer's presence status.
 
-Schema changes must never be made without migrations.
+Boundary validation decisions made by the backend are final.
 
 ---
 
-### 9.11 Testing Requirements
+## 8.1 Boundary Configuration
 
-Each new attendance feature should include automated tests covering:
+Every event must have exactly one configured attendance boundary.
 
-- successful workflow;
-- invalid workflow transitions;
-- permission enforcement;
-- validation failures;
-- edge cases;
-- service-layer business logic.
+Supported boundary types are:
 
-Business rules should be tested independently from API routes.
+- GeoJSON
+- Captured GPS Points
+
+The configured boundary remains fixed for the duration of the event unless explicitly modified by an administrator before the event becomes active.
 
 ---
 
-### 9.12 Phase 2 Development Principles
+## 8.2 Backend Responsibility
 
-During Phase 2 development:
+The backend is responsible for:
 
-- The backend remains the source of truth.
-- Business rules belong in services.
-- Clients are never trusted to compute attendance outcomes.
-- Administrator approval is always enforced server-side.
-- Every model change includes a migration.
-- Every API change updates the API contract before implementation.
+- validating boundary configuration;
+- evaluating submitted locations;
+- determining whether a volunteer is inside or outside the event boundary;
+- updating attendance state when required;
+- generating related system events.
+
+Clients must never determine boundary validation results.
+
+---
+
+## 8.3 Boundary Evaluation
+
+Each valid location update received during an active attendance session must be evaluated against the configured event boundary.
+
+The evaluation produces one of two outcomes:
+
+- Inside Boundary
+- Outside Boundary
+
+These results are used by the backend to determine subsequent presence state transitions.
+
+---
+
+## 8.4 Boundary Types
+
+### GeoJSON Boundary
+
+When an event uses a GeoJSON boundary:
+
+- the backend evaluates submitted coordinates against the configured GeoJSON geometry;
+- the GeoJSON definition is considered the authoritative event boundary.
+
+---
+
+### Captured GPS Points
+
+When an event uses captured GPS points:
+
+- the backend evaluates submitted coordinates using the generated boundary derived from the captured points;
+- the generated boundary becomes the authoritative event boundary for the event.
+
+---
+
+## 8.5 Validation Requirements
+
+Before evaluating a location update, the backend must verify:
+
+- the referenced event exists;
+- the event is active;
+- attendance is active;
+- a valid boundary configuration exists;
+- required location information has been provided.
+
+Validation failures must prevent boundary evaluation.
+
+---
+
+## 8.6 Presence State Changes
+
+Boundary evaluation may trigger presence state transitions.
+
+Examples include:
+
+- volunteer leaves the event boundary;
+- volunteer returns to the event boundary.
+
+State transitions are determined exclusively by backend services.
+
+---
+
+## 8.7 Historical Records
+
+Boundary validation may generate:
+
+- presence log entries;
+- notifications;
+- activity history records;
+- audit log records.
+
+Historical records must accurately reflect backend decisions and remain chronologically ordered.
+
+---
+
+## 8.8 Boundary Integrity
+
+Boundary definitions must remain internally consistent throughout the event.
+
+Backend services must reject invalid or incomplete boundary configurations before an event becomes active.
+
+---
+
+## 8.9 Error Handling
+
+Boundary validation requests must return appropriate business-level errors when:
+
+- the event does not exist;
+- the event is not active;
+- the boundary configuration is missing;
+- the boundary configuration is invalid;
+- required location information is unavailable.
+
+Responses must follow the standard API error format.
+
+---
+
+## 8.10 Performance Requirements
+
+Boundary validation may be performed frequently during active events.
+
+Backend implementations should:
+
+- minimize computational overhead;
+- avoid unnecessary database operations;
+- evaluate only active attendance sessions;
+- maintain consistent validation results.
+
+Performance optimizations must never change boundary validation outcomes.
+
+# 9. Emergency Ticket Rules
+
+## Purpose
+
+Emergency tickets allow volunteers to request permission to leave an active event due to an emergency or other valid reason.
+
+The backend is responsible for validating ticket creation, managing the approval workflow, enforcing administrator decisions, and maintaining a complete history of all emergency tickets.
+
+The backend remains the sole authority for determining ticket outcomes.
+
+---
+
+## 9.1 Ticket Eligibility
+
+A volunteer may create an emergency ticket only if all of the following conditions are satisfied:
+
+- the user is authenticated;
+- the user has the Member role;
+- the referenced event exists;
+- the event is in the `ACTIVE` state;
+- the volunteer has an active attendance record;
+- the attendance has not been completed.
+
+If any validation fails, the request must be rejected.
+
+---
+
+## 9.2 Ticket Creation
+
+When a volunteer submits an emergency request, the backend must:
+
+- validate the request;
+- create an emergency ticket;
+- record the submission timestamp;
+- set the ticket status to `PENDING`;
+- notify the appropriate administrators;
+- generate activity history;
+- generate an audit log entry where applicable.
+
+Ticket creation does not modify the volunteer's attendance status.
+
+---
+
+## 9.3 Emergency Ticket Lifecycle
+
+Emergency tickets progress through the following lifecycle.
+
+```
+PENDING
+
+      │
+
+      ├────────► APPROVED
+
+      │
+
+      ├────────► REJECTED
+
+      │
+
+      └────────► CANCELLED
+```
+
+Only the backend may perform ticket state transitions.
+
+---
+
+## 9.4 Administrator Review
+
+Only administrators may review emergency tickets.
+
+During review, an administrator may:
+
+- approve the request;
+- reject the request.
+
+Administrative decisions must be recorded by the backend.
+
+---
+
+## 9.5 Approval
+
+When an emergency ticket is approved, the backend must:
+
+- update the ticket status;
+- record the reviewing administrator;
+- record the review timestamp;
+- notify the volunteer;
+- generate activity history;
+- generate audit records.
+
+Approval permits the volunteer to proceed according to the approved workflow.
+
+---
+
+## 9.6 Rejection
+
+When an emergency ticket is rejected, the backend must:
+
+- update the ticket status;
+- record the reviewing administrator;
+- record the review timestamp;
+- notify the volunteer;
+- generate activity history;
+- generate audit records.
+
+Rejection does not complete attendance.
+
+The volunteer remains subject to normal attendance and presence monitoring rules.
+
+---
+
+## 9.7 Ticket Cancellation
+
+A pending emergency ticket may be cancelled before administrative review, subject to business rules.
+
+Cancelled tickets remain stored for historical reference.
+
+Cancellation generates appropriate activity history and audit records.
+
+---
+
+## 9.8 Multiple Emergency Tickets
+
+A volunteer may submit multiple emergency tickets during the same attendance session, subject to backend validation.
+
+Each ticket is treated as an independent business record.
+
+Historical tickets must remain available for reporting and auditing.
+
+---
+
+## 9.9 Validation Rules
+
+Emergency ticket operations must reject requests when:
+
+- attendance does not exist;
+- attendance has already been completed;
+- the event is not active;
+- the user lacks permission;
+- required information is missing;
+- the requested operation violates ticket state rules.
+
+---
+
+## 9.10 Related System Actions
+
+Emergency ticket operations may automatically generate:
+
+- notifications;
+- activity history records;
+- audit log records.
+
+These records are generated by backend services without client involvement.
+
+---
+
+## 9.11 Error Handling
+
+Emergency ticket operations must return appropriate business-level errors.
+
+Examples include:
+
+- attendance not found;
+- event not active;
+- emergency ticket not found;
+- ticket already reviewed;
+- insufficient permissions;
+- invalid ticket state.
+
+Responses must follow the standard API error format.
+
+---
+
+## 9.12 Data Integrity
+
+Emergency tickets are permanent historical records.
+
+Backend services must preserve ticket history even after approval, rejection, or cancellation.
+
+Historical ticket records should not be deleted through normal application operations.
+
+# 10. Volunteer Block Rules
+
+## Purpose
+
+Volunteer blocks are temporary participation restrictions applied by administrators.
+
+A volunteer block prevents a volunteer from participating in future events until the restriction is removed.
+
+The backend is responsible for creating, enforcing, and removing volunteer blocks.
+
+---
+
+## 10.1 Backend Authority
+
+Volunteer blocks may only be created or removed by administrators.
+
+Members cannot:
+
+- create volunteer blocks;
+- modify volunteer blocks;
+- remove volunteer blocks.
+
+All volunteer block operations must be authorized by the backend.
+
+---
+
+## 10.2 Block Eligibility
+
+A volunteer block may be applied when administrative action is required.
+
+Examples include:
+
+- repeated attendance violations;
+- misuse of emergency tickets;
+- repeated unauthorized boundary exits;
+- other policy violations determined by administrators.
+
+The backend records the administrative reason for every volunteer block.
+
+---
+
+## 10.3 Volunteer Block Lifecycle
+
+Volunteer blocks progress through the following lifecycle.
+
+```
+ACTIVE
+
+↓
+
+REMOVED
+```
+
+Only the backend may perform block state transitions.
+
+---
+
+## 10.4 Active Restrictions
+
+While a volunteer has an active block:
+
+- new event participation must be rejected;
+- new attendance records must not be created;
+- participation eligibility checks must fail.
+
+Existing historical records remain unchanged.
+
+---
+
+## 10.5 Removing a Volunteer Block
+
+Only administrators may remove an active volunteer block.
+
+When removing a block, the backend must:
+
+- update the block status;
+- record the administrator performing the action;
+- record the removal timestamp;
+- record the removal reason;
+- generate appropriate notifications;
+- generate activity history;
+- generate audit log records.
+
+Removing a block restores eligibility for future event participation.
+
+---
+
+## 10.6 Historical Records
+
+Volunteer block records are permanent historical records.
+
+Removing a block updates its status to `REMOVED`.
+
+Historical block records must not be deleted through normal application operations.
+
+---
+
+## 10.7 Validation Rules
+
+Volunteer block operations must reject requests when:
+
+- the volunteer does not exist;
+- the requesting user lacks administrator privileges;
+- the referenced volunteer block does not exist;
+- the requested operation violates the current block state.
+
+Validation must occur before modifying persistent data.
+
+---
+
+## 10.8 Related System Actions
+
+Volunteer block operations automatically generate:
+
+- notifications;
+- activity history records;
+- audit log records.
+
+These records are created by backend services.
+
+---
+
+## 10.9 Error Handling
+
+Volunteer block operations must return appropriate business-level errors.
+
+Examples include:
+
+- volunteer not found;
+- volunteer already has an active block;
+- volunteer block not found;
+- volunteer block already removed;
+- insufficient permissions.
+
+Responses must follow the standard API error format.
+
+---
+
+## 10.10 Data Integrity
+
+The backend must ensure that:
+
+- a volunteer cannot have multiple active blocks simultaneously;
+- historical block records remain immutable;
+- participation eligibility is always evaluated before attendance creation;
+- block state changes are performed atomically to prevent inconsistent system state.
+
+# 11. Notification Rules
+
+## Purpose
+
+Notifications inform users about significant system events and actions that require their attention.
+
+The backend is responsible for generating, storing, and managing notifications. Notifications are created automatically as part of backend workflows and must never rely on client-side generation.
+
+---
+
+## 11.1 Notification Generation
+
+Notifications are generated automatically when significant business events occur.
+
+Examples include:
+
+- successful check-in;
+- successful check-out;
+- volunteer leaves the event boundary;
+- volunteer returns to the event boundary;
+- emergency ticket submitted;
+- emergency ticket approved;
+- emergency ticket rejected;
+- emergency ticket cancelled;
+- volunteer block applied;
+- volunteer block removed;
+- administrative announcements.
+
+Clients must not create notifications directly.
+
+---
+
+## 11.2 Notification Ownership
+
+Every notification belongs to exactly one user.
+
+A notification may optionally reference:
+
+- an event;
+- an attendance record.
+
+The backend determines the appropriate recipient for every notification.
+
+---
+
+## 11.3 Notification Lifecycle
+
+Notifications progress through the following lifecycle.
+
+```
+UNREAD
+
+↓
+
+READ
+```
+
+The backend manages notification status transitions.
+
+---
+
+## 11.4 Notification Delivery
+
+When a notification is generated, the backend must:
+
+- create the notification record;
+- associate it with the appropriate user;
+- record the creation timestamp;
+- initialize the notification status as `UNREAD`.
+
+Notification delivery mechanisms are implementation-specific and do not affect the business rules.
+
+---
+
+## 11.5 Marking Notifications as Read
+
+Users may mark their own notifications as read.
+
+The backend must:
+
+- verify notification ownership;
+- update the notification status to `READ`;
+- record the read timestamp.
+
+Users must not modify notifications belonging to other users.
+
+---
+
+## 11.6 Notification History
+
+Notifications remain stored after being read.
+
+Read notifications remain available for:
+
+- user reference;
+- reporting;
+- auditing where applicable.
+
+Notifications should not be deleted through normal application operations.
+
+---
+
+## 11.7 Validation Rules
+
+Notification operations must reject requests when:
+
+- the notification does not exist;
+- the authenticated user does not own the notification;
+- the request is unauthorized.
+
+Validation must occur before updating notification status.
+
+---
+
+## 11.8 Related System Actions
+
+Notification generation may also create:
+
+- activity history records;
+- audit log records where applicable.
+
+These actions are performed automatically by backend services.
+
+---
+
+## 11.9 Error Handling
+
+Notification-related operations must return appropriate business-level errors.
+
+Examples include:
+
+- notification not found;
+- unauthorized notification access;
+- insufficient permissions.
+
+Responses must follow the standard API error format.
+
+---
+
+## 11.10 Data Integrity
+
+The backend must ensure that:
+
+- notifications remain associated with their intended recipient;
+- notification history is preserved;
+- notification status transitions remain valid;
+- notification timestamps are generated by the server.
+
+Notification records should remain immutable except for status updates permitted by business rules.
+
+# 12. Activity History Rules
+
+## Purpose
+
+Activity history provides a chronological record of significant business events performed by or affecting a user.
+
+The backend is responsible for automatically generating activity history records as part of normal business workflows.
+
+Activity history is intended for user-facing timelines and reporting rather than administrative auditing.
+
+---
+
+## 12.1 Activity Generation
+
+Activity history records must be generated automatically when significant business events occur.
+
+Examples include:
+
+- successful check-in;
+- successful check-out;
+- volunteer leaves the event boundary;
+- volunteer returns to the event boundary;
+- emergency ticket submitted;
+- emergency ticket approved;
+- emergency ticket rejected;
+- emergency ticket cancelled;
+- volunteer block applied;
+- volunteer block removed;
+- event participation completed.
+
+Clients must never create activity history records directly.
+
+---
+
+## 12.2 Activity Ownership
+
+Each activity history record belongs to exactly one user.
+
+A record may optionally reference:
+
+- an event;
+- an attendance record.
+
+The backend determines the appropriate associations when creating activity history records.
+
+---
+
+## 12.3 Chronological Timeline
+
+Activity history must preserve the chronological order of business events.
+
+The backend records the timestamp when each activity occurs.
+
+Historical ordering must remain consistent regardless of when records are viewed.
+
+---
+
+## 12.4 Automatic Generation
+
+Activity history is generated by backend services during normal workflow execution.
+
+Business services are responsible for creating activity history records as part of successful operations.
+
+Clients are responsible only for displaying activity history returned by the backend.
+
+---
+
+## 12.5 Activity Categories
+
+Each activity history record must include:
+
+- activity category;
+- activity type;
+- title;
+- description;
+- creation timestamp.
+
+These fields provide sufficient context for users to understand the recorded activity.
+
+---
+
+## 12.6 Historical Preservation
+
+Activity history records are permanent historical records.
+
+Records should not be modified or deleted through normal application operations.
+
+Historical activity provides accountability and supports reporting.
+
+---
+
+## 12.7 Validation Rules
+
+Activity history operations must ensure:
+
+- referenced users exist;
+- referenced entities are valid when applicable;
+- required activity information is present;
+- timestamps are generated by the server.
+
+---
+
+## 12.8 Related System Actions
+
+Activity history is generated alongside many backend operations.
+
+Examples include:
+
+- attendance operations;
+- presence monitoring;
+- emergency ticket workflow;
+- volunteer block management;
+- notification generation where appropriate.
+
+Generation of activity history must not require additional client interaction.
+
+---
+
+## 12.9 Error Handling
+
+Failures to retrieve activity history must return appropriate business-level errors.
+
+Examples include:
+
+- user not found;
+- unauthorized access;
+- invalid request parameters.
+
+Responses must follow the standard API error format.
+
+---
+
+## 12.10 Data Integrity
+
+The backend must ensure that:
+
+- activity history accurately reflects completed business operations;
+- activity records remain chronologically ordered;
+- duplicate activity records are not created for the same business event;
+- historical records remain immutable after creation.
+
+# 13. Audit Log Rules
+
+## Purpose
+
+Audit logs provide a permanent record of significant administrative and system actions performed within the application.
+
+The backend is responsible for automatically generating audit log records to support accountability, security investigations, compliance, and troubleshooting.
+
+Audit logs are intended for administrative use and are not user-facing.
+
+---
+
+## 13.1 Audit Log Generation
+
+Audit log records must be generated automatically whenever significant administrative or security-sensitive actions occur.
+
+Examples include:
+
+- user authentication;
+- event creation;
+- event modification;
+- event activation;
+- event completion;
+- emergency ticket approval;
+- emergency ticket rejection;
+- volunteer block creation;
+- volunteer block removal;
+- attendance administration.
+
+Clients must never create audit log records directly.
+
+---
+
+## 13.2 Audit Ownership
+
+Each audit log records the actor responsible for the operation.
+
+Where applicable, the backend records:
+
+- authenticated user;
+- affected entity;
+- related event;
+- related attendance record;
+- action timestamp.
+
+System-generated operations without an authenticated user may record a null actor.
+
+---
+
+## 13.3 Recorded Information
+
+Each audit log should include sufficient information to identify:
+
+- who performed the action;
+- what action occurred;
+- which entity was affected;
+- when the action occurred;
+- additional contextual metadata where appropriate.
+
+Sensitive information must not be stored unnecessarily.
+
+---
+
+## 13.4 Automatic Generation
+
+Audit log records are generated by backend services as part of successful business operations.
+
+Business services are responsible for creating audit records during administrative workflows.
+
+Clients are responsible only for displaying audit information returned by authorized backend endpoints.
+
+---
+
+## 13.5 Historical Preservation
+
+Audit logs are permanent historical records.
+
+Audit log entries must not be modified or deleted through normal application operations.
+
+Historical audit data supports accountability and compliance.
+
+---
+
+## 13.6 Security Requirements
+
+Audit logs must:
+
+- accurately represent completed operations;
+- be protected from unauthorized modification;
+- be accessible only to authorized administrators;
+- avoid exposing sensitive credentials or secrets.
+
+Authentication credentials, password hashes, and security secrets must never be recorded in audit logs.
+
+---
+
+## 13.7 Validation Rules
+
+Audit log generation must ensure:
+
+- referenced entities exist when applicable;
+- timestamps are generated by the server;
+- actor information is correctly associated;
+- recorded actions accurately reflect completed operations.
+
+---
+
+## 13.8 Related System Actions
+
+Audit logs may be generated during:
+
+- authentication;
+- event management;
+- attendance operations;
+- presence monitoring;
+- emergency ticket workflow;
+- volunteer block management;
+- administrative configuration changes.
+
+Audit log generation should occur automatically without additional client interaction.
+
+---
+
+## 13.9 Error Handling
+
+Audit logging failures must not expose internal implementation details to clients.
+
+Where appropriate:
+
+- the primary business operation should complete successfully;
+- audit logging failures should be recorded for administrative investigation.
+
+Responses returned to clients must follow the standard API error format.
+
+---
+
+## 13.10 Data Integrity
+
+The backend must ensure that:
+
+- audit log entries remain immutable after creation;
+- duplicate audit records are not generated for the same completed action;
+- chronological ordering is preserved;
+- audit history remains available for authorized administrative access.
+
