@@ -260,3 +260,132 @@ If you get "DATABASE_URL not set" error, copy `.env.example` to `.env` and fill 
 cp backend/.env.example backend/.env
 # Edit backend/.env with your local database URL and generated JWT secret
 ```
+# 13. Phase 3 Environment Extensions
+
+Phase 3 extends the backend environment configuration to support activity management, activity evidence, and reusable templates.
+
+The existing authentication, database, and logging configuration remain unchanged.
+
+---
+
+## 13.1 Additional Environment Variables
+
+The following optional environment variables are introduced for the Activity Layer.
+
+| Variable | Type | Default | Required | Notes |
+|---|---|---|---|---|
+| `ACTIVITY_MEDIA_ROOT` | string | `./media/activities` | no | Root directory for activity evidence |
+| `MAX_ACTIVITY_PHOTOS` | int | `10` | no | Maximum photos per activity submission |
+| `MAX_ACTIVITY_VIDEOS` | int | `2` | no | Maximum videos per activity submission |
+| `MAX_VIDEO_DURATION_SECONDS` | int | `60` | no | Maximum video duration |
+| `MAX_PHOTO_SIZE_MB` | int | `5` | no | Maximum uploaded photo size |
+| `MAX_VIDEO_SIZE_MB` | int | `100` | no | Maximum uploaded video size |
+
+---
+
+## 13.2 Updated `.env.example`
+
+Append the following values.
+
+```env
+# Activity Layer
+
+ACTIVITY_MEDIA_ROOT=./media/activities
+
+MAX_ACTIVITY_PHOTOS=10
+
+MAX_ACTIVITY_VIDEOS=2
+
+MAX_VIDEO_DURATION_SECONDS=60
+
+MAX_PHOTO_SIZE_MB=5
+
+MAX_VIDEO_SIZE_MB=100
+```
+
+---
+
+## 13.3 Activity Media Storage
+
+Activity evidence is stored separately from attendance evidence.
+
+```
+media/
+
+├── attendance/
+
+└── activities/
+
+    ├── photos/
+
+    └── videos/
+```
+
+Only metadata is stored in PostgreSQL.
+
+Physical files remain in the configured media directory.
+
+---
+
+## 13.4 File Optimization
+
+Before storing evidence:
+
+- optimize images while preserving review quality;
+- compress videos where appropriate;
+- preserve sufficient quality for administrator review.
+
+Optimization should reduce storage requirements without affecting usability.
+
+---
+
+## 13.5 Database Configuration
+
+No additional database connection settings are required.
+
+Phase 3 uses the existing:
+
+- PostgreSQL configuration;
+- SQLAlchemy configuration;
+- Alembic migration process;
+- connection pooling.
+
+Only new migrations are added.
+
+---
+
+## 13.6 Deployment Notes
+
+Deployment should additionally verify:
+
+- activity media directory exists;
+- directory permissions allow uploads;
+- sufficient storage capacity exists;
+- media directory is excluded from version control.
+
+---
+
+## 13.7 Environment Checklist
+
+Before running Phase 3:
+
+- verify activity media directory exists;
+- verify upload limits are configured;
+- verify database migrations executed successfully;
+- verify media directory permissions;
+- verify evidence uploads succeed.
+
+---
+
+## 13.8 Phase 3 Environment Principles
+
+Phase 3 follows the existing environment strategy.
+
+Principles:
+
+- configuration through environment variables;
+- no hard-coded paths;
+- upload limits remain configurable;
+- media stored outside source code;
+- database configuration remains unchanged;
+- environment-specific configuration remains supported.

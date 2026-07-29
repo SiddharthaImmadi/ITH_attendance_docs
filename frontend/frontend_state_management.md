@@ -659,70 +659,6 @@ Authentication State should emphasize:
 - reliability;
 - predictable lifecycle.
 
-# 6. User State
-
-User State represents profile information associated with the authenticated user.
-
-Unlike Authentication State, which identifies the user, User State provides information used throughout the application experience.
-
----
-
-## 6.1 Purpose
-
-User State supports personalization and role-aware user experiences.
-
-It provides information required by multiple application features without duplicating backend data.
-
----
-
-## 6.2 Managed Information
-
-Examples include:
-
-- profile information;
-- display name;
-- assigned role;
-- user preferences;
-- profile settings.
-
-User State should contain only information relevant to the current user.
-
----
-
-## 6.3 Synchronization
-
-User information originates from the backend.
-
-Whenever profile information changes, User State should synchronize with the latest backend data.
-
-The frontend should avoid maintaining conflicting profile information.
-
----
-
-## 6.4 Scope
-
-User State is shared across all authenticated screens.
-
-Multiple interfaces may reference User State simultaneously.
-
----
-
-## 6.5 Lifetime
-
-User State remains available throughout the authenticated session.
-
-It is cleared when authentication ends.
-
----
-
-## 6.6 Design Principles
-
-User State should emphasize:
-
-- consistency;
-- minimal duplication;
-- backend synchronization;
-- efficient access.
 
 # 6. User State
 
@@ -789,7 +725,7 @@ User State should emphasize:
 - backend synchronization;
 - efficient access.
 
-# 8. Attendance State
+# 7. Attendance State
 
 Attendance State represents a participant's involvement in an event.
 
@@ -797,7 +733,7 @@ It is one of the most dynamic categories of application state and changes throug
 
 ---
 
-## 8.1 Purpose
+## 7.1 Purpose
 
 Attendance State supports:
 
@@ -810,7 +746,7 @@ It provides participants and administrators with accurate attendance information
 
 ---
 
-## 8.2 Managed Information
+## 7.2 Managed Information
 
 Examples include:
 
@@ -824,7 +760,7 @@ Attendance decisions always originate from the backend.
 
 ---
 
-## 8.3 Attendance Lifecycle
+## 7.3 Attendance Lifecycle
 
 ```text
 Not Started
@@ -846,7 +782,7 @@ Attendance State should always reflect the participant's latest backend status.
 
 ---
 
-## 8.4 Synchronization
+## 7.4 Synchronization
 
 Attendance State should synchronize automatically while attendance remains active.
 
@@ -854,7 +790,7 @@ Synchronization frequency should balance responsiveness with efficient resource 
 
 ---
 
-## 8.5 Scope
+## 7.5 Scope
 
 Attendance State is shared between:
 
@@ -867,7 +803,7 @@ All interfaces should display consistent attendance information.
 
 ---
 
-## 8.6 State Transitions
+## 7.6 State Transitions
 
 Attendance transitions should occur only after backend confirmation.
 
@@ -875,7 +811,7 @@ The frontend should never independently determine attendance outcomes.
 
 ---
 
-## 8.7 Design Principles
+## 7.7 Design Principles
 
 Attendance State should emphasize:
 
@@ -884,7 +820,7 @@ Attendance State should emphasize:
 - real-time synchronization;
 - backend authority.
 
-# 9. Presence Monitoring State
+# 8. Presence Monitoring State
 
 Presence Monitoring State represents a participant's real-time location status during an active attendance.
 
@@ -892,7 +828,7 @@ Unlike Attendance State, which tracks participation within an event, Presence Mo
 
 ---
 
-## 9.1 Purpose
+## 8.1 Purpose
 
 Presence Monitoring State supports:
 
@@ -906,7 +842,7 @@ Presence Monitoring exists only while attendance remains active.
 
 ---
 
-## 9.2 Managed Information
+## 8.2 Managed Information
 
 Examples include:
 
@@ -920,7 +856,7 @@ Presence information should always reflect the latest backend state.
 
 ---
 
-## 9.3 Lifecycle
+## 8.3 Lifecycle
 
 Presence Monitoring follows the active attendance lifecycle.
 
@@ -948,7 +884,7 @@ Monitoring should automatically begin and end according to the attendance lifecy
 
 ---
 
-## 9.4 Synchronization
+## 8.4 Synchronization
 
 Presence Monitoring requires frequent synchronization while attendance is active.
 
@@ -962,7 +898,7 @@ Synchronization frequency should balance responsiveness and resource usage.
 
 ---
 
-## 9.5 Scope
+## 8.5 Scope
 
 Presence Monitoring State is shared by:
 
@@ -974,7 +910,7 @@ Every interface should display consistent presence information.
 
 ---
 
-## 9.6 Design Principles
+## 8.6 Design Principles
 
 Presence Monitoring State should emphasize:
 
@@ -983,7 +919,7 @@ Presence Monitoring State should emphasize:
 - minimal latency;
 - backend authority.
 
-# 10. Emergency Ticket State
+# 9. Emergency Ticket State
 
 Emergency Ticket State represents participant requests submitted during an active attendance that require administrative review.
 
@@ -991,7 +927,7 @@ This state tracks the complete lifecycle of an emergency ticket from submission 
 
 ---
 
-## 10.1 Purpose
+## 9.1 Purpose
 
 Emergency Ticket State supports:
 
@@ -1004,7 +940,7 @@ The frontend facilitates communication without evaluating ticket validity.
 
 ---
 
-## 10.2 Managed Information
+## 9.2 Managed Information
 
 Examples include:
 
@@ -1018,7 +954,7 @@ Ticket decisions originate exclusively from the backend.
 
 ---
 
-## 10.3 Lifecycle
+## 9.3 Lifecycle
 
 ```text
 Not Created
@@ -1044,7 +980,7 @@ The frontend should present the current lifecycle stage without modifying backen
 
 ---
 
-## 10.4 Synchronization
+## 9.4 Synchronization
 
 Emergency Ticket State should synchronize whenever:
 
@@ -1056,7 +992,7 @@ Relevant screens should update automatically.
 
 ---
 
-## 10.5 Scope
+## 9.5 Scope
 
 Emergency Ticket State is shared between:
 
@@ -1069,7 +1005,7 @@ All interfaces should present consistent ticket information.
 
 ---
 
-## 10.6 Design Principles
+## 9.6 Design Principles
 
 Emergency Ticket State should emphasize:
 
@@ -1078,7 +1014,7 @@ Emergency Ticket State should emphasize:
 - predictable lifecycle;
 - backend authority.
 
-# 11. Volunteer Block State
+# 10. Volunteer Block State
 
 Volunteer Block State represents temporary participation restrictions applied by administrators.
 
@@ -1086,7 +1022,7 @@ This state determines whether a participant is currently eligible to participate
 
 ---
 
-## 11.1 Purpose
+## 10.1 Purpose
 
 Volunteer Block State supports:
 
@@ -1099,7 +1035,7 @@ Eligibility decisions remain the responsibility of the backend.
 
 ---
 
-## 11.2 Managed Information
+## 10.2 Managed Information
 
 Examples include:
 
@@ -1112,7 +1048,7 @@ The frontend should present volunteer block information without modifying it.
 
 ---
 
-## 11.3 Lifecycle
+## 10.3 Lifecycle
 
 ```text
 No Restriction
@@ -1134,7 +1070,7 @@ Changes should become visible as soon as backend state is updated.
 
 ---
 
-## 11.4 Synchronization
+## 10.4 Synchronization
 
 Volunteer Block State should synchronize whenever:
 
@@ -1146,7 +1082,7 @@ Only affected interfaces should refresh.
 
 ---
 
-## 11.5 Scope
+## 10.5 Scope
 
 Volunteer Block State is primarily consumed by:
 
@@ -1158,7 +1094,7 @@ Participant-facing interfaces should clearly communicate eligibility where appli
 
 ---
 
-## 11.6 Design Principles
+## 10.6 Design Principles
 
 Volunteer Block State should emphasize:
 
@@ -1167,7 +1103,7 @@ Volunteer Block State should emphasize:
 - predictable synchronization;
 - operational visibility.
 
-# 12. Notification State
+# 11. Notification State
 
 Notification State manages user notifications generated by backend events.
 
@@ -1175,7 +1111,7 @@ Notifications communicate important attendance and administrative updates to use
 
 ---
 
-## 12.1 Purpose
+## 11.1 Purpose
 
 Notification State supports:
 
@@ -1188,7 +1124,7 @@ Notifications should help users remain informed without disrupting their current
 
 ---
 
-## 12.2 Managed Information
+## 11.2 Managed Information
 
 Examples include:
 
@@ -1202,7 +1138,7 @@ Notification content originates from the backend.
 
 ---
 
-## 12.3 Lifecycle
+## 11.3 Lifecycle
 
 ```text
 Generated
@@ -1228,7 +1164,7 @@ Notification lifecycle should remain synchronized across all interfaces.
 
 ---
 
-## 12.4 Synchronization
+## 11.4 Synchronization
 
 Notification State should synchronize whenever:
 
@@ -1240,7 +1176,7 @@ The application should refresh notification indicators automatically.
 
 ---
 
-## 12.5 Scope
+## 11.5 Scope
 
 Notification State is shared across:
 
@@ -1253,7 +1189,7 @@ Notification indicators should remain consistent throughout the application.
 
 ---
 
-## 12.6 Design Principles
+## 11.6 Design Principles
 
 Notification State should emphasize:
 
@@ -1262,7 +1198,7 @@ Notification State should emphasize:
 - discoverability;
 - synchronization.
 
-# 13. Activity History State
+# 12. Activity History State
 
 Activity History State maintains a historical record of significant application events associated with the authenticated user.
 
@@ -1270,7 +1206,7 @@ This information provides users with a chronological view of their participation
 
 ---
 
-## 13.1 Purpose
+## 12.1 Purpose
 
 Activity History State supports:
 
@@ -1283,7 +1219,7 @@ Historical records are informational and cannot be modified through the frontend
 
 ---
 
-## 13.2 Managed Information
+## 12.2 Managed Information
 
 Examples include:
 
@@ -1297,7 +1233,7 @@ Activities should appear in chronological order.
 
 ---
 
-## 13.3 Lifecycle
+## 12.3 Lifecycle
 
 ```text
 Activity Occurs
@@ -1323,7 +1259,7 @@ Historical records remain available according to backend retention policies.
 
 ---
 
-## 13.4 Synchronization
+## 12.4 Synchronization
 
 Activity History should synchronize whenever new historical records become available.
 
@@ -1331,7 +1267,7 @@ Synchronization does not require continuous updates while no new activity occurs
 
 ---
 
-## 13.5 Scope
+## 12.5 Scope
 
 Activity History is consumed by:
 
@@ -1343,7 +1279,7 @@ Historical information should remain consistent across all interfaces.
 
 ---
 
-## 13.6 Design Principles
+## 12.6 Design Principles
 
 Activity History State should emphasize:
 
@@ -1352,7 +1288,7 @@ Activity History State should emphasize:
 - readability;
 - backend authority.
 
-# 14. Report State
+# 13. Report State
 
 Report State represents administrative reporting information available within the application.
 
@@ -1362,7 +1298,7 @@ Reports are generated from backend data and presented by the frontend without mo
 
 ---
 
-## 14.1 Purpose
+## 13.1 Purpose
 
 Report State supports:
 
@@ -1376,7 +1312,7 @@ Reports are informational and do not modify application data.
 
 ---
 
-## 14.2 Managed Information
+## 13.2 Managed Information
 
 Examples include:
 
@@ -1390,7 +1326,7 @@ Report contents originate from the backend.
 
 ---
 
-## 14.3 Lifecycle
+## 13.3 Lifecycle
 
 ```text
 Report Requested
@@ -1416,7 +1352,7 @@ Reports should remain available according to backend retention policies.
 
 ---
 
-## 14.4 Synchronization
+## 13.4 Synchronization
 
 Report State should synchronize whenever:
 
@@ -1428,7 +1364,7 @@ Previously generated reports should remain accessible whenever possible.
 
 ---
 
-## 14.5 Scope
+## 13.5 Scope
 
 Report State is primarily consumed by:
 
@@ -1440,7 +1376,7 @@ Participant interfaces should not consume administrative reporting state.
 
 ---
 
-## 14.6 Design Principles
+## 13.6 Design Principles
 
 Report State should emphasize:
 
@@ -1449,7 +1385,7 @@ Report State should emphasize:
 - historical accuracy;
 - backend authority.
 
-# 15. UI State
+# 14. UI State
 
 UI State represents temporary interface information required to support user interactions.
 
@@ -1457,7 +1393,7 @@ Unlike business data, UI State exists solely to improve the user experience and 
 
 ---
 
-## 15.1 Purpose
+## 14.1 Purpose
 
 UI State supports:
 
@@ -1470,7 +1406,7 @@ UI State should never contain business decisions.
 
 ---
 
-## 15.2 Managed Information
+## 14.2 Managed Information
 
 Examples include:
 
@@ -1486,7 +1422,7 @@ UI State should remain local whenever practical.
 
 ---
 
-## 15.3 Lifecycle
+## 14.3 Lifecycle
 
 ```text
 User Interaction
@@ -1512,7 +1448,7 @@ UI State should exist only while it improves the current interaction.
 
 ---
 
-## 15.4 Scope
+## 14.4 Scope
 
 Most UI State is screen-specific.
 
@@ -1520,7 +1456,7 @@ Only interface state that benefits multiple screens should be shared.
 
 ---
 
-## 15.5 Persistence
+## 14.5 Persistence
 
 Temporary interface state should normally be discarded after navigation.
 
@@ -1528,7 +1464,7 @@ Only user preferences intended to improve future interactions should persist bet
 
 ---
 
-## 15.6 Design Principles
+## 14.6 Design Principles
 
 UI State should emphasize:
 
@@ -1537,7 +1473,7 @@ UI State should emphasize:
 - predictability;
 - minimal persistence.
 
-# 16. Server State
+# 15. Server State
 
 Server State represents business information retrieved from backend services.
 
@@ -1545,7 +1481,7 @@ It forms the foundation of the application's operational data and should always 
 
 ---
 
-## 16.1 Purpose
+## 15.1 Purpose
 
 Server State supports:
 
@@ -1558,7 +1494,7 @@ The frontend consumes Server State but does not own it.
 
 ---
 
-## 16.2 Characteristics
+## 15.2 Characteristics
 
 Server State differs from UI State because it:
 
@@ -1569,7 +1505,7 @@ Server State differs from UI State because it:
 
 ---
 
-## 16.3 Examples
+## 15.3 Examples
 
 Server State includes:
 
@@ -1585,7 +1521,7 @@ Server State includes:
 
 ---
 
-## 16.4 Synchronization
+## 15.4 Synchronization
 
 Server State should remain synchronized with backend services throughout the application lifecycle.
 
@@ -1597,7 +1533,7 @@ Synchronization strategies should prioritize:
 
 ---
 
-## 16.5 Design Principles
+## 15.5 Design Principles
 
 Server State should emphasize:
 
@@ -1606,7 +1542,7 @@ Server State should emphasize:
 - efficient synchronization;
 - predictable updates.
 
-# 17. State Synchronization
+# 16. State Synchronization
 
 State Synchronization ensures that frontend state accurately reflects backend information throughout the application.
 
@@ -1614,7 +1550,7 @@ Synchronization should occur automatically whenever business data changes.
 
 ---
 
-## 17.1 Purpose
+## 16.1 Purpose
 
 Synchronization maintains consistency between:
 
@@ -1626,7 +1562,7 @@ Users should rarely need to manually refresh information.
 
 ---
 
-## 17.2 Synchronization Triggers
+## 16.2 Synchronization Triggers
 
 Examples include:
 
@@ -1642,7 +1578,7 @@ Only affected state should be synchronized whenever practical.
 
 ---
 
-## 17.3 Synchronization Strategy
+## 16.3 Synchronization Strategy
 
 Synchronization should:
 
@@ -1653,7 +1589,7 @@ Synchronization should:
 
 ---
 
-## 17.4 Conflict Resolution
+## 16.4 Conflict Resolution
 
 If frontend and backend state differ, backend information always takes precedence.
 
@@ -1661,7 +1597,7 @@ The frontend should discard outdated local information and synchronize with the 
 
 ---
 
-## 17.5 Design Principles
+## 16.5 Design Principles
 
 Synchronization should emphasize:
 
@@ -1670,7 +1606,7 @@ Synchronization should emphasize:
 - backend authority;
 - predictable updates.
 
-# 18. Cache Management
+# 17. Cache Management
 
 Cache Management improves application responsiveness by temporarily storing recently retrieved backend information.
 
@@ -1678,7 +1614,7 @@ Caching should reduce unnecessary network requests without compromising data acc
 
 ---
 
-## 18.1 Purpose
+## 17.1 Purpose
 
 Caching supports:
 
@@ -1689,7 +1625,7 @@ Caching supports:
 
 ---
 
-## 18.2 Cached Information
+## 17.2 Cached Information
 
 Examples include:
 
@@ -1704,7 +1640,7 @@ Only backend-managed information should be cached.
 
 ---
 
-## 18.3 Cache Refresh
+## 17.3 Cache Refresh
 
 Cached information should refresh whenever:
 
@@ -1714,7 +1650,7 @@ Cached information should refresh whenever:
 
 ---
 
-## 18.4 Cache Invalidation
+## 17.4 Cache Invalidation
 
 Outdated cached information should be discarded promptly after significant business operations.
 
@@ -1727,7 +1663,7 @@ Examples include:
 
 ---
 
-## 18.5 Design Principles
+## 17.5 Design Principles
 
 Cache Management should emphasize:
 
@@ -1736,7 +1672,7 @@ Cache Management should emphasize:
 - freshness;
 - predictable behavior.
 
-# 19. Background Updates
+# 18. Background Updates
 
 Background Updates keep important application information current without interrupting user interactions.
 
@@ -1744,7 +1680,7 @@ They improve operational awareness while reducing manual refresh requirements.
 
 ---
 
-## 19.1 Purpose
+## 18.1 Purpose
 
 Background Updates support:
 
@@ -1757,7 +1693,7 @@ Updates should occur without disrupting the current workflow.
 
 ---
 
-## 19.2 Continuous Updates
+## 18.2 Continuous Updates
 
 Examples include:
 
@@ -1770,7 +1706,7 @@ Only information requiring timely updates should synchronize continuously.
 
 ---
 
-## 19.3 Resource Management
+## 18.3 Resource Management
 
 Background activity should:
 
@@ -1782,7 +1718,7 @@ Resource efficiency is an important architectural consideration.
 
 ---
 
-## 19.4 Design Principles
+## 18.4 Design Principles
 
 Background Updates should emphasize:
 
@@ -1791,7 +1727,7 @@ Background Updates should emphasize:
 - minimal interruption;
 - automatic synchronization.
 
-# 20. Error Recovery
+# 19. Error Recovery
 
 Error Recovery defines how state should behave when synchronization or backend communication fails.
 
@@ -1799,7 +1735,7 @@ Recovery strategies should preserve user confidence while restoring normal appli
 
 ---
 
-## 20.1 Purpose
+## 19.1 Purpose
 
 Error Recovery supports:
 
@@ -1810,7 +1746,7 @@ Error Recovery supports:
 
 ---
 
-## 20.2 Recovery Strategy
+## 19.2 Recovery Strategy
 
 Whenever possible, the application should:
 
@@ -1821,7 +1757,7 @@ Whenever possible, the application should:
 
 ---
 
-## 20.3 State Restoration
+## 19.3 State Restoration
 
 Recovered state should accurately reflect the latest backend information.
 
@@ -1829,7 +1765,7 @@ The frontend should discard inconsistent local state whenever backend synchroniz
 
 ---
 
-## 20.4 Design Principles
+## 19.4 Design Principles
 
 Error Recovery should emphasize:
 
@@ -1838,7 +1774,7 @@ Error Recovery should emphasize:
 - consistency;
 - backend authority.
 
-# 21. Performance Considerations
+# 20. Performance Considerations
 
 Efficient state management contributes directly to application responsiveness and scalability.
 
@@ -1846,7 +1782,7 @@ Performance improvements should simplify the user experience without compromisin
 
 ---
 
-## 21.1 Objectives
+## 20.1 Objectives
 
 State management should strive to:
 
@@ -1857,7 +1793,7 @@ State management should strive to:
 
 ---
 
-## 21.2 Efficient Updates
+## 20.2 Efficient Updates
 
 Only information affected by a business operation should be refreshed.
 
@@ -1865,7 +1801,7 @@ Large-scale state updates should be avoided unless required.
 
 ---
 
-## 21.3 Resource Utilization
+## 20.3 Resource Utilization
 
 State management should make efficient use of:
 
@@ -1877,7 +1813,7 @@ Application responsiveness should remain a primary objective.
 
 ---
 
-## 21.4 Scalability
+## 20.4 Scalability
 
 The architecture should support future application growth without requiring fundamental changes to state organization.
 
@@ -1885,7 +1821,7 @@ New business features should integrate into existing state categories whenever p
 
 ---
 
-## 21.5 Design Principles
+## 20.5 Design Principles
 
 Performance should emphasize:
 
@@ -1894,7 +1830,7 @@ Performance should emphasize:
 - maintainability;
 - predictable behavior.
 
-# 22. Conclusion
+# 21. Conclusion
 
 The Frontend State Management architecture defines how application state is organized, synchronized, and maintained throughout the InnoTech Hub Attendance System.
 
@@ -1914,3 +1850,211 @@ Implementation-specific details, including framework APIs, hooks, context provid
 
 Together with the Frontend UI Specification, Routing Architecture, Component Guidelines, and Design System, this document provides the foundation for building a scalable, consistent, and maintainable frontend application.
 
+# 22. Phase 3 Activity State Management
+
+The Phase 3 Activity Layer introduces additional frontend state required to support activity management, volunteer assignments, progress tracking, evidence submission, administrative review, reusable templates, and activity reporting.
+
+As with all existing application state, the backend remains the authoritative source for business information.
+
+---
+
+## 22.1 Objectives
+
+The Activity Layer state architecture is designed to:
+
+- maintain consistent activity information;
+- synchronize assignment updates;
+- support progress tracking;
+- manage evidence uploads;
+- synchronize review decisions;
+- minimize duplicate state.
+
+---
+
+## 22.2 Activity State
+
+Activity State represents activities created for events.
+
+Examples include:
+
+- activity information;
+- activity status;
+- priority;
+- associated event;
+- assignment summary.
+
+Activity information originates from the backend.
+
+---
+
+## 22.3 Assignment State
+
+Assignment State represents volunteer assignments.
+
+Examples include:
+
+- assigned members;
+- assignment status;
+- assignment timestamps;
+- assignment history.
+
+Assignment State changes whenever administrators modify assignments.
+
+---
+
+## 22.4 Progress State
+
+Progress State represents timeline updates submitted by volunteers.
+
+Examples include:
+
+- progress entries;
+- timestamps;
+- descriptions;
+- submission status.
+
+Timeline entries should remain ordered chronologically.
+
+---
+
+## 22.5 Evidence State
+
+Evidence State manages uploaded photographs and videos associated with progress updates.
+
+Examples include:
+
+- upload status;
+- upload progress;
+- attachment metadata;
+- synchronization status.
+
+Evidence should become read-only after successful submission.
+
+---
+
+## 22.6 Review State
+
+Review State represents administrator review decisions.
+
+Examples include:
+
+- pending review;
+- verified;
+- needs changes;
+- reviewer remarks.
+
+Review State should synchronize immediately after administrator decisions.
+
+---
+
+## 22.7 Template State
+
+Template State represents reusable activity templates.
+
+Examples include:
+
+- template information;
+- template availability;
+- template categories;
+- usage history.
+
+Templates remain independent from generated activities.
+
+---
+
+## 22.8 Activity Report State
+
+Activity Report State represents generated activity reports.
+
+Examples include:
+
+- report availability;
+- generation status;
+- report metadata;
+- download status.
+
+Reports remain backend-generated.
+
+---
+
+## 22.9 Activity Synchronization
+
+Activity State should synchronize whenever:
+
+- activities are created;
+- activities are updated;
+- assignments change;
+- progress is submitted;
+- evidence uploads complete;
+- reviews are completed.
+
+Only affected state should refresh whenever practical.
+
+---
+
+## 22.10 Offline State
+
+Certain activity operations may continue while temporary connectivity is unavailable.
+
+Examples include:
+
+- progress updates;
+- evidence selection;
+- draft submissions.
+
+Locally stored information should synchronize automatically when connectivity returns.
+
+If evidence upload ultimately fails after submission, users should be informed that replacement evidence is required according to backend policies.
+
+---
+
+## 22.11 Cache Management
+
+Activity-related cache should include:
+
+- activity lists;
+- assignment summaries;
+- activity details;
+- review queues;
+- template lists.
+
+Cache invalidation should occur after successful business operations.
+
+---
+
+## 22.12 Background Updates
+
+Background synchronization should refresh:
+
+- assignment changes;
+- review decisions;
+- activity status;
+- progress updates.
+
+Updates should avoid unnecessary network requests while maintaining current information.
+
+---
+
+## 22.13 Error Recovery
+
+If synchronization fails:
+
+- preserve previously synchronized information;
+- retry synchronization where appropriate;
+- preserve locally entered progress whenever possible;
+- clearly communicate synchronization status.
+
+Backend state always replaces outdated local information after successful synchronization.
+
+---
+
+## 22.14 Design Principles
+
+The Activity Layer state architecture should emphasize:
+
+- backend authority;
+- predictable synchronization;
+- minimal duplication;
+- efficient caching;
+- offline resilience;
+- scalable organization.

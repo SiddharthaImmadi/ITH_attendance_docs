@@ -1563,3 +1563,499 @@ It establishes consistent standards for colors, typography, spacing, layouts, co
 All future frontend modules should reference this design system to ensure a cohesive, accessible, and maintainable user experience across administrator and member interfaces.
 
 As the application evolves, this design system should be extended through reusable design tokens and shared component patterns rather than introducing isolated visual styles or feature-specific conventions.
+
+# 15. Phase 3 Activity Layer Design System
+
+Phase 3 extends the existing design system to support activity management, volunteer assignments, progress tracking, evidence submission, administrator review, activity templates, and activity reporting.
+
+The Activity Layer must reuse the existing visual language rather than introducing a separate design style.
+
+---
+
+## 15.1 Activity Status Indicators
+
+Activity statuses should use consistent visual indicators across:
+
+- activity cards;
+- activity details;
+- administrator tables;
+- member assignments;
+- timelines;
+- reports.
+
+Recommended visual treatment:
+
+| Status | Recommended Color |
+|--------|-------------------|
+| Draft | Gray |
+| Published | Blue |
+| Cancelled | Red |
+| Archived | Gray |
+
+Status indicators must always include text.
+
+Color must never be the only indication of status.
+
+---
+
+## 15.2 Assignment Status Indicators
+
+Assignment status should remain visually distinct from the activity's own status.
+
+| Status | Recommended Color |
+|--------|-------------------|
+| Assigned | Blue |
+| In Progress | Indigo |
+| Under Review | Amber |
+| Needs Changes | Amber |
+| Verified | Emerald |
+
+This distinction is important because an activity and an individual volunteer assignment may be in different states.
+
+---
+
+## 15.3 Priority Indicators
+
+Activity priority should be immediately recognizable without overpowering activity status.
+
+Recommended hierarchy:
+
+| Priority | Recommended Treatment |
+|----------|-----------------------|
+| Low | Neutral |
+| Medium | Blue |
+| High | Amber |
+| Critical | Red |
+
+Priority indicators should use:
+
+- text;
+- optional icon;
+- subtle semantic color.
+
+Avoid using large solid color areas for priority.
+
+---
+
+## 15.4 Activity Cards
+
+Activity cards extend the existing Card pattern.
+
+Recommended hierarchy:
+
+1. Activity title
+2. Activity status
+3. Priority
+4. Event information
+5. Assignment information
+6. Progress summary
+7. Available actions
+
+Cards should remain visually consistent with existing Event and Attendance cards.
+
+---
+
+## 15.5 Assignment Cards
+
+Member assignment cards should prioritize actionable information.
+
+Recommended hierarchy:
+
+1. Activity title
+2. Assignment status
+3. Priority
+4. Event
+5. Latest progress
+6. Required action
+
+Assignments requiring member attention should be visually noticeable without appearing as system errors.
+
+---
+
+## 15.6 Activity Timeline
+
+Activity timelines should follow the existing timeline visual language.
+
+Each entry should display:
+
+- event indicator;
+- title;
+- timestamp;
+- optional description;
+- optional evidence reference.
+
+Examples include:
+
+- Assigned
+- Work Started
+- Progress Updated
+- Evidence Added
+- Submitted for Review
+- Needs Changes
+- Resubmitted
+- Verified
+
+Chronological order must remain visually clear.
+
+---
+
+## 15.7 Evidence Gallery
+
+Photographs and videos should be displayed using a consistent evidence gallery.
+
+Evidence cards should provide:
+
+- preview;
+- evidence type;
+- upload status;
+- timestamp where applicable.
+
+Media previews should maintain consistent dimensions.
+
+Images should preserve their aspect ratio.
+
+Videos should display a clear playback indicator.
+
+---
+
+## 15.8 Evidence Upload
+
+Evidence upload interfaces should clearly communicate limits before upload begins.
+
+Display:
+
+- current photo count;
+- maximum photo count;
+- current video count;
+- maximum video count;
+- video duration requirement.
+
+Current limits:
+
+- maximum 10 photographs;
+- maximum 2 videos;
+- maximum 60 seconds per video.
+
+---
+
+## 15.9 Upload Progress
+
+Evidence uploads should provide visible progress feedback.
+
+Possible states include:
+
+- Preparing
+- Uploading
+- Uploaded
+- Failed
+
+When meaningful, display upload percentage.
+
+Failed uploads should provide a clear retry action.
+
+The interface should never imply that evidence has been saved until upload succeeds.
+
+---
+
+## 15.10 Evidence Read-Only State
+
+After successful activity submission, submitted evidence becomes read-only.
+
+The interface should:
+
+- remove editing controls;
+- remove deletion controls;
+- preserve evidence previews;
+- clearly communicate that the submission has been completed.
+
+Read-only content should remain visually accessible rather than appearing disabled.
+
+---
+
+## 15.11 Review Interface
+
+Administrator review interfaces should prioritize the submitted work.
+
+Recommended visual hierarchy:
+
+1. Volunteer
+2. Activity
+3. Progress history
+4. Evidence
+5. Submission information
+6. Review controls
+
+Review controls should remain visually separated from submitted evidence.
+
+---
+
+## 15.12 Review Decisions
+
+The Phase 3 review workflow uses:
+
+| Decision | Recommended Color |
+|----------|-------------------|
+| Verified | Emerald |
+| Needs Changes | Amber |
+
+`Needs Changes` is a corrective workflow, not a permanent failure state.
+
+The interface should therefore avoid styling it like a destructive rejection.
+
+---
+
+## 15.13 Needs Changes Feedback
+
+When an administrator requests changes, reviewer remarks should receive strong visual emphasis.
+
+The member should immediately understand:
+
+- that changes are required;
+- what needs correction;
+- that resubmission is allowed.
+
+Recommended structure:
+
+```text
+Needs Changes
+
+Administrator Remarks
+
+[Explanation of required correction]
+
+[Continue Activity]
+## 15.14 Verified State
+
+Verified activities should communicate successful completion clearly.
+
+Recommended treatment:
+
+- success indicator;
+- Verified label;
+- administrator remark where available;
+- completion information.
+
+Verified submissions remain read-only.
+
+---
+
+## 15.15 Activity Templates
+
+Template interfaces should visually distinguish templates from actual activities.
+
+Template cards may display:
+
+- template name;
+- category;
+- description;
+- activity count where applicable;
+- available actions.
+
+Applying a template should clearly communicate that new independent activities will be created.
+
+---
+
+## 15.16 Activity Filters
+
+Activity interfaces may include filters for:
+
+- status;
+- priority;
+- category;
+- event;
+- assigned volunteer.
+
+Filter controls should follow the existing Form Input and Dropdown standards.
+
+Active filters should remain clearly visible.
+
+---
+
+## 15.17 Bulk Operations
+
+Administrator interfaces supporting bulk operations should clearly communicate selection state.
+
+Selected rows or cards should:
+
+- remain visually distinguishable;
+- display the number of selected items;
+- expose available bulk actions.
+
+Potentially destructive bulk actions require confirmation.
+
+---
+
+## 15.18 Activity Empty States
+
+Examples include:
+
+### Member
+
+> No activities assigned.
+
+### Administrator
+
+> No activities have been created for this event.
+
+### Review Queue
+
+> No submissions are waiting for review.
+
+### Templates
+
+> No activity templates available.
+
+Empty states should provide an appropriate next action whenever one exists.
+
+---
+
+## 15.19 Activity Loading States
+
+Use skeleton loading for:
+
+- activity lists;
+- assignment lists;
+- review queues;
+- activity details;
+- templates.
+
+Use progress indicators for:
+
+- evidence uploads;
+- report generation;
+- synchronization.
+
+Avoid replacing an entire populated interface with a spinner during small background updates.
+
+---
+
+## 15.20 Activity Error Feedback
+
+Activity errors should follow the existing semantic feedback system.
+
+Examples:
+
+- Failed to load activities.
+- Assignment could not be completed.
+- Evidence upload failed.
+- Submission could not be completed.
+- Review could not be saved.
+
+Errors should provide a recovery action whenever possible.
+
+---
+
+## 15.21 Notifications
+
+Activity notifications should use the existing notification design.
+
+Examples include:
+
+- Activity assigned.
+- Submission received.
+- Changes requested.
+- Activity verified.
+
+Activity assignment notifications are particularly important for members and should provide direct navigation to the assigned activity.
+
+---
+
+## 15.22 Responsive Activity Layouts
+
+Activity workflows must remain functional across all supported screen sizes.
+
+### Desktop
+
+Prioritize:
+
+- tables;
+- side-by-side evidence review;
+- multi-column activity layouts;
+- efficient administrator workflows.
+
+### Tablet
+
+Prioritize:
+
+- collapsible information sections;
+- responsive grids;
+- simplified tables.
+
+### Mobile
+
+Prioritize:
+
+- assignment completion;
+- progress entry;
+- evidence capture/upload;
+- review feedback.
+
+Activity actions should remain easily reachable on smaller screens.
+
+---
+
+## 15.23 Evidence on Mobile
+
+Evidence workflows require particular attention on mobile devices.
+
+Controls should provide:
+
+- large touch targets;
+- clear camera access;
+- clear upload progress;
+- readable media previews;
+- simple retry behavior.
+
+Photo and video workflows should avoid unnecessary navigation between screens.
+
+---
+
+## 15.24 Activity Accessibility
+
+Activity interfaces inherit all accessibility requirements defined in Section 13.
+
+Additionally:
+
+- evidence previews require descriptive labels;
+- video controls must be keyboard accessible;
+- upload progress must be available to assistive technologies;
+- review status must not rely on color alone;
+- priority must not rely on color alone;
+- timeline entries must preserve logical reading order.
+
+---
+
+## 15.25 Motion
+
+Activity Layer motion should remain subtle.
+
+Appropriate uses include:
+
+- upload progress;
+- timeline entry appearance;
+- status transitions;
+- review confirmation;
+- expandable evidence previews.
+
+Avoid decorative animations around evidence or review decisions.
+
+Reduced-motion preferences must continue to be respected.
+
+---
+
+## 15.26 Phase 3 Design Principles
+
+The Activity Layer should preserve the existing design system rather than introduce feature-specific styling.
+
+Phase 3 interfaces should emphasize:
+
+- clear activity status;
+- clear assignment status;
+- visible progress;
+- evidence readability;
+- actionable review feedback;
+- efficient administrator workflows;
+- simple member workflows;
+- responsive evidence handling;
+- accessibility;
+- visual consistency.

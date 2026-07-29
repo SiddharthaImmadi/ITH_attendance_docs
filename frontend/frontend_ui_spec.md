@@ -1070,143 +1070,6 @@ The Event Detail screen should emphasize:
 - clear information hierarchy;
 - lifecycle awareness.
 
-## 5.3 Event Detail
-
-### Purpose
-
-The Event Detail screen provides administrators with comprehensive information about a specific event.
-
-It serves as the operational center for managing an event throughout its lifecycle and monitoring attendance-related activity.
-
-The screen focuses on one event at a time while providing quick access to related administrative workflows.
-
----
-
-### Screen Responsibilities
-
-The Event Detail screen is responsible for:
-
-- presenting complete event information;
-- displaying current event status;
-- summarizing attendance activity;
-- providing operational actions;
-- navigating to related administrative tools.
-
-This screen provides detailed management without overwhelming administrators with unrelated information.
-
----
-
-### Primary Information
-
-The screen should prominently display:
-
-- event information;
-- event schedule;
-- event status;
-- attendance summary;
-- participant statistics;
-- boundary information.
-
-Information should be grouped logically to improve readability.
-
----
-
-### Available Actions
-
-Depending on the event lifecycle, administrators may:
-
-- update the event;
-- activate the event;
-- complete the event;
-- cancel the event;
-- open live monitoring;
-- generate reports;
-- review attendance information.
-
-Only actions valid for the current event state should be available.
-
----
-
-### Attendance Overview
-
-The screen should summarize attendance without replacing detailed reporting.
-
-Examples include:
-
-- total participants;
-- currently present participants;
-- participants outside the event boundary;
-- completed attendances;
-- pending administrative actions.
-
-The summary should provide operational awareness at a glance.
-
----
-
-### Navigation
-
-The Event Detail screen serves as the entry point to event-specific workflows.
-
-Administrators should be able to navigate directly to:
-
-- Live Monitoring;
-- Reports;
-- Emergency Ticket Review (filtered for the event where applicable).
-
-Navigation should preserve the current event context.
-
----
-
-### Loading State
-
-While event information is loading:
-
-- display loading placeholders;
-- preserve screen layout;
-- disable unavailable actions.
-
-Previously retrieved information should remain visible whenever practical.
-
----
-
-### Empty State
-
-If an event contains no attendance activity, the interface should communicate that the event is ready to receive participants.
-
-The absence of attendance should not appear as an application error.
-
----
-
-### Error State
-
-If event information cannot be retrieved:
-
-- display a clear error message;
-- provide a retry action;
-- preserve previously available information whenever possible.
-
----
-
-### Responsive Behavior
-
-Desktop layouts should prioritize information density.
-
-Tablet layouts should reorganize summary sections vertically.
-
-Mobile layouts should emphasize the most important operational information first.
-
----
-
-### Design Principles
-
-The Event Detail screen should emphasize:
-
-- operational visibility;
-- efficient event management;
-- contextual navigation;
-- clear information hierarchy;
-- lifecycle awareness.
-
 ## 5.4 Live Monitoring
 
 ### Purpose
@@ -3252,3 +3115,463 @@ Implementation-specific details—including reusable components, routing archite
 
 Together with the backend architecture, API contracts, business rules, and design system, this specification provides a complete blueprint for building a consistent, scalable, and maintainable attendance platform.
 
+# 15. Phase 3 Activity Layer Experience
+
+The Phase 3 Activity Layer extends the existing attendance experience by introducing activity management, volunteer assignments, progress tracking, evidence submission, activity review, reusable templates, and enhanced reporting.
+
+Unlike attendance, which focuses on participation, the Activity Layer focuses on the work performed by volunteers during an event.
+
+The frontend presents activity information while the backend remains responsible for all business decisions.
+
+---
+
+## 15.1 Overview
+
+The Activity Layer introduces dedicated experiences for both administrators and members.
+
+Administrator experiences focus on planning, assignment, monitoring, and review.
+
+Member experiences focus on completing assigned work and submitting evidence.
+
+The Activity Layer operates independently of attendance while remaining associated with events.
+
+---
+
+# 15.2 Administrator Activity Experience
+
+Administrators receive several new operational screens.
+
+Major screens include:
+
+- Activity Management
+- Activity Detail
+- Activity Assignment
+- Activity Review
+- Activity Templates
+- Activity Reports
+
+These interfaces emphasize efficient planning, assignment, and verification.
+
+---
+
+## 15.3 Activity Management
+
+### Purpose
+
+The Activity Management screen provides administrators with centralized management of all activities belonging to an event.
+
+Activities may be created, updated, published, cancelled, archived, searched, filtered, and reviewed from this interface.
+
+---
+
+### Primary Information
+
+Each activity should display:
+
+- activity title;
+- category;
+- priority;
+- current status;
+- assigned volunteers;
+- submission progress.
+
+---
+
+### Available Actions
+
+Administrators may:
+
+- create activities;
+- edit draft activities;
+- publish activities;
+- cancel activities;
+- archive activities;
+- assign volunteers;
+- open activity details.
+
+Only actions valid for the current activity state should be displayed.
+
+---
+
+## 15.4 Activity Detail
+
+### Purpose
+
+The Activity Detail screen provides complete information about an individual activity.
+
+It serves as the central workspace for managing an activity.
+
+---
+
+### Primary Information
+
+The screen should display:
+
+- activity information;
+- assigned volunteers;
+- activity timeline;
+- submission status;
+- evidence summary;
+- review summary.
+
+---
+
+### Available Actions
+
+Administrators may:
+
+- modify draft activities;
+- manage assignments;
+- review volunteer submissions;
+- navigate to reports.
+
+---
+
+## 15.5 Activity Assignment
+
+### Purpose
+
+The Activity Assignment screen allows administrators to assign one activity to one or more volunteers.
+
+Assignments remain independent for every volunteer.
+
+---
+
+### Primary Information
+
+Display:
+
+- volunteer list;
+- assignment status;
+- assignment history;
+- assignment conflicts.
+
+---
+
+### Available Actions
+
+Administrators may:
+
+- assign volunteers;
+- remove assignments;
+- search volunteers;
+- filter volunteers.
+
+Conflicting assignments should clearly communicate the reason.
+
+---
+
+## 15.6 Activity Review
+
+### Purpose
+
+The Activity Review screen provides administrators with submitted activities awaiting review.
+
+The interface should prioritize pending reviews.
+
+---
+
+### Primary Information
+
+Display:
+
+- volunteer information;
+- submitted progress;
+- uploaded evidence;
+- submission time;
+- review status.
+
+---
+
+### Available Actions
+
+Administrators may:
+
+- verify activities;
+- request changes;
+- review submission history.
+
+Needs Changes requires mandatory remarks.
+
+---
+
+## 15.7 Activity Templates
+
+### Purpose
+
+Templates allow administrators to reuse frequently performed activity structures.
+
+Templates reduce repetitive activity creation.
+
+---
+
+### Available Actions
+
+Administrators may:
+
+- create templates;
+- edit templates;
+- apply templates;
+- search templates;
+- archive templates.
+
+Applying a template generates new independent activities.
+
+---
+
+## 15.8 Activity Reports
+
+### Purpose
+
+Activity Reports extend attendance reporting by including volunteer work completed during events.
+
+Reports remain download-only.
+
+---
+
+### Available Actions
+
+Administrators may:
+
+- generate reports;
+- download reports;
+- filter reports.
+
+Report generation status should remain visible until completion.
+
+---
+
+# 15.9 Member Activity Experience
+
+Members receive new interfaces supporting assigned work.
+
+Major screens include:
+
+- My Activities
+- Activity Detail
+- Progress Timeline
+- Evidence Submission
+- Submission Status
+
+The experience should minimize unnecessary interactions.
+
+---
+
+## 15.10 My Activities
+
+### Purpose
+
+The My Activities screen displays activities assigned to the authenticated member.
+
+Assignments should be grouped by status.
+
+---
+
+### Primary Information
+
+Each assignment should display:
+
+- activity title;
+- event;
+- priority;
+- assignment status;
+- latest progress update.
+
+---
+
+### Available Actions
+
+Members may:
+
+- open assigned activity;
+- continue progress;
+- submit completed work.
+
+Completed submissions remain read-only.
+
+---
+
+## 15.11 Activity Detail
+
+### Purpose
+
+The Activity Detail screen provides complete information about the assigned work.
+
+Members should clearly understand:
+
+- what work must be completed;
+- current progress;
+- submission requirements.
+
+---
+
+### Available Actions
+
+Members may:
+
+- add progress updates;
+- upload evidence;
+- submit activity.
+
+Only valid actions should be visible.
+
+---
+
+## 15.12 Progress Timeline
+
+### Purpose
+
+The Progress Timeline displays the chronological history of work completed during an activity.
+
+Timeline entries remain immutable.
+
+---
+
+### Primary Information
+
+Each update displays:
+
+- timestamp;
+- description;
+- attached evidence.
+
+Timeline entries appear in chronological order.
+
+---
+
+## 15.13 Evidence Submission
+
+### Purpose
+
+Evidence Submission allows members to upload supporting photographs and videos.
+
+---
+
+### Submission Rules
+
+The interface should communicate:
+
+- maximum ten photographs;
+- maximum two videos;
+- maximum sixty-second video duration.
+
+Progress indicators should clearly communicate upload status.
+
+After submission, evidence becomes read-only.
+
+---
+
+## 15.14 Review Feedback
+
+### Purpose
+
+Members should clearly understand the outcome of administrator review.
+
+Possible outcomes include:
+
+- Verified
+- Needs Changes
+
+Needs Changes should prominently display administrator remarks.
+
+Members may correct the submission and resubmit.
+
+---
+
+## 15.15 Activity Notifications
+
+Members should receive notifications for:
+
+- new activity assignments;
+- review completion;
+- needs changes requests.
+
+Notifications should navigate directly to the related activity.
+
+---
+
+# 15.16 Shared Activity Components
+
+The Activity Layer introduces reusable interface patterns including:
+
+- activity cards;
+- assignment cards;
+- progress timeline;
+- evidence gallery;
+- activity status badges;
+- review status badges;
+- priority indicators.
+
+Detailed implementation belongs to the Component Guidelines.
+
+---
+
+## 15.17 Activity Loading States
+
+Activity interfaces should provide loading feedback for:
+
+- activity retrieval;
+- assignment loading;
+- progress synchronization;
+- evidence upload;
+- report generation.
+
+Previously available information should remain visible whenever practical.
+
+---
+
+## 15.18 Activity Empty States
+
+Examples include:
+
+- no assigned activities;
+- no published activities;
+- no pending reviews;
+- no activity templates;
+- no reports.
+
+Each empty state should encourage the user's next logical action.
+
+---
+
+## 15.19 Activity Error States
+
+Error handling should provide clear recovery guidance for:
+
+- failed uploads;
+- failed submissions;
+- synchronization failures;
+- permission failures;
+- network interruptions.
+
+Previously entered information should be preserved whenever possible.
+
+---
+
+## 15.20 Responsive Behavior
+
+All Activity Layer interfaces should remain fully functional across:
+
+- desktop;
+- laptop;
+- tablet;
+- mobile.
+
+Desktop layouts may prioritize information density.
+
+Mobile layouts should prioritize task completion with minimal scrolling.
+
+---
+
+## 15.21 Design Principles
+
+The Activity Layer should emphasize:
+
+- simplicity;
+- operational efficiency;
+- chronological workflows;
+- backend-driven state;
+- responsive interactions;
+- reusable interface patterns;
+- accessibility;
+- consistency.

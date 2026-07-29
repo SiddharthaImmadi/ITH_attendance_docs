@@ -3482,3 +3482,416 @@ The implementation emphasizes:
 This implementation guide complements the API contracts, backend architecture, database schema, and business rules by describing how requests move through the backend while preserving clear separation of responsibilities.
 
 Following these implementation principles ensures that future development remains consistent with the project's architectural standards, business requirements, and long-term maintainability goals.
+
+# 21. Phase 3 Activity Layer Implementation
+
+Phase 3 extends the backend by introducing the Activity Layer.
+
+The Activity Layer allows administrators to create activities, assign volunteers, collect progress updates and evidence, review completed work, and reuse activity templates.
+
+The implementation follows the same layered architecture used throughout the attendance system.
+
+The backend remains the single source of truth for all activity-related business decisions.
+
+---
+
+## 21.1 Activity Processing Flow
+
+Every activity request follows the standard backend pipeline.
+
+```text
+Client Request
+
+↓
+
+Activity Route
+
+↓
+
+Authentication
+
+↓
+
+Authorization
+
+↓
+
+Schema Validation
+
+↓
+
+Activity Service
+
+↓
+
+Business Validation
+
+↓
+
+Repository Layer
+
+↓
+
+Database
+
+↓
+
+Supporting Services
+
+↓
+
+Response
+```
+
+Supporting services include:
+
+- Notification Service
+- Activity History Service
+- Audit Log Service
+
+---
+
+## 21.2 Activity Creation
+
+Activity creation is performed only by administrators.
+
+Implementation flow:
+
+```text
+Create Activity
+
+↓
+
+Validate Administrator
+
+↓
+
+Validate Event
+
+↓
+
+Validate Activity Data
+
+↓
+
+Create Activity
+
+↓
+
+Persist Activity
+
+↓
+
+Supporting Services
+
+↓
+
+Response
+```
+
+The Activity Service validates:
+
+- administrator permissions;
+- event existence;
+- activity information;
+- activity category;
+- activity priority.
+
+Activities are created in the **Draft** state.
+
+---
+
+## 21.3 Activity Publication
+
+Only Draft activities may be published.
+
+Implementation flow:
+
+```text
+Retrieve Activity
+
+↓
+
+Validate Current State
+
+↓
+
+Publish Activity
+
+↓
+
+Persist Changes
+
+↓
+
+Response
+```
+
+Only published activities may receive volunteer assignments.
+
+---
+
+## 21.4 Activity Assignment
+
+Administrators assign one or more volunteers to a published activity.
+
+Implementation flow:
+
+```text
+Retrieve Activity
+
+↓
+
+Validate Activity
+
+↓
+
+Validate Volunteer
+
+↓
+
+Check Duplicate Assignment
+
+↓
+
+Create Assignment
+
+↓
+
+Supporting Services
+
+↓
+
+Response
+```
+
+Assignment validation prevents duplicate assignments for the same volunteer.
+
+---
+
+## 21.5 Progress Updates
+
+Volunteers submit progress updates throughout activity execution.
+
+Implementation flow:
+
+```text
+Progress Update
+
+↓
+
+Validate Assignment
+
+↓
+
+Validate Activity State
+
+↓
+
+Store Progress Update
+
+↓
+
+Response
+```
+
+Progress updates are append-only.
+
+---
+
+## 21.6 Evidence Processing
+
+Evidence is attached to progress updates.
+
+Implementation flow:
+
+```text
+Upload Evidence
+
+↓
+
+Validate Assignment
+
+↓
+
+Validate Submission Limits
+
+↓
+
+Optimize File
+
+↓
+
+Store File
+
+↓
+
+Persist Metadata
+
+↓
+
+Response
+```
+
+The backend validates:
+
+- supported file type;
+- maximum photo limit;
+- maximum video limit;
+- maximum video duration.
+
+Only metadata is stored in the database.
+
+---
+
+## 21.7 Activity Submission
+
+After completing the activity, volunteers submit it for administrator review.
+
+Implementation flow:
+
+```text
+Validate Assignment
+
+↓
+
+Validate Progress
+
+↓
+
+Validate Evidence
+
+↓
+
+Update Status
+
+↓
+
+Notify Administrator
+
+↓
+
+Response
+```
+
+Once submitted:
+
+- progress updates become read-only;
+- evidence becomes immutable.
+
+---
+
+## 21.8 Review Processing
+
+Administrators review submitted activities.
+
+Implementation flow:
+
+```text
+Retrieve Submission
+
+↓
+
+Review Evidence
+
+↓
+
+Decision
+
+↓
+
+Persist Review
+
+↓
+
+Supporting Services
+
+↓
+
+Response
+```
+
+Review decisions:
+
+- VERIFIED
+- NEEDS_CHANGES
+
+Every review creates a new review history record.
+
+---
+
+## 21.9 Template Processing
+
+Templates simplify recurring activity creation.
+
+Implementation flow:
+
+```text
+Select Template
+
+↓
+
+Retrieve Template
+
+↓
+
+Generate Activities
+
+↓
+
+Persist Activities
+
+↓
+
+Response
+```
+
+Generated activities become independent records.
+
+Updating a template does not modify previously generated activities.
+
+---
+
+## 21.10 Transaction Management
+
+The following operations execute within a single transaction:
+
+- activity creation;
+- volunteer assignment;
+- activity submission;
+- review completion;
+- template application.
+
+Rollback occurs if any required operation fails.
+
+---
+
+## 21.11 Error Handling
+
+Activity processing handles:
+
+- activity not found;
+- invalid activity state;
+- duplicate assignment;
+- assignment not found;
+- evidence limit exceeded;
+- invalid review state;
+- template not found.
+
+Errors follow the standardized API response model.
+
+---
+
+## 21.12 Design Principles
+
+The Activity Layer follows these principles:
+
+- backend-controlled business decisions;
+- centralized business logic;
+- append-only progress history;
+- immutable review history;
+- reusable templates;
+- transactional consistency;
+- repository abstraction;
+- standardized validation;
+- thin route handlers.

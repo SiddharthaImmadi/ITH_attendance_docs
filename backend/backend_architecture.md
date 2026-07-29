@@ -72,6 +72,7 @@ Examples include:
 - Attendance
 - Presence Monitoring
 - Emergency Tickets
+- Activities
 - Notifications
 - Reports
 
@@ -151,16 +152,34 @@ backend/
 ├── alembic/
 │   └── database migrations
 │
-├── app/
-│   ├── api/
-│   ├── core/
-│   ├── models/
-│   ├── schemas/
-│   ├── services/
-│   ├── repositories/
-│   ├── middleware/
-│   ├── utils/
-│   └── main.py
+app/
+
+├── api/
+│   ├── auth.py
+│   ├── users.py
+│   ├── events.py
+│   ├── attendance.py
+│   ├── presence.py
+│   ├── emergency_tickets.py
+│   ├── activities.py
+│   ├── notifications.py
+│   └── reports.py
+│
+├── core/
+│
+├── models/
+│
+├── schemas/
+│
+├── services/
+│
+├── repositories/
+│
+├── middleware/
+│
+├── utils/
+│
+└── main.py
 │
 ├── media/
 │
@@ -168,6 +187,17 @@ backend/
 │
 └── tests/
 ```
+
+### activities.py
+
+Responsible for:
+
+- activity creation;
+- activity assignment;
+- progress updates;
+- evidence management;
+- review workflow;
+- activity template management.
 
 Each directory has a clearly defined responsibility.
 
@@ -774,6 +804,8 @@ Business logic is organized into independent domain services.
 ```text
 app/services/
 
+app/services/
+
 ├── auth_service.py
 ├── user_service.py
 ├── event_service.py
@@ -782,6 +814,11 @@ app/services/
 ├── boundary_service.py
 ├── emergency_ticket_service.py
 ├── volunteer_block_service.py
+├── activity_service.py
+├── activity_assignment_service.py
+├── activity_progress_service.py
+├── activity_review_service.py
+├── activity_template_service.py
 ├── notification_service.py
 ├── activity_history_service.py
 ├── audit_log_service.py
@@ -889,6 +926,60 @@ Responsible for:
 - block removal;
 - participation enforcement.
 
+
+### Activity Service
+
+Responsible for:
+
+- activity creation;
+- activity updates;
+- activity publication;
+- activity cancellation;
+- activity archival.
+
+---
+
+### Activity Assignment Service
+
+Responsible for:
+
+- assigning activities to volunteers;
+- validating assignment conflicts;
+- maintaining assignment status;
+- tracking assignment lifecycle.
+
+---
+
+### Activity Progress Service
+
+Responsible for:
+
+- creating progress updates;
+- managing evidence uploads;
+- validating activity completion;
+- submitting activities for review.
+
+---
+
+### Activity Review Service
+
+Responsible for:
+
+- reviewing submitted activities;
+- requesting changes;
+- verifying completed activities;
+- preserving review history.
+
+---
+
+### Activity Template Service
+
+Responsible for:
+
+- template creation;
+- template updates;
+- template retrieval;
+- generating activities from templates.
 ---
 
 ### Notification Service
@@ -945,15 +1036,19 @@ Services collaborate through clearly defined interfaces while maintaining owners
 Example workflow:
 
 ```text
-Attendance Service
+Activity Service
 
 ↓
 
-Boundary Service
+Activity Assignment Service
 
 ↓
 
-Presence Service
+Activity Progress Service
+
+↓
+
+Activity Review Service
 
 ↓
 
@@ -1085,12 +1180,20 @@ Repositories are organized by business domain.
 ```text
 app/repositories/
 
+app/repositories/
+
 ├── user_repository.py
 ├── event_repository.py
 ├── attendance_repository.py
 ├── presence_repository.py
 ├── emergency_ticket_repository.py
 ├── volunteer_block_repository.py
+├── activity_repository.py
+├── activity_assignment_repository.py
+├── activity_progress_repository.py
+├── activity_evidence_repository.py
+├── activity_review_repository.py
+├── activity_template_repository.py
 ├── notification_repository.py
 ├── activity_history_repository.py
 ├── audit_log_repository.py
@@ -1163,6 +1266,70 @@ Responsible for:
 - active volunteer blocks;
 - historical volunteer blocks;
 - eligibility lookups.
+
+
+### Activity Repository
+
+Responsible for:
+
+- creating activities;
+- updating activity details;
+- publishing activities;
+- cancelling activities;
+- archiving activities;
+- retrieving activity lists.
+
+---
+
+### Activity Assignment Repository
+
+Responsible for:
+
+- creating assignments;
+- retrieving volunteer assignments;
+- updating assignment status;
+- validating duplicate assignments.
+
+---
+
+### Activity Progress Repository
+
+Responsible for:
+
+- storing progress updates;
+- retrieving activity timelines;
+- maintaining chronological ordering.
+
+---
+
+### Activity Evidence Repository
+
+Responsible for:
+
+- storing evidence metadata;
+- retrieving evidence;
+- deleting evidence before submission.
+
+---
+
+### Activity Review Repository
+
+Responsible for:
+
+- storing review decisions;
+- retrieving review history;
+- retrieving pending reviews.
+
+---
+
+### Activity Template Repository
+
+Responsible for:
+
+- storing templates;
+- storing template items;
+- retrieving templates;
+- applying templates.
 
 ---
 
@@ -1713,6 +1880,377 @@ The Event Management Architecture follows these principles:
 - independent service responsibilities.
 
 These principles ensure reliable event management throughout the application.
+
+# Activity Management Architecture
+
+The Activity Management module provides administrators with the ability to create, assign, monitor, and review volunteer activities during an event.
+
+Activities belong to events and are independent of attendance records.
+
+The module is composed of the following components:
+
+- Activity Management
+- Activity Assignment
+- Progress Tracking
+- Evidence Management
+- Review Workflow
+- Template Management
+
+---
+
+## Component Flow
+
+```
+Administrator
+
+      │
+
+      ▼
+
+Activity Service
+
+      │
+
+      ▼
+
+Activity Assignment Service
+
+      │
+
+      ▼
+
+Activity Progress Service
+
+      │
+
+      ▼
+
+Activity Review Service
+
+      │
+
+      ▼
+
+Repositories
+
+      │
+
+      ▼
+
+PostgreSQL Database
+```
+
+---
+
+## Data Flow
+
+```
+Activity
+
+      │
+
+      ▼
+
+Assignments
+
+      │
+
+      ▼
+
+Progress Updates
+
+      │
+
+      ▼
+
+Evidence
+
+      │
+
+      ▼
+
+Reviews
+```
+
+---
+
+## Design Principles
+
+- Activities are independent of attendance records.
+- One activity may be assigned to multiple volunteers.
+- Each volunteer maintains an independent execution lifecycle.
+- Evidence belongs to progress updates.
+- Review history is preserved.
+- Templates generate new draft activities without modifying existing activities.
+
+# Activity Management Architecture
+
+The Activity Management module extends the attendance system by allowing administrators to create, assign, monitor, and review volunteer activities during an event.
+
+Activities are independent of attendance records and follow their own lifecycle from creation through review.
+
+---
+
+## Module Components
+
+The Activity Management module consists of the following components:
+
+- Activity Management
+- Activity Assignment
+- Activity Progress Tracking
+- Evidence Management
+- Activity Review
+- Activity Templates
+
+Each component is implemented as an independent service while following the project's layered architecture.
+
+---
+
+## High-Level Architecture
+
+```
+Administrator
+
+      │
+
+      ▼
+
+Activity API
+
+      │
+
+      ▼
+
+Activity Service
+
+      │
+
+      ▼
+
+Repositories
+
+      │
+
+      ▼
+
+PostgreSQL Database
+```
+
+---
+
+## Activity Lifecycle
+
+```
+DRAFT
+
+    │
+
+    ▼
+
+PUBLISHED
+
+    │
+
+    ▼
+
+ASSIGNED
+
+    │
+
+    ▼
+
+IN_PROGRESS
+
+    │
+
+    ▼
+
+UNDER_REVIEW
+
+    │
+
+    ├────────────► VERIFIED
+
+    │
+
+    └────────────► NEEDS_CHANGES
+                        │
+                        ▼
+                  IN_PROGRESS
+```
+
+---
+
+## Assignment Architecture
+
+One activity may be assigned to multiple volunteers.
+
+Each assignment maintains an independent execution lifecycle.
+
+```
+Activity
+
+      │
+
+      ├────────────► Volunteer A
+
+      │                  │
+
+      │                  ▼
+
+      │            Assignment A
+
+      │
+
+      ├────────────► Volunteer B
+
+      │                  │
+
+      │                  ▼
+
+      │            Assignment B
+
+      │
+
+      └────────────► Volunteer C
+
+                         │
+
+                         ▼
+
+                   Assignment C
+```
+
+Each assignment progresses independently through execution and review.
+
+---
+
+## Progress Tracking
+
+Progress updates provide a chronological record of work completed by a volunteer.
+
+```
+Assignment
+
+      │
+
+      ▼
+
+Progress Update 1
+
+      │
+
+      ▼
+
+Progress Update 2
+
+      │
+
+      ▼
+
+Progress Update 3
+```
+
+Progress updates are append-only and preserve the activity timeline.
+
+---
+
+## Evidence Management
+
+Evidence is attached to individual progress updates rather than directly to activities.
+
+```
+Assignment
+
+      │
+
+      ▼
+
+Progress Update
+
+      │
+
+      ├──────────► Photo
+
+      │
+
+      ├──────────► Photo
+
+      │
+
+      └──────────► Video
+```
+
+This structure preserves the context of each evidence item.
+
+---
+
+## Review Workflow
+
+Submitted activities are reviewed by an administrator.
+
+```
+UNDER_REVIEW
+
+      │
+
+      ├────────────► VERIFIED
+
+      │
+
+      └────────────► NEEDS_CHANGES
+                            │
+                            ▼
+                      IN_PROGRESS
+```
+
+Each review action creates a new review record, preserving the complete review history.
+
+---
+
+## Template Architecture
+
+Templates simplify activity creation for recurring event types.
+
+```
+Activity Template
+
+        │
+
+        ▼
+
+Template Items
+
+        │
+
+        ▼
+
+Generated Activities
+
+        │
+
+        ▼
+
+Assignments
+```
+
+Generated activities become independent records. Updating a template affects only future activities created from it.
+
+---
+
+## Design Principles
+
+The Activity Management module follows these principles:
+
+- Activities belong to events.
+- Activities are independent of attendance records.
+- One activity may be assigned to multiple volunteers.
+- Every volunteer maintains an independent execution lifecycle.
+- Progress updates are append-only.
+- Evidence belongs to progress updates.
+- Review history is permanently preserved.
+- Templates generate new activities without modifying existing ones.
+
 
 # 12. Attendance Architecture
 
@@ -3873,9 +4411,31 @@ File storage is responsible for:
 
 ## 26.2 Storage Strategy
 
-Files are stored independently from relational data.
+---
 
-The database stores only file metadata and storage references.
+## Activity Evidence Storage
+
+Activity evidence is stored separately from attendance evidence.
+
+Each uploaded file is associated with a progress update and referenced by its metadata in the database.
+
+Example directory structure:
+
+```text
+media/
+
+├── attendance/
+│
+└── activities/
+    ├── photos/
+    └── videos/
+```
+
+Only file metadata is stored in PostgreSQL.
+
+The physical files remain in the media storage directory while database records maintain the relationship between activities, progress updates, and evidence.
+
+Evidence files are optimized before storage to reduce disk usage while maintaining sufficient quality for administrative review.
 
 ---
 
@@ -3985,9 +4545,14 @@ The backend follows these principles:
 
 # 29. Performance Considerations
 
-The backend is designed to provide predictable performance while maintaining correctness and data integrity.
+### Activity Module Performance
 
-Performance optimizations should never compromise business rules.
+- Activities are indexed by event, status, category, and priority.
+- Assignment queries are indexed by volunteer and activity.
+- Progress updates are retrieved in chronological order using indexed timestamps.
+- Evidence metadata is indexed for efficient review retrieval.
+- Activity reports are generated on demand rather than stored.
+- Template application creates activities in bulk to reduce repeated database operations.
 
 ---
 
@@ -4054,13 +4619,18 @@ Existing services should remain stable while new services are introduced indepen
 
 ## 30.3 Design Principles
 
-Scalability should emphasize:
+### Activity Layer Scalability
 
-- modularity;
-- maintainability;
-- extensibility;
-- loose coupling;
-- service independence.
+The Activity module is designed to scale independently of the attendance module.
+
+Scalability is achieved through:
+
+- independent services for activity management;
+- normalized database relationships;
+- indexed assignment and review queries;
+- optimized evidence storage;
+- reusable activity templates;
+- on-demand report generation.
 
 # 31. Conclusion
 
@@ -4078,5 +4648,16 @@ The architecture emphasizes:
 - secure authentication and authorization;
 - comprehensive historical record keeping;
 - extensibility for future enhancements.
+
+The architecture additionally supports:
+
+- activity management;
+- volunteer activity assignment;
+- progress tracking;
+- evidence management;
+- administrator review workflow;
+- reusable activity templates.
+
+The modular architecture allows future Activity Layer enhancements to be implemented without affecting the existing attendance and presence monitoring modules.
 
 Following these architectural principles ensures that the backend remains consistent with the project's API contracts, database schema, and business rules while providing a stable platform for future development.

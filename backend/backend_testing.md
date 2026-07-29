@@ -689,3 +689,301 @@ Priority order:
 5. Reporting enhancements
 
 Business logic inside `app/services/` should receive the highest level of test coverage.
+
+# 13. Phase 3 Testing Strategy
+
+Phase 3 introduces activity management, volunteer assignments, progress tracking, evidence management, administrator review, and reusable activity templates.
+
+These features require additional unit tests, integration tests, workflow tests, and performance testing.
+
+---
+
+## 13.1 Test Structure
+
+Extend the existing structure.
+
+```
+tests/
+
+├── test_activities.py
+
+├── test_activity_assignments.py
+
+├── test_activity_progress.py
+
+├── test_activity_reviews.py
+
+├── test_activity_templates.py
+
+├── unit/
+
+│   ├── test_activity_service.py
+
+│   ├── test_activity_assignment_service.py
+
+│   ├── test_activity_progress_service.py
+
+│   ├── test_activity_review_service.py
+
+│   └── test_activity_template_service.py
+
+└── integration/
+
+    └── test_phase3_workflow.py
+```
+
+---
+
+## 13.2 Unit Tests
+
+Service layer tests should verify business logic independently of the API.
+
+### Activity Service
+
+- activity creation
+- activity updates
+- activity publication
+- activity cancellation
+- activity archival
+
+### Activity Assignment Service
+
+- assignment creation
+- duplicate assignment prevention
+- assignment validation
+- assignment status changes
+
+### Activity Progress Service
+
+- progress update creation
+- progress ordering
+- submission validation
+- evidence validation
+
+### Activity Review Service
+
+- verification
+- needs changes
+- review history
+- invalid review transitions
+
+### Activity Template Service
+
+- template creation
+- template update
+- template retrieval
+- activity generation
+
+---
+
+## 13.3 API Integration Tests
+
+Create endpoint tests for:
+
+### Activities
+
+- POST /activities
+- GET /activities
+- GET /activities/{id}
+- PATCH /activities/{id}
+- POST /activities/{id}/publish
+- POST /activities/{id}/cancel
+- POST /activities/{id}/archive
+
+### Assignments
+
+- POST /activities/{id}/assign
+- GET /activities/{id}/assignments
+- GET /members/me/assignments
+
+### Progress
+
+- POST /assignments/{id}/progress
+- GET /assignments/{id}/progress
+- POST /assignments/{id}/submit
+
+### Reviews
+
+- GET /activities/review/pending
+- POST /reviews/{id}/verify
+- POST /reviews/{id}/needs-changes
+
+### Templates
+
+- POST /activity-templates
+- GET /activity-templates
+- POST /activity-templates/{id}/apply
+
+---
+
+## 13.4 Activity Workflow Tests
+
+Verify the complete activity lifecycle.
+
+```
+Draft
+
+↓
+
+Published
+
+↓
+
+Assigned
+
+↓
+
+In Progress
+
+↓
+
+Submitted
+
+↓
+
+Verified
+```
+
+Also verify:
+
+```
+Submitted
+
+↓
+
+Needs Changes
+
+↓
+
+In Progress
+
+↓
+
+Submitted
+
+↓
+
+Verified
+```
+
+Each transition should be tested.
+
+---
+
+## 13.5 Evidence Tests
+
+Verify:
+
+- photo upload;
+- video upload;
+- maximum photo limit;
+- maximum video limit;
+- maximum video duration;
+- invalid file types;
+- evidence retrieval;
+- evidence becomes read-only after submission.
+
+---
+
+## 13.6 Assignment Tests
+
+Verify:
+
+- one activity assigned to multiple volunteers;
+- duplicate assignment prevention;
+- assignment conflict detection;
+- independent assignment lifecycle;
+- administrator-only assignment creation.
+
+---
+
+## 13.7 Template Tests
+
+Verify:
+
+- template creation;
+- template modification;
+- template retrieval;
+- template application;
+- generated activities remain independent of the template.
+
+---
+
+## 13.8 Authorization Tests
+
+Verify:
+
+Members:
+
+- cannot create activities;
+- cannot assign volunteers;
+- cannot review activities;
+- cannot modify another member's assignment.
+
+Administrators:
+
+- can create activities;
+- can assign volunteers;
+- can review submissions;
+- can manage templates.
+
+---
+
+## 13.9 Performance Tests
+
+Verify:
+
+- activity list retrieval remains responsive;
+- assignment queries use indexes efficiently;
+- review queue scales correctly;
+- evidence retrieval performs efficiently;
+- template application handles bulk activity generation.
+
+---
+
+## 13.10 Error Handling Tests
+
+Verify expected responses for:
+
+- activity not found;
+- duplicate assignment;
+- invalid activity state;
+- assignment not found;
+- submission already completed;
+- evidence limit exceeded;
+- invalid review state;
+- template not found;
+- unauthorized access.
+
+Responses must follow the standard API error format.
+
+---
+
+## 13.11 Acceptance Criteria
+
+Each Phase 3 feature should include tests covering:
+
+| Feature | Required Tests |
+|----------|----------------|
+| Activity Management | Creation, publication, cancellation, archival |
+| Assignment | Assignment, duplicate prevention, lifecycle |
+| Progress Updates | Creation, ordering, submission |
+| Evidence | Upload, limits, retrieval |
+| Review Workflow | Verification, needs changes, review history |
+| Activity Templates | Creation, application, independence |
+
+---
+
+## 13.12 Coverage Goal
+
+**Phase 3 target: 90% minimum backend coverage**
+
+Priority order:
+
+1. Activity lifecycle
+2. Assignment workflow
+3. Review workflow
+4. Evidence management
+5. Template generation
+
+Business logic inside the Activity services should receive the highest level of automated test coverage.

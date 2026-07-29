@@ -501,3 +501,375 @@
 - [ ] Update database documentation
 - [ ] Update progress.md
 - [ ] Add Phase 2 changelog entry
+
+# Backend Development To-Do List — Phase 3
+
+## Milestone 12: Activity Management
+
+### Database
+
+- [ ] Create activities table migration
+- [ ] Add foreign key relationship to events
+- [ ] Add created_by foreign key
+- [ ] Add cancelled_by foreign key
+- [ ] Create activity enums
+- [ ] Create indexes
+- [ ] Run migrations
+
+### Activity Service
+
+- [ ] Create ActivityService
+- [ ] Implement create_activity()
+- [ ] Implement update_activity()
+- [ ] Implement publish_activity()
+- [ ] Implement cancel_activity()
+- [ ] Implement archive_activity()
+- [ ] Validate activity lifecycle
+- [ ] Prevent invalid state transitions
+
+### API
+
+- [ ] Create POST /activities
+- [ ] Create GET /activities
+- [ ] Create GET /activities/{id}
+- [ ] Create PATCH /activities/{id}
+- [ ] Create POST /activities/{id}/publish
+- [ ] Create POST /activities/{id}/cancel
+- [ ] Create POST /activities/{id}/archive
+
+### Testing
+
+- [ ] Test activity creation
+- [ ] Test activity publication
+- [ ] Test activity cancellation
+- [ ] Test activity archival
+- [ ] Test activity retrieval
+
+---
+
+## Milestone 13: Activity Assignment
+
+### Database
+
+- [ ] Create activity_assignments table
+- [ ] Create foreign key relationships
+- [ ] Create unique constraint (activity_id, user_id)
+- [ ] Create indexes
+- [ ] Run migrations
+
+### Service
+
+- [ ] Create ActivityAssignmentService
+- [ ] Implement assign_member()
+- [ ] Implement remove_assignment()
+- [ ] Implement get_assignments()
+- [ ] Validate duplicate assignments
+- [ ] Validate assignment conflicts
+
+### API
+
+- [ ] Create POST /activities/{id}/assign
+- [ ] Create GET /activities/{id}/assignments
+- [ ] Create GET /members/me/assignments
+
+### Testing
+
+- [ ] Test assignment creation
+- [ ] Test duplicate prevention
+- [ ] Test multiple volunteer assignments
+- [ ] Test authorization
+
+---
+
+## Milestone 14: Activity Progress & Evidence
+
+### Database
+
+- [ ] Create activity_progress_updates table
+- [ ] Create activity_evidence table
+- [ ] Create indexes
+- [ ] Run migrations
+
+### Service
+
+- [ ] Create ActivityProgressService
+- [ ] Implement add_progress()
+- [ ] Implement upload_photo()
+- [ ] Implement upload_video()
+- [ ] Implement submit_for_review()
+- [ ] Validate evidence limits
+- [ ] Optimize uploaded files
+
+### File Storage
+
+- [ ] Create media/activities/photos
+- [ ] Create media/activities/videos
+- [ ] Store metadata only in database
+- [ ] Verify optimized file storage
+
+### API
+
+- [ ] Create POST /assignments/{id}/progress
+- [ ] Create GET /assignments/{id}/progress
+- [ ] Create POST /assignments/{id}/submit
+
+### Testing
+
+- [ ] Test progress creation
+- [ ] Test evidence upload
+- [ ] Test upload limits
+- [ ] Test activity submission
+- [ ] Test immutable evidence after submission
+
+---
+
+## Milestone 15: Activity Review
+
+### Database
+
+- [ ] Create activity_reviews table
+- [ ] Create foreign keys
+- [ ] Create indexes
+- [ ] Run migrations
+
+### Service
+
+- [ ] Create ActivityReviewService
+- [ ] Implement verify_activity()
+- [ ] Implement request_changes()
+- [ ] Implement get_pending_reviews()
+- [ ] Implement get_review_history()
+
+### API
+
+- [ ] Create GET /activities/review/pending
+- [ ] Create POST /reviews/{id}/verify
+- [ ] Create POST /reviews/{id}/needs-changes
+
+### Validation
+
+- [ ] Require remarks for Needs Changes
+- [ ] Preserve review history
+- [ ] Prevent invalid review states
+
+### Testing
+
+- [ ] Test verification
+- [ ] Test needs changes
+- [ ] Test review history
+- [ ] Test authorization
+
+---
+
+## Milestone 16: Activity Templates
+
+### Database
+
+- [ ] Create activity_templates table
+- [ ] Create activity_template_items table
+- [ ] Create indexes
+- [ ] Run migrations
+
+### Service
+
+- [ ] Create ActivityTemplateService
+- [ ] Implement create_template()
+- [ ] Implement update_template()
+- [ ] Implement apply_template()
+- [ ] Implement get_templates()
+
+### API
+
+- [ ] Create POST /activity-templates
+- [ ] Create GET /activity-templates
+- [ ] Create PATCH /activity-templates/{id}
+- [ ] Create POST /activity-templates/{id}/apply
+
+### Validation
+
+- [ ] Validate template structure
+- [ ] Generate independent activities
+- [ ] Preserve existing activities
+
+### Testing
+
+- [ ] Test template creation
+- [ ] Test template updates
+- [ ] Test template application
+- [ ] Test generated activities
+
+---
+
+## Milestone 17: Activity Reporting
+
+### Reporting Service
+
+- [ ] Extend activity reports
+- [ ] Include assignments
+- [ ] Include progress history
+- [ ] Include evidence references
+- [ ] Include review status
+- [ ] Include reviewer remarks
+
+### Export
+
+- [ ] Extend Excel export
+- [ ] Verify workbook formatting
+- [ ] Validate generated reports
+
+### Testing
+
+- [ ] Test report generation
+- [ ] Test report accuracy
+- [ ] Test exported workbook structure
+
+---
+
+## Milestone 18: Backend Polish
+
+### Error Handling
+
+- [ ] Add Phase 3 error codes
+- [ ] Standardize activity errors
+- [ ] Standardize assignment errors
+- [ ] Standardize review errors
+- [ ] Improve validation responses
+
+### Performance
+
+- [ ] Optimize activity queries
+- [ ] Optimize assignment queries
+- [ ] Optimize review queries
+- [ ] Review database indexes
+- [ ] Verify lazy loading where appropriate
+
+### Security
+
+- [ ] Verify administrator authorization
+- [ ] Verify volunteer ownership
+- [ ] Verify review permissions
+- [ ] Review endpoint protection
+
+---
+
+## Phase 3 Integration Testing
+
+- [ ] Test complete activity lifecycle
+- [ ] Test multiple volunteer assignments
+- [ ] Test progress updates
+- [ ] Test evidence uploads
+- [ ] Test review workflow
+- [ ] Test template generation
+- [ ] Test reporting enhancements
+- [ ] Test concurrent assignments
+- [ ] Test concurrent submissions
+- [ ] Test concurrent reviews
+
+---
+
+## Documentation
+
+- [ ] Verify implementation matches API_contract.md
+- [ ] Verify implementation follows rules_backend.md
+- [ ] Verify database schema matches implementation
+- [ ] Verify architecture documentation
+- [ ] Verify services documentation
+- [ ] Update backend_testing.md
+- [ ] Update progress.md
+- [ ] Add Phase 3 changelog entry
+
+---
+
+## Milestone 19: Final Verification & Release Readiness
+
+### Documentation Verification
+
+- [ ] Verify implementation matches PRD.md
+- [ ] Verify implementation matches API_contract.md
+- [ ] Verify implementation matches backend_database_schema.md
+- [ ] Verify implementation matches backend_architecture.md
+- [ ] Verify implementation matches backend_services.md
+- [ ] Verify implementation matches backend_api_implementation.md
+- [ ] Verify implementation matches backend_testing.md
+- [ ] Verify implementation follows rules_backend.md
+
+### Database Verification
+
+- [ ] Verify all migrations execute successfully
+- [ ] Verify foreign key relationships
+- [ ] Verify indexes are created
+- [ ] Verify enum definitions
+- [ ] Verify constraints
+- [ ] Verify rollback migrations
+
+### API Verification
+
+- [ ] Verify every endpoint matches API_contract.md
+- [ ] Verify request models
+- [ ] Verify response models
+- [ ] Verify HTTP status codes
+- [ ] Verify error responses
+- [ ] Verify authentication and authorization
+
+### Business Rule Verification
+
+- [ ] Verify activity lifecycle
+- [ ] Verify assignment workflow
+- [ ] Verify progress update workflow
+- [ ] Verify evidence validation
+- [ ] Verify review workflow
+- [ ] Verify template generation
+- [ ] Verify reporting workflow
+
+### Testing Verification
+
+- [ ] Run complete unit test suite
+- [ ] Run complete integration test suite
+- [ ] Verify coverage target is achieved
+- [ ] Verify performance benchmarks
+- [ ] Verify concurrency scenarios
+- [ ] Verify error handling scenarios
+
+### Security Verification
+
+- [ ] Verify administrator permissions
+- [ ] Verify volunteer permissions
+- [ ] Verify ownership validation
+- [ ] Verify protected endpoints
+- [ ] Verify file upload validation
+- [ ] Verify input validation
+
+### Performance Verification
+
+- [ ] Review database query performance
+- [ ] Verify index usage
+- [ ] Verify lazy loading where appropriate
+- [ ] Verify evidence optimization
+- [ ] Verify report generation performance
+
+### Frontend Integration Readiness
+
+- [ ] Verify API documentation is complete
+- [ ] Verify OpenAPI documentation
+- [ ] Verify frontend contract compatibility
+- [ ] Verify response consistency
+- [ ] Verify pagination
+- [ ] Verify filtering and sorting
+
+### Repository Verification
+
+- [ ] Cross-check implementation with Repo A documentation
+- [ ] Verify API contracts have not been modified
+- [ ] Verify backward compatibility
+- [ ] Review changelog
+- [ ] Update progress.md
+- [ ] Prepare implementation for frontend integration
+
+### Release Checklist
+
+- [ ] All milestones completed
+- [ ] All documentation updated
+- [ ] All tests passing
+- [ ] No known critical defects
+- [ ] Ready for frontend development
+- [ ] Ready for system integration

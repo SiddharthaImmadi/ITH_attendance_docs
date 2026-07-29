@@ -444,12 +444,21 @@ app/services/
 
 ├── monitoring_service.py
 
+├── activity_service.py
+
+├── activity_assignment_service.py
+
+├── activity_progress_service.py
+
+├── activity_review_service.py
+
+├── activity_template_service.py
+
 ├── reports_service.py
 
 ├── geo_service.py
 
 └── notification_service.py (optional)
-```
 
 Each service should own a single business domain.
 
@@ -728,4 +737,349 @@ All Phase 2 services should follow these principles:
 - Services communicate through clear interfaces.
 - Database operations are transactional.
 - Business rules are implemented once and reused.
+- Services remain independently testable.
+
+---
+
+# 12.13 Phase 3 Service Layer Extensions
+
+Phase 3 extends the service layer by introducing activity management, volunteer assignments, progress tracking, evidence management, activity review, and reusable activity templates.
+
+Each service owns a single business domain and communicates with other services through well-defined interfaces.
+
+---
+
+## 12.14 ActivityService
+
+ActivityService manages the lifecycle of activities.
+
+Responsibilities:
+
+- create activities
+- update activities
+- publish activities
+- cancel activities
+- archive activities
+
+Example methods:
+
+```python
+create_activity()
+
+update_activity()
+
+publish_activity()
+
+cancel_activity()
+
+archive_activity()
+```
+
+ActivityService should not manage volunteer assignments or evidence.
+
+---
+
+## 12.15 ActivityAssignmentService
+
+ActivityAssignmentService manages volunteer assignments.
+
+Responsibilities:
+
+- assign volunteers
+- validate assignment conflicts
+- retrieve assignments
+- maintain assignment status
+
+Example methods:
+
+```python
+assign_member()
+
+remove_assignment()
+
+get_assignments()
+
+validate_assignment()
+```
+
+AssignmentService should not manage progress updates or reviews.
+
+---
+
+## 12.16 ActivityProgressService
+
+ActivityProgressService manages activity execution.
+
+Responsibilities:
+
+- create progress updates
+- upload evidence
+- validate activity completion
+- submit activities for review
+
+Example methods:
+
+```python
+add_progress()
+
+upload_photo()
+
+upload_video()
+
+submit_for_review()
+```
+
+ProgressService should not perform administrative reviews.
+
+---
+
+## 12.17 ActivityReviewService
+
+ActivityReviewService manages administrator reviews.
+
+Responsibilities:
+
+- retrieve pending reviews
+- verify completed activities
+- request changes
+- preserve review history
+
+Example methods:
+
+```python
+get_pending_reviews()
+
+verify_activity()
+
+request_changes()
+
+get_review_history()
+```
+
+ReviewService should never modify activity progress.
+
+---
+
+## 12.18 ActivityTemplateService
+
+ActivityTemplateService manages reusable templates.
+
+Responsibilities:
+
+- create templates
+- update templates
+- retrieve templates
+- generate activities
+
+Example methods:
+
+```python
+create_template()
+
+update_template()
+
+apply_template()
+
+get_templates()
+```
+
+Templates should only define reusable activity structures.
+
+---
+
+## 12.19 Activity Service Communication
+
+Activity services communicate through clearly defined interfaces.
+
+Recommended workflow:
+
+```
+ActivityService
+
+↓
+
+ActivityAssignmentService
+
+↓
+
+ActivityProgressService
+
+↓
+
+ActivityReviewService
+```
+
+Supporting services:
+
+```
+ActivityProgressService
+
+↓
+
+GeoService
+```
+
+Administrative workflow:
+
+```
+ActivityReviewService
+
+↓
+
+ReportsService
+```
+
+Circular dependencies should be avoided.
+
+---
+
+## 12.20 Activity Business Rule Ownership
+
+Each business rule belongs to one service only.
+
+Examples:
+
+Activity lifecycle
+
+→ ActivityService
+
+Assignment validation
+
+→ ActivityAssignmentService
+
+Progress updates
+
+→ ActivityProgressService
+
+Evidence validation
+
+→ ActivityProgressService
+
+Review decisions
+
+→ ActivityReviewService
+
+Template generation
+
+→ ActivityTemplateService
+
+Report generation
+
+→ ReportsService
+
+Avoid implementing the same business rule in multiple services.
+
+---
+
+## 12.21 Activity State Management
+
+Assignment state transitions must be validated before changes are committed.
+
+Example:
+
+```
+ASSIGNED
+
+↓
+
+IN_PROGRESS
+
+↓
+
+UNDER_REVIEW
+
+↓
+
+VERIFIED
+```
+
+or
+
+```
+UNDER_REVIEW
+
+↓
+
+NEEDS_CHANGES
+
+↓
+
+IN_PROGRESS
+
+↓
+
+UNDER_REVIEW
+```
+
+Invalid transitions should raise appropriate exceptions.
+
+---
+
+## 12.22 Activity Transactions
+
+Operations affecting multiple tables should execute within a single database transaction.
+
+Examples:
+
+- activity assignment;
+- activity submission;
+- evidence upload;
+- review completion;
+- template application.
+
+Rollback the transaction if any operation fails.
+
+---
+
+## 12.23 Activity Service Testing
+
+Each Activity service should be tested independently.
+
+ActivityService:
+
+- lifecycle
+- publication
+- cancellation
+
+ActivityAssignmentService:
+
+- assignment validation
+- duplicate prevention
+- conflict detection
+
+ActivityProgressService:
+
+- progress updates
+- evidence upload
+- submission validation
+
+ActivityReviewService:
+
+- verification
+- needs changes
+- review history
+
+ActivityTemplateService:
+
+- template creation
+- template application
+- generated activities
+
+Mock database interactions where appropriate.
+
+---
+
+## 12.24 Phase 3 Service Principles
+
+All Phase 3 services should follow these principles:
+
+- Single Responsibility Principle.
+- Activities remain independent of attendance records.
+- Business logic belongs only in services.
+- Route handlers remain thin.
+- Services communicate through clear interfaces.
+- Database operations are transactional.
+- Review history is preserved.
+- Progress updates are append-only.
+- Templates generate independent activities.
 - Services remain independently testable.

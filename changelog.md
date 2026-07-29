@@ -18,8 +18,47 @@
 ## [Unreleased]
 
 ### Added
-- Nothing yet since v0.1.2.
+- Nothing yet.
 
+---
+
+## [v0.2.0] — 2026-07-29
+
+### Added
+
+- Phase 3 Activity Layer documentation completed.
+- Activity Management architecture documented.
+- Activity Assignment workflow documented.
+- Activity Progress Tracking documented.
+- Activity Evidence management documented.
+- Activity Review workflow documented.
+- Activity Template system documented.
+- Phase 3 backend testing strategy documented.
+- Phase 3 backend implementation roadmap documented.
+
+### Changed
+
+- `PRD.md` extended with complete Phase 3 requirements.
+- `API_contract.md` extended with the complete Activity Layer API.
+- `backend_database_schema.md` extended with Phase 3 database tables and relationships.
+- `backend_architecture.md` extended with Activity Layer architecture.
+- `backend_services.md` extended with Activity Layer services.
+- `backend_api_implementation.md` extended with Phase 3 implementation guidance.
+- `backend_testing.md` extended with Phase 3 testing strategy.
+- `backend_todo.md` extended with complete Phase 3 implementation milestones.
+- `backend_authentication.md` extended with Phase 3 authorization rules.
+- `backend_environment.md` extended with Activity Layer configuration.
+- `progress.md` updated to reflect completion of Phase 3 documentation.
+
+### Fixed
+
+- Documentation structure standardized across backend documentation.
+- Cross-document terminology aligned for Activities, Assignments, Reviews, Templates, and Evidence.
+- Documentation flow aligned with the backend implementation sequence.
+
+### Removed
+
+- None.
 ---
 
 ## [v0.1.2] — 2026-07-20

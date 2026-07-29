@@ -937,6 +937,1210 @@ Cancels a pending emergency request.
 --
 ---
 
+1. Standard Response Format
+2. Standard Error Format
+3. Authentication
+4. Events
+5. Attendance
+6. Presence Monitoring
+7. Emergency Tickets
+8. Activities
+9. Notifications
+10. Volunteer Blocking
+11. Reports
+12. Activity History
+13. Audit Logs
+14. Error Code Reference
+15. Status Enums
+16. API Contract Change Process
+17. API Changelog
+
+# Activities
+# Activities
+
+## Overview
+
+The Activities module enables administrators to plan, assign, monitor, and review volunteer work during an event.
+
+Activities are independent work items that may optionally be associated with an attendance session.
+
+Members only see activities assigned to them.
+
+All activity operations follow the business rules defined throughout the project documentation.
+
+---
+
+## Activity Lifecycle
+
+```
+Draft
+    ↓
+Published
+    ↓
+Assigned
+    ↓
+In Progress
+    ↓
+Under Review
+    ↓
+Verified
+```
+
+Activities may also be:
+
+- Cancelled
+- Archived
+
+Cancelled activities never become active again.
+
+Archived activities are read-only.
+
+---
+
+## POST /activities
+
+**Purpose:** Create a new activity.
+
+**Auth required:** Yes (admin only)
+
+
+### Validation Rules
+
+- Title is required.
+- Category is required.
+- Priority is required.
+- Session association is optional.
+- Event template is optional.
+
+---
+
+### Response 201
+
+```json
+{
+  "success": true,
+  "message": "Activity created successfully.",
+  "data": {
+    "activity_id": "uuid",
+    "status": "DRAFT"
+  }
+}
+```
+
+---
+
+## GET /activities
+
+
+
+## GET /activities/{activityId}
+
+Returns complete activity details.
+
+---
+
+## PATCH /activities/{activityId}/publish
+
+Publishes a draft activity.
+
+Only published activities may be assigned.
+
+---
+
+## POST /activities/{activityId}/duplicate
+
+Creates a new activity by copying the selected activity.
+
+Assignments, evidence, progress, reviews, notifications, and history are **not** copied.
+
+---
+
+## POST /activities/{activityId}/cancel
+
+Cancels an activity.
+
+Only administrators may cancel activities.
+
+Cancelled activities cannot be resumed.
+
+---
+
+## DELETE /activities/{activityId}
+
+Deletes an activity.
+
+Validation Rules:
+
+- Only Draft activities without assignments may be deleted.
+- Assigned activities cannot be deleted.
+- Cancelled activities cannot be deleted.
+- Archived activities cannot be deleted.
+
+---
+
+# Activity Assignment
+
+## POST /activities/{activityId}/assign
+
+**Purpose:** Assign one activity to one or more members.
+
+**Auth required:** Yes (admin only)
+
+### Request
+
+```json
+{
+  "member_ids": [
+    "member_uuid_1",
+    "member_uuid_2",
+    "member_uuid_3"
+  ]
+}
+```
+
+### Validation Rules
+
+- Activity must be in the **Published** state.
+- Only administrators may assign activities.
+- Members cannot assign themselves.
+- Assignment conflicts caused by overlapping schedules shall prevent assignment.
+- Members added to a group after assignment shall not automatically receive existing assignments.
+
+---
+
+### Response 201
+
+```json
+{
+  "success": true,
+  "message": "Activity assigned successfully.",
+  "data": {
+    "activity_id": "uuid",
+    "assigned_members": 3
+  }
+}
+```
+
+---
+
+## GET /activities/{activityId}/assignments
+
+**Purpose:** Retrieve all assignments for a specific activity.
+
+**Auth required:** Yes (admin only)
+
+### Response 200
+
+```json
+{
+  "success": true,
+  "message": "Assignments retrieved successfully.",
+  "data": [
+    {
+      "assignment_id": "uuid",
+      "member_id": "uuid",
+      "member_name": "Alice",
+      "status": "ASSIGNED",
+      "assigned_at": "2026-09-01T09:00:00Z"
+    }
+  ]
+}
+```
+
+---
+
+## GET /assignments/me
+
+### Response 200
+
+```json
+{
+  "success": true,
+  "message": "Assigned activities retrieved successfully.",
+  "data": {
+    "items": [
+      {
+        "assignment_id": "uuid",
+        "activity_id": "uuid",
+        "title": "Stage Setup",
+        "priority": "HIGH",
+        "status": "ASSIGNED",
+        "due_time": "2026-09-01T09:30:00Z"
+      }
+    ],
+    "pagination": {
+      "page": 1,
+      "page_size": 20,
+      "total_records": 8,
+      "total_pages": 1
+    }
+  }
+}
+```
+
+---
+
+## DELETE /assignments/{assignmentId}
+
+**Purpose:** Remove an assignment from a member.
+
+**Auth required:** Yes (admin only)
+
+### Validation Rules
+
+- Assignment may only be removed if the activity has not been started.
+- Assignments in **In Progress**, **Under Review**, or **Verified** cannot be removed.
+
+---
+
+### Response 200
+
+```json
+{
+  "success": true,
+  "message": "Assignment removed successfully."
+}
+```
+
+---
+
+# Activity Execution
+
+## Activity Assignment Lifecycle
+
+```
+Assigned
+    ↓
+In Progress
+    ↓
+Under Review
+    ↓
+Verified
+```
+
+If the reviewer requests changes:
+
+```
+Under Review
+      ↓
+Needs Changes
+      ↓
+In Progress
+      ↓
+Under Review
+```
+
+---
+
+## POST /assignments/{assignmentId}/start
+
+**Purpose:** Start an assigned activity.
+
+**Auth required:** Yes (member)
+
+### Validation Rules
+
+- The assignment must belong to the authenticated member.
+- The assignment must be in the **Assigned** state.
+- An activity can only be started once.
+- Once started, the activity cannot return to the **Assigned** state.
+
+### Response 200
+
+```json
+{
+  "success": true,
+  "message": "Activity started successfully.",
+  "data": {
+    "assignment_id": "uuid",
+    "status": "IN_PROGRESS",
+    "started_at": "2026-09-01T09:05:00Z"
+  }
+}
+```
+
+---
+
+## POST /assignments/{assignmentId}/progress
+
+**Purpose:** Add a progress update to an activity.
+
+**Auth required:** Yes (member)
+
+### Request
+
+```json
+{
+  "title": "Stage Preparation",
+  "description": "Completed arranging chairs and tables."
+}
+```
+
+### Validation Rules
+
+- Only the assigned member may add progress updates.
+- Progress updates are recorded chronologically.
+- Progress updates cannot be edited after submission for review.
+- Multiple progress updates are allowed.
+
+---
+
+### Response 201
+
+```json
+{
+  "success": true,
+  "message": "Progress update recorded successfully.",
+  "data": {
+    "progress_id": "uuid"
+  }
+}
+```
+
+---
+
+## GET /assignments/{assignmentId}/progress
+
+**Purpose:** Retrieve the complete progress timeline.
+
+**Auth required:** Yes
+
+### Response 200
+
+```json
+{
+  "success": true,
+  "message": "Progress timeline retrieved successfully.",
+  "data": {
+    "items": [
+      {
+        "progress_id": "uuid",
+        "title": "Stage Preparation",
+        "description": "Completed arranging chairs.",
+        "created_at": "2026-09-01T09:20:00Z"
+      }
+    ]
+  }
+}
+```
+
+---
+
+## POST /assignments/{assignmentId}/submit
+
+**Purpose:** Submit the completed activity for review.
+
+**Auth required:** Yes (member)
+
+### Validation Rules
+
+- Activity must be **In Progress**.
+- At least one progress update is required.
+- At least one evidence item is required.
+- Only the assigned member may submit the activity.
+- After submission, the activity becomes read-only for the member.
+
+---
+
+### Response 200
+
+```json
+{
+  "success": true,
+  "message": "Activity submitted successfully.",
+  "data": {
+    "assignment_id": "uuid",
+    "status": "UNDER_REVIEW",
+    "submitted_at": "2026-09-01T10:30:00Z"
+  }
+}
+```
+
+---
+
+## GET /assignments/{assignmentId}
+
+**Purpose:** Retrieve the complete assignment details.
+
+**Auth required:** Yes
+
+### Response 200
+
+```json
+{
+  "success": true,
+  "message": "Assignment retrieved successfully.",
+  "data": {
+    "assignment_id": "uuid",
+    "activity": {
+      "id": "uuid",
+      "title": "Stage Setup",
+      "priority": "HIGH"
+    },
+    "status": "IN_PROGRESS",
+    "started_at": "2026-09-01T09:05:00Z",
+    "submitted_at": null
+  }
+}
+```
+
+---
+
+# Evidence Management
+
+Evidence is always associated with a progress update rather than directly with an activity.
+
+Only live camera capture is supported. Gallery uploads and manual file uploads are not permitted.
+
+Evidence remains editable until the activity is submitted for review.
+
+---
+
+## POST /progress/{progressId}/photos
+
+**Purpose:** Capture and upload one or more live photos for a progress update.
+
+**Auth required:** Yes (member)
+
+### Request
+
+Multipart Form Data
+
+| Field | Type | Required |
+|---|---|---|
+| photos | File[] | Yes |
+
+### Validation Rules
+
+- Only the assigned member may upload evidence.
+- Photos must be captured using the device camera.
+- Gallery uploads are not permitted.
+- Maximum of 10 photos per activity.
+- Photos are automatically optimized before storage.
+- Evidence cannot be uploaded after the activity is submitted for review.
+
+---
+
+### Response 201
+
+```json
+{
+  "success": true,
+  "message": "Photos uploaded successfully.",
+  "data": {
+    "uploaded": 4
+  }
+}
+```
+
+---
+
+## POST /progress/{progressId}/videos
+
+**Purpose:** Capture and upload live videos for a progress update.
+
+**Auth required:** Yes (member)
+
+### Request
+
+Multipart Form Data
+
+| Field | Type | Required |
+|---|---|---|
+| videos | File[] | Yes |
+
+### Validation Rules
+
+- Only live camera recording is permitted.
+- Gallery uploads are not permitted.
+- Maximum of 2 videos per activity.
+- Each video must not exceed 1 minute.
+- Videos are automatically optimized before storage.
+- Evidence cannot be uploaded after the activity is submitted for review.
+
+---
+
+### Response 201
+
+```json
+{
+  "success": true,
+  "message": "Videos uploaded successfully.",
+  "data": {
+    "uploaded": 1
+  }
+}
+```
+
+---
+
+## GET /progress/{progressId}/evidence
+
+**Purpose:** Retrieve all evidence associated with a progress update.
+
+**Auth required:** Yes
+
+### Response 200
+
+```json
+{
+  "success": true,
+  "message": "Evidence retrieved successfully.",
+  "data": {
+    "photos": [
+      {
+        "id": "uuid",
+        "url": "/media/photo1.jpg",
+        "captured_at": "2026-09-01T09:15:22Z"
+      }
+    ],
+    "videos": [
+      {
+        "id": "uuid",
+        "url": "/media/video1.mp4",
+        "duration_seconds": 42,
+        "captured_at": "2026-09-01T09:18:40Z"
+      }
+    ]
+  }
+}
+```
+
+---
+
+## DELETE /evidence/{evidenceId}
+
+**Purpose:** Delete evidence before activity submission.
+
+**Auth required:** Yes (member)
+
+### Validation Rules
+
+- Only the member who uploaded the evidence may delete it.
+- Evidence may only be deleted before the activity is submitted for review.
+- Members may replace deleted evidence with newly captured evidence.
+
+---
+
+### Response 200
+
+```json
+{
+  "success": true,
+  "message": "Evidence deleted successfully."
+}
+```
+
+---
+
+## Evidence Metadata
+
+The system automatically records metadata for every evidence item.
+
+Members cannot modify this information.
+
+### Stored Metadata
+
+- Evidence ID
+- Assignment ID
+- Progress Update ID
+- Captured Timestamp
+- Device Information
+- GPS Coordinates (when available)
+- File Type
+- File Size
+- Media Duration (videos only)
+
+---
+
+## Business Rules
+
+- Evidence belongs to a progress update.
+- Evidence cannot exist without a progress update.
+- Gallery uploads are never permitted.
+- Manual file uploads are never permitted.
+- Members may capture multiple photos and videos before submission.
+- After submission for review, all evidence becomes read-only.
+- Optimized media shall preserve sufficient quality for administrative review.
+
+---
+
+# Review Workflow
+
+Completed activities enter the review process after submission.
+
+Only administrators can review submitted activities.
+
+Members cannot modify submitted activities unless the reviewer requests changes.
+
+---
+
+## Review Lifecycle
+
+```
+Under Review
+      │
+      ├──────────────► Verified
+      │
+      └──────────────► Needs Changes
+                            │
+                            ▼
+                       In Progress
+                            │
+                            ▼
+                      Under Review
+```
+
+Activities remain in this cycle until they are successfully verified.
+
+---
+
+## GET /reviews/pending
+
+
+
+### Response 200
+
+```json
+{
+  "success": true,
+  "message": "Pending reviews retrieved successfully.",
+  "data": {
+    "items": [
+      {
+        "assignment_id": "uuid",
+        "activity_title": "Stage Setup",
+        "member_name": "Alice",
+        "submitted_at": "2026-09-01T10:30:00Z",
+        "priority": "HIGH"
+      }
+    ]
+  }
+}
+```
+
+---
+
+## GET /reviews/{assignmentId}
+
+**Purpose:** Retrieve a complete submission for review.
+
+**Auth required:** Yes (admin only)
+
+### Response 200
+
+```json
+{
+  "success": true,
+  "message": "Review details retrieved successfully.",
+  "data": {
+    "assignment_id": "uuid",
+    "activity": {
+      "title": "Stage Setup",
+      "category": "Logistics"
+    },
+    "progress_updates": [],
+    "evidence": [],
+    "submitted_at": "2026-09-01T10:30:00Z"
+  }
+}
+```
+
+---
+
+## POST /reviews/{assignmentId}/verify
+
+**Purpose:** Verify a completed activity.
+
+**Auth required:** Yes (admin only)
+
+### Request
+
+```json
+{
+  "remarks": "Excellent work."
+}
+```
+
+### Validation Rules
+
+- Assignment must be in **Under Review**.
+- Remarks are optional.
+- Only administrators may verify activities.
+
+---
+
+### Response 200
+
+```json
+{
+  "success": true,
+  "message": "Activity verified successfully.",
+  "data": {
+    "status": "VERIFIED"
+  }
+}
+```
+
+---
+
+## POST /reviews/{assignmentId}/needs-changes
+
+**Purpose:** Request corrections before approving an activity.
+
+**Auth required:** Yes (admin only)
+
+### Request
+
+```json
+{
+  "remarks": "Please upload a photo of the completed stage from the front entrance."
+}
+```
+
+### Validation Rules
+
+- Assignment must be in **Under Review**.
+- Review remarks are mandatory.
+- Only administrators may request changes.
+
+---
+
+### Response 200
+
+```json
+{
+  "success": true,
+  "message": "Review completed. Changes requested.",
+  "data": {
+    "status": "NEEDS_CHANGES"
+  }
+}
+```
+
+---
+
+## GET /reviews/history
+
+**Purpose:** Retrieve completed review history.
+
+**Auth required:** Yes (admin only)
+
+### Optional Filters
+
+- reviewer
+- member
+- event
+- session
+- status
+- category
+
+---
+
+### Response 200
+
+```json
+{
+  "success": true,
+  "message": "Review history retrieved successfully.",
+  "data": {
+    "items": [
+      {
+        "assignment_id": "uuid",
+        "member_name": "Alice",
+        "review_status": "VERIFIED",
+        "reviewed_at": "2026-09-01T11:10:00Z"
+      }
+    ]
+  }
+}
+```
+
+---
+
+## Business Rules
+
+- Only administrators may review activities.
+- Members cannot review their own submissions.
+- Verified activities become read-only.
+- Selecting **Needs Changes** requires review remarks.
+- Members respond to **Needs Changes** by submitting additional progress updates and evidence.
+- Previously submitted progress updates and evidence are preserved for audit purposes.
+- Every review action is recorded in the audit log.
+
+---
+
+# Activity Templates
+
+Activity Templates help administrators quickly create commonly used activities for recurring event types.
+
+Templates define the basic structure of an activity but do not include assignments, progress updates, evidence, reviews, notifications, or historical data.
+
+---
+
+## GET /activity-templates
+
+**Purpose:** Retrieve all available activity templates.
+
+**Auth required:** Yes (admin only)
+
+### Optional Filters
+
+- event_type
+- category
+- status
+
+---
+
+### Response 200
+
+```json
+{
+  "success": true,
+  "message": "Activity templates retrieved successfully.",
+  "data": {
+    "items": [
+      {
+        "template_id": "uuid",
+        "name": "Workshop Template",
+        "event_type": "Workshop",
+        "activities": 8,
+        "created_at": "2026-09-01T09:00:00Z"
+      }
+    ]
+  }
+}
+```
+
+---
+
+## POST /activity-templates
+
+**Purpose:** Create a new activity template.
+
+**Auth required:** Yes (admin only)
+
+### Request
+
+```json
+{
+  "name": "Workshop Template",
+  "event_type": "Workshop",
+  "activities": [
+    {
+      "title": "Stage Setup",
+      "category": "Logistics",
+      "priority": "HIGH"
+    },
+    {
+      "title": "Photography",
+      "category": "Media",
+      "priority": "MEDIUM"
+    }
+  ]
+}
+```
+
+### Validation Rules
+
+- Template name is required.
+- Event type is required.
+- At least one activity is required.
+- Activity titles must be unique within the template.
+
+---
+
+### Response 201
+
+```json
+{
+  "success": true,
+  "message": "Activity template created successfully.",
+  "data": {
+    "template_id": "uuid"
+  }
+}
+```
+
+---
+
+## GET /activity-templates/{templateId}
+
+**Purpose:** Retrieve complete template details.
+
+**Auth required:** Yes (admin only)
+
+### Response 200
+
+```json
+{
+  "success": true,
+  "message": "Activity template retrieved successfully.",
+  "data": {
+    "template_id": "uuid",
+    "name": "Workshop Template",
+    "event_type": "Workshop",
+    "activities": [
+      {
+        "title": "Stage Setup",
+        "category": "Logistics",
+        "priority": "HIGH"
+      }
+    ]
+  }
+}
+```
+
+---
+
+## PATCH /activity-templates/{templateId}
+
+**Purpose:** Update an existing activity template.
+
+**Auth required:** Yes (admin only)
+
+### Validation Rules
+
+- Templates may only be edited by administrators.
+- Updating a template does not modify activities already created from it.
+
+---
+
+### Response 200
+
+```json
+{
+  "success": true,
+  "message": "Activity template updated successfully."
+}
+```
+
+---
+
+## DELETE /activity-templates/{templateId}
+
+**Purpose:** Delete an activity template.
+
+**Auth required:** Yes (admin only)
+
+### Validation Rules
+
+- Templates currently being used by active events cannot be deleted.
+- Deleted templates do not affect activities that were previously created from them.
+
+---
+
+### Response 200
+
+```json
+{
+  "success": true,
+  "message": "Activity template deleted successfully."
+}
+```
+
+---
+
+## POST /activity-templates/{templateId}/apply
+
+
+### Validation Rules
+
+- Event ID is required.
+- Session association is optional.
+- Activities created from a template are created as **Draft** activities.
+- Administrators may modify the generated draft activities before publishing.
+
+---
+
+### Response 201
+
+```json
+{
+  "success": true,
+  "message": "Activity template applied successfully.",
+  "data": {
+    "activities_created": 8
+  }
+}
+```
+
+---
+
+## Business Rules
+
+- Each event type should typically maintain one standard template.
+- Administrators may update the template over time as organizational needs evolve.
+- Templates define the initial structure of activities.
+- Assignments are never stored in templates.
+- Progress updates are never stored in templates.
+- Evidence is never stored in templates.
+- Reviews are never stored in templates.
+- Templates are intended to reduce repetitive activity creation for recurring event types.
+
+---
+
+# Activity Reports
+
+Activity reports extend the attendance reports introduced in earlier phases by providing detailed information about activity planning, execution, evidence, and review.
+
+Reports are generated on demand and may be exported for auditing and record keeping.
+
+---
+
+## GET /reports/activities.xlsx
+
+**Purpose:** Export activities for one or more events.
+
+**Auth required:** Yes (admin only)
+
+### Optional Query Parameters
+
+| Parameter | Description |
+|---|---|
+| event_id | Filter by event |
+| category | Filter by activity category |
+| priority | Filter by priority |
+| status | Filter by activity status |
+| assigned_member | Filter by member |
+| review_status | Filter by review result |
+
+---
+
+### Response 200
+
+Returns an Excel workbook.
+
+### Workbook Sheets
+
+- Activity Summary
+- Assignment Summary
+- Progress Timeline
+- Evidence Summary
+- Review Summary
+- Activity Statistics
+
+---
+
+## GET /reports/activities/{activityId}.xlsx
+
+**Purpose:** Export a complete report for a single activity.
+
+**Auth required:** Yes (admin only)
+
+### Response 200
+
+Returns an Excel workbook containing:
+
+- Activity Details
+- Assignment Details
+- Progress Timeline
+- Evidence
+- Review Information
+- Activity Audit Summary
+
+---
+
+## GET /reports/activity-statistics
+
+
+
+### Response 200
+
+```json
+{
+  "success": true,
+  "message": "Activity statistics retrieved successfully.",
+  "data": {
+    "total_activities": 120,
+    "assigned": 118,
+    "in_progress": 27,
+    "under_review": 8,
+    "verified": 74,
+    "needs_changes": 9,
+    "cancelled": 2
+  }
+}
+```
+
+---
+
+## Business Rules
+
+- Reports are generated on demand.
+- Only administrators may export reports.
+- Archived activities remain available for reporting.
+- Reports include verified, needs changes, cancelled, and archived activities.
+- Report contents always reflect the latest approved data.
+
+---
+
+# Activity Error Codes
+
+| Code | HTTP Status | Used In | Meaning |
+|---|---|---|---|
+| ACTIVITY_NOT_FOUND | 404 | Activities | Activity does not exist |
+| ACTIVITY_NOT_PUBLISHED | 422 | Assignment | Activity must be published before assignment |
+| ACTIVITY_ALREADY_STARTED | 409 | Start Activity | Activity has already been started |
+| ACTIVITY_ALREADY_SUBMITTED | 409 | Submit Activity | Activity has already been submitted |
+| ASSIGNMENT_CONFLICT | 409 | Assignment | Member has a conflicting assignment |
+| ASSIGNMENT_NOT_FOUND | 404 | Assignments | Assignment not found |
+| ACTIVITY_NOT_ASSIGNED | 403 | Execution | Activity is not assigned to this member |
+| PROGRESS_REQUIRED | 422 | Submit Activity | At least one progress update is required |
+| EVIDENCE_REQUIRED | 422 | Submit Activity | At least one evidence item is required |
+| PHOTO_LIMIT_EXCEEDED | 422 | Evidence | Maximum photo limit exceeded |
+| VIDEO_LIMIT_EXCEEDED | 422 | Evidence | Maximum video limit exceeded |
+| VIDEO_DURATION_EXCEEDED | 422 | Evidence | Video exceeds the allowed duration |
+| LIVE_CAPTURE_REQUIRED | 422 | Evidence | Gallery uploads and manual file uploads are not permitted |
+| REVIEW_ALREADY_COMPLETED | 409 | Review | Review has already been completed |
+| REVIEW_REMARK_REQUIRED | 422 | Review | Remarks are required when requesting changes |
+| TEMPLATE_NOT_FOUND | 404 | Templates | Activity template not found |
+| TEMPLATE_IN_USE | 409 | Templates | Template cannot be deleted while in use |
+
+---
+
+# Activity Status Enums
+
+## Activity Status
+
+- DRAFT
+- PUBLISHED
+- CANCELLED
+- ARCHIVED
+
+---
+
+## Assignment Status
+
+- ASSIGNED
+- IN_PROGRESS
+- UNDER_REVIEW
+- VERIFIED
+- NEEDS_CHANGES
+
+---
+
+## Priority
+
+- LOW
+- MEDIUM
+- HIGH
+- CRITICAL
+
+---
+
+## Evidence Type
+
+- PHOTO
+- VIDEO
+
+---
+
+## Review Decision
+
+- VERIFIED
+- NEEDS_CHANGES
+
 # Notifications
 
 Notifications provide in-app alerts generated automatically by the system.
@@ -2201,41 +3405,6 @@ No request body.
 | event_id | UUID | No | Filter by event |
 | from | DateTime | No | Start date |
 | to | DateTime | No | End date |
-
----
-
-## Success Response
-
-HTTP 200 OK
-
-```json
-{
-  "success": true,
-  "message": "Activity history retrieved successfully.",
-  "data": {
-    "items": [
-      {
-        "id": "history_uuid",
-        "category": "ATTENDANCE",
-        "activity_type": "CHECK_IN",
-        "title": "Attendance Started",
-        "description": "Successfully checked in.",
-        "created_at": "2026-08-01T09:02:15Z",
-        "metadata": {
-          "event_id": "event_uuid",
-          "attendance_id": "attendance_uuid"
-        }
-      }
-    ],
-    "pagination": {
-      "page": 1,
-      "page_size": 20,
-      "total_records": 52,
-      "total_pages": 3
-    }
-  }
-}
-```
 
 ---
 

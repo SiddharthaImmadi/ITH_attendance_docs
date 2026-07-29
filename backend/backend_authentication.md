@@ -516,3 +516,291 @@ Phase 2 extends authorization while preserving:
 - secure password handling;
 - short-lived access tokens;
 - dependency-based authorization.
+
+# 14. Phase 3 Authentication & Authorization Extensions
+
+Phase 3 continues using the existing JWT authentication architecture.
+
+No changes are required to:
+
+- password hashing;
+- JWT generation;
+- JWT verification;
+- token expiration;
+- login flow.
+
+Phase 3 extends authorization rules to support activity management, volunteer assignments, activity reviews, and template management.
+
+---
+
+## 14.1 Authentication Flow
+
+Authentication remains unchanged.
+
+```
+Login
+
+↓
+
+JWT Issued
+
+↓
+
+Protected API Request
+
+↓
+
+JWT Verification
+
+↓
+
+Role Verification
+
+↓
+
+Ownership Validation
+
+↓
+
+Business Logic
+```
+
+All Phase 3 endpoints require a valid JWT.
+
+---
+
+## 14.2 Member Permissions
+
+Authenticated members may:
+
+- view assigned activities;
+- view activity details;
+- create progress updates;
+- upload activity evidence;
+- submit activities for review;
+- view their own review history;
+- view activity history.
+
+Members may not:
+
+- create activities;
+- publish activities;
+- cancel activities;
+- archive activities;
+- assign volunteers;
+- review activities;
+- manage activity templates.
+
+---
+
+## 14.3 Administrator Permissions
+
+Authenticated administrators may:
+
+- create activities;
+- update activities;
+- publish activities;
+- cancel activities;
+- archive activities;
+- assign volunteers;
+- review submitted activities;
+- request changes;
+- verify completed activities;
+- manage activity templates;
+- generate activity reports.
+
+Administrators may only manage resources they own where ownership rules apply.
+
+---
+
+## 14.4 Authorization Dependencies
+
+Continue using dependency injection.
+
+Examples:
+
+```python
+get_current_user()
+
+get_current_admin()
+```
+
+Business services should assume authorization has already been validated by the route layer.
+
+---
+
+## 14.5 Endpoint Protection
+
+Member endpoints:
+
+```
+GET  /members/me/assignments
+
+GET  /assignments/{id}/progress
+
+POST /assignments/{id}/progress
+
+POST /assignments/{id}/submit
+
+GET  /members/me/activity-history
+```
+
+Administrator endpoints:
+
+```
+POST  /activities
+
+PATCH /activities/{id}
+
+POST  /activities/{id}/publish
+
+POST  /activities/{id}/cancel
+
+POST  /activities/{id}/archive
+
+POST  /activities/{id}/assign
+
+GET   /activities/review/pending
+
+POST  /reviews/{id}/verify
+
+POST  /reviews/{id}/needs-changes
+
+POST  /activity-templates
+
+PATCH /activity-templates/{id}
+
+POST  /activity-templates/{id}/apply
+```
+
+All endpoints require authentication.
+
+Administrator endpoints additionally require administrator authorization.
+
+---
+
+## 14.6 Ownership Validation
+
+Authorization extends beyond roles.
+
+Services should verify ownership before returning protected resources.
+
+Examples:
+
+Members:
+
+- may only access assignments assigned to them;
+- may only upload progress to their own assignments;
+- may only submit their own assignments;
+- may only access their own activity history.
+
+Administrators:
+
+- may only manage activities they created;
+- may only review activities belonging to events they manage.
+
+Ownership validation belongs in the service layer.
+
+---
+
+## 14.7 Activity Review Authorization
+
+Review operations require administrator authorization.
+
+The backend must verify:
+
+- reviewer is an administrator;
+- assignment exists;
+- assignment is awaiting review;
+- assignment has not already been verified.
+
+Review decisions become permanent records.
+
+---
+
+## 14.8 Template Authorization
+
+Only administrators may:
+
+- create templates;
+- modify templates;
+- apply templates.
+
+Members have no access to template management endpoints.
+
+---
+
+## 14.9 Security Principles
+
+Phase 3 continues the existing security model.
+
+Principles:
+
+- authenticate every protected request;
+- authorize every sensitive operation;
+- never trust client-provided user identifiers;
+- derive user identity from the verified JWT;
+- validate ownership before returning data;
+- preserve review history;
+- prevent unauthorized activity management.
+
+---
+
+## 14.10 Error Responses
+
+Unauthorized authentication:
+
+```
+401 UNAUTHORIZED
+```
+
+Insufficient permissions:
+
+```
+403 FORBIDDEN
+```
+
+Ownership violation:
+
+```
+404 NOT_FOUND
+```
+
+Invalid activity state:
+
+```
+409 CONFLICT
+```
+
+Returning `404` for unauthorized ownership prevents resource enumeration.
+
+---
+
+## 14.11 Testing Requirements
+
+Verify:
+
+- members cannot create activities;
+- members cannot assign volunteers;
+- members cannot review activities;
+- members cannot access another member's assignments;
+- administrators can manage activities;
+- administrators can review submissions;
+- administrators can manage templates;
+- JWT authentication remains required for all protected endpoints.
+
+---
+
+## 14.12 Phase 3 Security Principles
+
+The authentication architecture remains unchanged.
+
+Phase 3 extends authorization while preserving:
+
+- stateless JWT authentication;
+- role-based access control;
+- ownership validation;
+- secure password handling;
+- short-lived access tokens;
+- dependency-based authorization;
+- centralized authorization logic.

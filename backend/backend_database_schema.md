@@ -420,6 +420,111 @@ CREATE TYPE audit_action_type AS ENUM (
     'LOGOUT'
 );
 ```
+---
+
+### activity_status
+
+Defines the lifecycle state of an activity.
+
+```sql
+CREATE TYPE activity_status AS ENUM (
+    'DRAFT',
+    'PUBLISHED',
+    'CANCELLED',
+    'ARCHIVED'
+);
+```
+
+| Value | Description |
+|---------|-------------|
+| DRAFT | Activity is being prepared |
+| PUBLISHED | Activity is available for assignment |
+| CANCELLED | Activity has been cancelled |
+| ARCHIVED | Activity is archived and read-only |
+
+---
+
+### assignment_status
+
+Defines the lifecycle state of an activity assignment.
+
+```sql
+CREATE TYPE assignment_status AS ENUM (
+    'ASSIGNED',
+    'IN_PROGRESS',
+    'UNDER_REVIEW',
+    'VERIFIED',
+    'NEEDS_CHANGES'
+);
+```
+
+| Value | Description |
+|---------|-------------|
+| ASSIGNED | Activity assigned to a member |
+| IN_PROGRESS | Member has started the activity |
+| UNDER_REVIEW | Awaiting administrator review |
+| VERIFIED | Activity successfully verified |
+| NEEDS_CHANGES | Administrator requested corrections |
+
+---
+
+### activity_priority
+
+Defines the priority assigned to an activity.
+
+```sql
+CREATE TYPE activity_priority AS ENUM (
+    'LOW',
+    'MEDIUM',
+    'HIGH',
+    'CRITICAL'
+);
+```
+
+| Value | Description |
+|---------|-------------|
+| LOW | Low priority |
+| MEDIUM | Medium priority |
+| HIGH | High priority |
+| CRITICAL | Highest priority |
+
+---
+
+### evidence_type
+
+Defines the type of evidence submitted for an activity.
+
+```sql
+CREATE TYPE evidence_type AS ENUM (
+    'PHOTO',
+    'VIDEO'
+);
+```
+
+| Value | Description |
+|---------|-------------|
+| PHOTO | Live captured photograph |
+| VIDEO | Live captured video |
+
+---
+
+### review_decision
+
+Defines the administrator's review decision.
+
+```sql
+CREATE TYPE review_decision AS ENUM (
+    'VERIFIED',
+    'NEEDS_CHANGES'
+);
+```
+
+| Value | Description |
+|---------|-------------|
+| VERIFIED | Activity accepted |
+| NEEDS_CHANGES | Corrections requested |
+
+
 
 ## Database Tables
 
@@ -1627,6 +1732,859 @@ Examples of actions recorded in the audit log include:
 - The `entity_type` and `entity_id` fields allow audit logs to reference any application entity without requiring separate audit tables.
 - Audit logs complement, but do not replace, the user-facing `activity_history` table.
 
+# activities
+
+## Purpose
+
+Stores activities created by administrators for an event.
+
+Activities represent operational work assigned to volunteers during an event. Each activity belongs to a single event and serves as the parent record for assignments, progress updates, evidence, and review.
+
+---
+
+## Table Definition
+
+| Column | Type | Nullable | Default | Description |
+|----------|------|----------|----------|-------------|
+| id | UUID | No | uuid_generate_v4() | Primary key |
+| event_id | UUID | No | — | Associated event |
+| title | VARCHAR(255) | No | — | Activity title |
+| description | TEXT | Yes | NULL | Activity description |
+| category | VARCHAR(100) | No | — | Activity category |
+| priority | activity_priority | No | MEDIUM | Activity priority |
+| status | activity_status | No | DRAFT | Current activity status |
+| created_by | UUID | No | — | Administrator who created the activity |
+| cancelled_by | UUID | Yes | NULL | Administrator who cancelled the activity |
+| cancelled_reason | TEXT | Yes | NULL | Cancellation reason |
+| cancelled_at | TIMESTAMPTZ | Yes | NULL | Cancellation timestamp |
+| archived_at | TIMESTAMPTZ | Yes | NULL | Archive timestamp |
+| created_at | TIMESTAMPTZ | No | NOW() | Creation timestamp |
+| updated_at | TIMESTAMPTZ | No | NOW() | Last update timestamp |
+
+---
+
+# activity_assignments
+
+## Purpose
+
+Stores the assignment of activities to individual volunteers.
+
+Each assignment represents one volunteer's responsibility for completing a specific activity. Assignments maintain the execution status, progress, review lifecycle, and completion history independently for each volunteer.
+
+---
+
+## Table Definition
+
+| Column | Type | Nullable | Default | Description |
+|----------|------|----------|----------|-------------|
+| id | UUID | No | uuid_generate_v4() | Primary key |
+| activity_id | UUID | No | — | Associated activity |
+| user_id | UUID | No | — | Assigned volunteer |
+| status | assignment_status | No | ASSIGNED | Current assignment status |
+| assigned_by | UUID | No | — | Administrator who assigned the activity |
+| started_at | TIMESTAMPTZ | Yes | NULL | Activity start time |
+| submitted_at | TIMESTAMPTZ | Yes | NULL | Submission time |
+| verified_at | TIMESTAMPTZ | Yes | NULL | Verification time |
+| created_at | TIMESTAMPTZ | No | NOW() | Assignment creation timestamp |
+| updated_at | TIMESTAMPTZ | No | NOW() | Last update timestamp |
+
+---
+
+## Constraints
+
+- Primary Key (`id`)
+- Foreign Key (`activity_id`) → `activities(id)`
+- Foreign Key (`user_id`) → `users(id)`
+- Foreign Key (`assigned_by`) → `users(id)`
+- One volunteer may only be assigned once to the same activity.
+
+---
+
+## Relationships
+
+Each assignment:
+
+- belongs to one activity;
+- belongs to one volunteer;
+- is created by one administrator;
+- may have multiple progress updates;
+- may have one review.
+
+One activity may have multiple assignments.
+
+---
+
+## Indexes
+
+| Index | Purpose |
+|---------|----------|
+| idx_activity_assignments_activity | Activity lookup |
+| idx_activity_assignments_user | Volunteer lookup |
+| idx_activity_assignments_status | Assignment status filtering |
+| idx_activity_assignments_created_at | Chronological ordering |
+
+---
+
+## SQL Definition
+
+```sql
+CREATE TABLE activity_assignments (
+
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+
+    activity_id UUID NOT NULL
+        REFERENCES activities(id)
+        ON DELETE CASCADE,
+
+    user_id UUID NOT NULL
+        REFERENCES users(id)
+        ON DELETE CASCADE,
+
+    status assignment_status
+        NOT NULL DEFAULT 'ASSIGNED',
+
+    assigned_by UUID NOT NULL
+        REFERENCES users(id),
+
+    started_at TIMESTAMPTZ,
+
+    submitted_at TIMESTAMPTZ,
+
+    verified_at TIMESTAMPTZ,
+
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+    CONSTRAINT uq_activity_assignment
+        UNIQUE(activity_id, user_id)
+);
+
+CREATE INDEX idx_activity_assignments_activity
+ON activity_assignments(activity_id);
+
+CREATE INDEX idx_activity_assignments_user
+ON activity_assignments(user_id);
+
+CREATE INDEX idx_activity_assignments_status
+ON activity_assignments(status);
+
+CREATE INDEX idx_activity_assignments_created_at
+ON activity_assignments(created_at);
+```
+
+---
+
+## Assignment Lifecycle
+
+```
+ASSIGNED
+
+    │
+
+    ▼
+
+IN_PROGRESS
+
+    │
+
+    ▼
+
+UNDER_REVIEW
+
+    │
+
+    ├────────────► VERIFIED
+
+    │
+
+    └────────────► NEEDS_CHANGES
+                        │
+                        ▼
+                  IN_PROGRESS
+```
+
+---
+
+## Notes
+
+- Assignments are created only by administrators.
+- One volunteer cannot receive duplicate assignments for the same activity.
+- Activities assigned to multiple volunteers create independent assignment records.
+- Each assignment maintains its own execution, evidence, and review lifecycle.
+- Assignment status changes do not affect other volunteers assigned to the same activity.
+
+# activity_progress_updates
+
+## Purpose
+
+Stores chronological progress updates submitted by volunteers while completing an assigned activity.
+
+Each progress update records a milestone in the activity timeline and may contain one or more evidence items.
+
+---
+
+## Table Definition
+
+| Column | Type | Nullable | Default | Description |
+|----------|------|----------|----------|-------------|
+| id | UUID | No | uuid_generate_v4() | Primary key |
+| assignment_id | UUID | No | — | Associated activity assignment |
+| title | VARCHAR(255) | No | — | Progress update title |
+| description | TEXT | No | — | Progress update description |
+| created_at | TIMESTAMPTZ | No | NOW() | Creation timestamp |
+
+---
+
+## Constraints
+
+- Primary Key (`id`)
+- Foreign Key (`assignment_id`) → `activity_assignments(id)`
+
+---
+
+## Relationships
+
+Each progress update:
+
+- belongs to one activity assignment;
+- may contain multiple evidence items.
+
+One activity assignment may contain multiple progress updates.
+
+---
+
+## Indexes
+
+| Index | Purpose |
+|---------|----------|
+| idx_progress_assignment | Assignment lookup |
+| idx_progress_created_at | Chronological ordering |
+
+---
+
+## SQL Definition
+
+```sql
+CREATE TABLE activity_progress_updates (
+
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+
+    assignment_id UUID NOT NULL
+        REFERENCES activity_assignments(id)
+        ON DELETE CASCADE,
+
+    title VARCHAR(255) NOT NULL,
+
+    description TEXT NOT NULL,
+
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_progress_assignment
+ON activity_progress_updates(assignment_id);
+
+CREATE INDEX idx_progress_created_at
+ON activity_progress_updates(created_at);
+```
+
+---
+
+## Progress Timeline
+
+```
+Progress Update 1
+
+↓
+
+Progress Update 2
+
+↓
+
+Progress Update 3
+
+↓
+
+...
+
+↓
+
+Final Submission
+```
+
+---
+
+## Notes
+
+- Progress updates are append-only.
+- Progress updates are always displayed chronologically.
+- Progress updates cannot be modified after the activity is submitted for review.
+- Each progress update may contain multiple evidence items stored in the `activity_evidence` table.
+
+# activity_evidence
+
+## Purpose
+
+Stores all evidence submitted for activity progress updates.
+
+Evidence consists of live-captured photographs and videos used by administrators during the review process.
+
+Evidence belongs to a progress update and remains permanently associated with the corresponding activity assignment.
+
+---
+
+## Table Definition
+
+| Column | Type | Nullable | Default | Description |
+|----------|------|----------|----------|-------------|
+| id | UUID | No | uuid_generate_v4() | Primary key |
+| progress_update_id | UUID | No | — | Associated progress update |
+| evidence_type | evidence_type | No | — | Type of evidence |
+| file_path | VARCHAR(500) | No | — | Stored file location |
+| file_size_bytes | BIGINT | No | — | File size after optimization |
+| duration_seconds | INTEGER | Yes | NULL | Video duration |
+| captured_latitude | DOUBLE PRECISION | Yes | NULL | Capture latitude |
+| captured_longitude | DOUBLE PRECISION | Yes | NULL | Capture longitude |
+| device_information | TEXT | Yes | NULL | Device information |
+| created_at | TIMESTAMPTZ | No | NOW() | Capture timestamp |
+
+---
+
+## Constraints
+
+- Primary Key (`id`)
+- Foreign Key (`progress_update_id`) → `activity_progress_updates(id)`
+- `duration_seconds` must be greater than zero when present.
+
+---
+
+## Relationships
+
+Each evidence record:
+
+- belongs to one progress update.
+
+One progress update may contain multiple evidence records.
+
+---
+
+## Indexes
+
+| Index | Purpose |
+|---------|----------|
+| idx_activity_evidence_progress | Progress update lookup |
+| idx_activity_evidence_type | Filter by evidence type |
+| idx_activity_evidence_created_at | Chronological ordering |
+
+---
+
+## SQL Definition
+
+```sql
+CREATE TABLE activity_evidence (
+
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+
+    progress_update_id UUID NOT NULL
+        REFERENCES activity_progress_updates(id)
+        ON DELETE CASCADE,
+
+    evidence_type evidence_type NOT NULL,
+
+    file_path VARCHAR(500) NOT NULL,
+
+    file_size_bytes BIGINT NOT NULL,
+
+    duration_seconds INTEGER,
+
+    captured_latitude DOUBLE PRECISION,
+
+    captured_longitude DOUBLE PRECISION,
+
+    device_information TEXT,
+
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+    CHECK (
+        duration_seconds IS NULL
+        OR duration_seconds > 0
+    )
+);
+
+CREATE INDEX idx_activity_evidence_progress
+ON activity_evidence(progress_update_id);
+
+CREATE INDEX idx_activity_evidence_type
+ON activity_evidence(evidence_type);
+
+CREATE INDEX idx_activity_evidence_created_at
+ON activity_evidence(created_at);
+```
+
+---
+
+## Evidence Rules
+
+- Evidence belongs to a progress update.
+- Gallery uploads are not permitted.
+- Manual file uploads are not permitted.
+- Images and videos are automatically optimized before storage.
+- A maximum of ten photographs and two videos are allowed per activity assignment.
+- Evidence cannot be modified after the activity is submitted for review.
+
+---
+
+## Notes
+
+- Evidence files remain associated with the activity permanently.
+- GPS coordinates are stored when available from the device.
+- Device information is stored for auditing purposes.
+- File optimization reduces storage requirements while preserving sufficient quality for administrative review.
+
+# activity_reviews
+
+## Purpose
+
+Stores administrator review decisions for submitted activity assignments.
+
+Each review record represents one review cycle. Multiple review records may exist for the same assignment, preserving the complete review history.
+
+---
+
+## Table Definition
+
+| Column | Type | Nullable | Default | Description |
+|----------|------|----------|----------|-------------|
+| id | UUID | No | uuid_generate_v4() | Primary key |
+| assignment_id | UUID | No | — | Reviewed assignment |
+| reviewer_id | UUID | No | — | Administrator performing the review |
+| decision | review_decision | No | — | Review outcome |
+| remarks | TEXT | Yes | NULL | Review remarks |
+| reviewed_at | TIMESTAMPTZ | No | NOW() | Review timestamp |
+| created_at | TIMESTAMPTZ | No | NOW() | Record creation timestamp |
+
+---
+
+## Constraints
+
+- Primary Key (`id`)
+- Foreign Key (`assignment_id`) → `activity_assignments(id)`
+- Foreign Key (`reviewer_id`) → `users(id)`
+- Remarks are mandatory when the decision is `NEEDS_CHANGES`.
+
+---
+
+## Relationships
+
+Each review:
+
+- belongs to one activity assignment;
+- is performed by one administrator.
+
+One assignment may have multiple review records.
+
+---
+
+## Indexes
+
+| Index | Purpose |
+|---------|----------|
+| idx_activity_reviews_assignment | Assignment lookup |
+| idx_activity_reviews_reviewer | Reviewer lookup |
+| idx_activity_reviews_decision | Decision filtering |
+| idx_activity_reviews_reviewed_at | Chronological ordering |
+
+---
+
+## SQL Definition
+
+```sql
+CREATE TABLE activity_reviews (
+
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+
+    assignment_id UUID NOT NULL
+        REFERENCES activity_assignments(id)
+        ON DELETE CASCADE,
+
+    reviewer_id UUID NOT NULL
+        REFERENCES users(id),
+
+    decision review_decision NOT NULL,
+
+    remarks TEXT,
+
+    reviewed_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+    CHECK (
+        decision <> 'NEEDS_CHANGES'
+        OR remarks IS NOT NULL
+    )
+);
+
+CREATE INDEX idx_activity_reviews_assignment
+ON activity_reviews(assignment_id);
+
+CREATE INDEX idx_activity_reviews_reviewer
+ON activity_reviews(reviewer_id);
+
+CREATE INDEX idx_activity_reviews_decision
+ON activity_reviews(decision);
+
+CREATE INDEX idx_activity_reviews_reviewed_at
+ON activity_reviews(reviewed_at);
+```
+
+---
+
+
+## Review Lifecycle
+
+```
+UNDER_REVIEW
+
+      │
+
+      ├────────────► VERIFIED
+
+      │
+
+      └────────────► NEEDS_CHANGES
+                            │
+                            ▼
+                      IN_PROGRESS
+                            │
+                            ▼
+                     UNDER_REVIEW
+```
+
+---
+
+## Notes
+
+- Only administrators may create review records.
+- Every review action creates a new review record.
+- Previous review records are never modified or deleted.
+- Review history remains permanently available for auditing.
+- Remarks are mandatory when requesting changes.
+- Remarks are optional when verifying an activity.
+
+
+
+## Constraints
+
+- Primary Key (`id`)
+- Foreign Key (`event_id`) → `events(id)`
+- Foreign Key (`created_by`) → `users(id)`
+- Foreign Key (`cancelled_by`) → `users(id)` (nullable)
+
+---
+
+## Relationships
+
+Each activity:
+
+- belongs to one event;
+- is created by one administrator;
+- may be cancelled by one administrator;
+- may have multiple assignments.
+
+One event may contain multiple activities.
+
+---
+
+## Indexes
+
+| Index | Purpose |
+|---------|----------|
+| idx_activities_event | Event activity lookup |
+| idx_activities_status | Filter by status |
+| idx_activities_priority | Filter by priority |
+| idx_activities_category | Category filtering |
+| idx_activities_created_by | Administrator lookup |
+| idx_activities_created_at | Chronological ordering |
+
+---
+
+## SQL Definition
+
+```sql
+CREATE TABLE activities (
+
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+
+    event_id UUID NOT NULL
+        REFERENCES events(id)
+        ON DELETE CASCADE,
+
+    title VARCHAR(255) NOT NULL,
+
+    description TEXT,
+
+    category VARCHAR(100) NOT NULL,
+
+    priority activity_priority
+        NOT NULL DEFAULT 'MEDIUM',
+
+    status activity_status
+        NOT NULL DEFAULT 'DRAFT',
+
+    created_by UUID NOT NULL
+        REFERENCES users(id),
+
+    cancelled_by UUID
+        REFERENCES users(id),
+
+    cancelled_reason TEXT,
+
+    cancelled_at TIMESTAMPTZ,
+
+    archived_at TIMESTAMPTZ,
+
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_activities_event
+ON activities(event_id);
+
+CREATE INDEX idx_activities_status
+ON activities(status);
+
+CREATE INDEX idx_activities_priority
+ON activities(priority);
+
+CREATE INDEX idx_activities_category
+ON activities(category);
+
+CREATE INDEX idx_activities_created_by
+ON activities(created_by);
+
+CREATE INDEX idx_activities_created_at
+ON activities(created_at);
+```
+
+---
+
+## Activity Lifecycle
+
+```
+DRAFT
+
+    │
+
+    ▼
+
+PUBLISHED
+
+    │
+
+    ├────────────► CANCELLED
+
+    │
+
+    └────────────► ARCHIVED
+```
+
+---
+
+## Notes
+
+- Activities always belong to one event.
+- Activities are created only by administrators.
+- Draft activities cannot be assigned.
+- Published activities may be assigned to one or more volunteers.
+- Cancelled activities cannot be resumed.
+- Archived activities remain available for historical reporting.
+- Activities do not store member assignments directly. Assignments are maintained separately in the `activity_assignments` table.
+
+# activity_templates
+
+## Purpose
+
+Stores reusable activity templates for different event types.
+
+Templates reduce repetitive activity creation by allowing administrators to generate a predefined set of activities for recurring events.
+
+Templates contain only the activity definitions and never store assignments, progress updates, evidence, reviews, or historical information.
+
+---
+
+## Table Definition
+
+| Column | Type | Nullable | Default | Description |
+|----------|------|----------|----------|-------------|
+| id | UUID | No | uuid_generate_v4() | Primary key |
+| name | VARCHAR(255) | No | — | Template name |
+| event_type | VARCHAR(100) | No | — | Event type |
+| created_by | UUID | No | — | Administrator who created the template |
+| created_at | TIMESTAMPTZ | No | NOW() | Creation timestamp |
+| updated_at | TIMESTAMPTZ | No | NOW() | Last update timestamp |
+
+---
+
+## Constraints
+
+- Primary Key (`id`)
+- Foreign Key (`created_by`) → `users(id)`
+- Template name must be unique within an event type.
+
+---
+
+## Relationships
+
+Each template:
+
+- is created by one administrator;
+- may contain multiple template items.
+
+---
+
+## Indexes
+
+| Index | Purpose |
+|---------|----------|
+| idx_activity_templates_event_type | Event type lookup |
+| idx_activity_templates_created_by | Administrator lookup |
+
+---
+
+## SQL Definition
+
+```sql
+CREATE TABLE activity_templates (
+
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+
+    name VARCHAR(255) NOT NULL,
+
+    event_type VARCHAR(100) NOT NULL,
+
+    created_by UUID NOT NULL
+        REFERENCES users(id),
+
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+    CONSTRAINT uq_template_name
+        UNIQUE(event_type, name)
+);
+
+CREATE INDEX idx_activity_templates_event_type
+ON activity_templates(event_type);
+
+CREATE INDEX idx_activity_templates_created_by
+ON activity_templates(created_by);
+```
+
+---
+
+## Notes
+
+- Templates are reusable.
+- Templates define only activity structure.
+- Updating a template never modifies existing activities.
+- Activities generated from templates become independent records.
+
+# activity_template_items
+
+## Purpose
+
+Stores the individual activities that belong to an activity template.
+
+When a template is applied, these records are copied into the `activities` table as new draft activities.
+
+---
+
+## Table Definition
+
+| Column | Type | Nullable | Default | Description |
+|----------|------|----------|----------|-------------|
+| id | UUID | No | uuid_generate_v4() | Primary key |
+| template_id | UUID | No | — | Parent template |
+| title | VARCHAR(255) | No | — | Activity title |
+| description | TEXT | Yes | NULL | Activity description |
+| category | VARCHAR(100) | No | — | Activity category |
+| priority | activity_priority | No | MEDIUM | Activity priority |
+| display_order | INTEGER | No | — | Order within the template |
+| created_at | TIMESTAMPTZ | No | NOW() | Creation timestamp |
+
+---
+
+## Constraints
+
+- Primary Key (`id`)
+- Foreign Key (`template_id`) → `activity_templates(id)`
+- `display_order` must be greater than zero.
+
+---
+
+## Relationships
+
+Each template item:
+
+- belongs to one template.
+
+One template may contain multiple template items.
+
+---
+
+## Indexes
+
+| Index | Purpose |
+|---------|----------|
+| idx_template_items_template | Template lookup |
+| idx_template_items_order | Ordered activity retrieval |
+
+---
+
+## SQL Definition
+
+```sql
+CREATE TABLE activity_template_items (
+
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+
+    template_id UUID NOT NULL
+        REFERENCES activity_templates(id)
+        ON DELETE CASCADE,
+
+    title VARCHAR(255) NOT NULL,
+
+    description TEXT,
+
+    category VARCHAR(100) NOT NULL,
+
+    priority activity_priority
+        NOT NULL DEFAULT 'MEDIUM',
+
+    display_order INTEGER NOT NULL,
+
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+    CHECK (display_order > 0)
+);
+
+CREATE INDEX idx_template_items_template
+ON activity_template_items(template_id);
+
+CREATE INDEX idx_template_items_order
+ON activity_template_items(display_order);
+```
+
+---
+
+## Notes
+
+- Template items are copied when a template is applied.
+- Template items are never linked to generated activities.
+- Editing template items affects only future activities created from the template.
+- Existing activities remain unchanged after template updates.
+
 # Relationships
 
 ## Overview
@@ -1757,6 +2715,83 @@ Each audit log:
 - may reference any application entity using `entity_type` and `entity_id`.
 
 Audit logs provide a permanent administrative audit trail.
+### activities
+
+Each activity:
+
+- belongs to one event;
+- is created by one administrator;
+- may be cancelled by one administrator;
+- may have multiple activity assignments.
+
+One event may contain multiple activities.
+
+---
+
+### activity_assignments
+
+Each activity assignment:
+
+- belongs to one activity;
+- belongs to one volunteer;
+- is assigned by one administrator;
+- may contain multiple progress updates;
+- may contain multiple review records.
+
+One activity may be assigned to multiple volunteers.
+
+---
+
+### activity_progress_updates
+
+Each progress update:
+
+- belongs to one activity assignment;
+- may contain multiple evidence records.
+
+One activity assignment may contain multiple progress updates.
+
+---
+
+### activity_evidence
+
+Each evidence record:
+
+- belongs to one progress update.
+
+One progress update may contain multiple evidence records.
+
+---
+
+### activity_reviews
+
+Each review:
+
+- belongs to one activity assignment;
+- is performed by one administrator.
+
+One assignment may have multiple review records representing the complete review history.
+
+---
+
+### activity_templates
+
+Each activity template:
+
+- is created by one administrator;
+- may contain multiple template items.
+
+Templates are reusable across multiple events.
+
+---
+
+### activity_template_items
+
+Each template item:
+
+- belongs to one activity template.
+
+One template may contain multiple template items.
 
 ---
 
@@ -1779,6 +2814,16 @@ Audit logs provide a permanent administrative audit trail.
 | attendance_records | notifications | One-to-Many (optional reference) |
 | attendance_records | activity_history | One-to-Many (optional reference) |
 | attendance_records | audit_logs | One-to-Many (optional reference) |
+| events | activities | One-to-Many |
+| users | activities (created_by) | One-to-Many |
+| activities | activity_assignments | One-to-Many |
+| users | activity_assignments | One-to-Many |
+| activity_assignments | activity_progress_updates | One-to-Many |
+| activity_progress_updates | activity_evidence | One-to-Many |
+| activity_assignments | activity_reviews | One-to-Many |
+| users | activity_reviews | One-to-Many |
+| users | activity_templates | One-to-Many |
+| activity_templates | activity_template_items | One-to-Many |
 
 ---
 
@@ -1829,6 +2874,13 @@ Indexes are designed to optimize operations such as:
 - Notification timeline retrieval.
 - User activity history.
 - Administrative audit reporting.
+
+- Activity lookup by event.
+- Volunteer assignment lookup.
+- Activity progress timeline retrieval.
+- Evidence retrieval for administrative review.
+- Pending activity review lookup.
+- Activity template retrieval by event type.
 
 ---
 
@@ -1959,5 +3011,12 @@ It supports:
 - notification delivery;
 - activity history;
 - administrative auditing.
+
+- activity management;
+- activity assignment;
+- progress tracking;
+- evidence management;
+- activity review workflow;
+- reusable activity templates.
 
 The schema is designed to maintain referential integrity, support future enhancements, and provide a stable foundation for backend implementation while remaining aligned with the API Contract and Business Rules documentation.

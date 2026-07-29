@@ -1002,3 +1002,496 @@ All contributors should follow these standards to ensure the frontend remains co
 
 As the application evolves, these rules should be refined through the project's documentation process while preserving architectural consistency and long-term maintainability.
 
+# 13. Phase 3 Activity Layer Rules
+
+Phase 3 extends the frontend rules to support activity management, volunteer assignments, progress updates, evidence submission, administrator review, activity templates, and activity reporting.
+
+All existing frontend engineering rules remain applicable.
+
+The backend remains authoritative for all Activity Layer business decisions.
+
+---
+
+## 13.1 Activity Authority
+
+The frontend must never independently determine:
+
+- activity lifecycle state;
+- assignment eligibility;
+- assignment conflicts;
+- assignment status;
+- submission validity;
+- review outcomes;
+- volunteer permissions;
+- template validity.
+
+These decisions belong to the backend.
+
+The frontend displays and reacts to backend responses.
+
+---
+
+## 13.2 Activity Creation
+
+Activities may only be created by administrators through the application.
+
+The frontend must not provide activity creation functionality to members.
+
+Activity creation forms should:
+
+- collect only fields defined by the API contract;
+- validate basic input format;
+- display backend validation errors;
+- prevent accidental duplicate submissions.
+
+If an administrator creates an activity by mistake, the UI should expose only the lifecycle actions permitted by the backend.
+
+---
+
+## 13.3 Activity Independence
+
+Every newly created activity is an independent record.
+
+Activities generated from templates must also become independent activities.
+
+The frontend must not maintain a live relationship where changes to a template modify previously generated activities.
+
+---
+
+## 13.4 Activity Lifecycle
+
+The frontend must represent the activity lifecycle exactly as returned by the backend.
+
+Do not infer lifecycle transitions locally.
+
+Actions should only be displayed when appropriate for the current backend state.
+
+Examples include:
+
+- Edit
+- Publish
+- Cancel
+- Archive
+- Assign
+
+After a successful action, refresh the affected activity state.
+
+---
+
+## 13.5 Assignment Rules
+
+Only administrators may assign activities.
+
+The frontend should support:
+
+- individual assignment;
+- approved bulk assignment operations;
+- assignment conflict feedback.
+
+If the backend reports an assignment conflict, the frontend must block completion of that assignment until the conflict is resolved.
+
+The frontend must not override or ignore backend conflict responses.
+
+---
+
+## 13.6 Assignment Notifications
+
+Members should receive notifications for new activity assignments.
+
+Activity assignment notifications should:
+
+- clearly identify the activity;
+- navigate to the related assignment when selected.
+
+Do not generate member notifications for unrelated Activity Layer operations unless required by the approved notification contract.
+
+---
+
+## 13.7 Late Joining Members
+
+A member who joins an event after activities have already started must not automatically inherit existing work.
+
+Their activity assignment should be determined after discussion with the administrator.
+
+The frontend should display only assignments returned by the backend.
+
+---
+
+## 13.8 Assignment Start
+
+Once a member starts an assigned activity, the member cannot independently abandon or switch that activity.
+
+The frontend should not provide an unsupported:
+
+- abandon action;
+- switch activity action;
+- self-reassignment action.
+
+Any reassignment decision must follow backend and administrator rules.
+
+---
+
+## 13.9 Progress Updates
+
+Members may submit progress updates only for activities assigned to them.
+
+Progress updates should:
+
+- be displayed chronologically;
+- preserve previously submitted updates;
+- clearly communicate synchronization state;
+- become part of the activity history after successful synchronization.
+
+The frontend must not rewrite historical progress records.
+
+---
+
+## 13.10 Evidence Requirements
+
+Activity evidence may include photographs and videos.
+
+Current limits are:
+
+- maximum 10 photographs;
+- maximum 2 videos;
+- maximum 60 seconds per video.
+
+The frontend should communicate these limits before submission.
+
+Client-side validation may prevent obviously invalid selections, but backend validation remains authoritative.
+
+---
+
+## 13.11 Evidence Storage State
+
+Before successful synchronization, locally captured evidence may be represented as pending.
+
+The interface should distinguish between:
+
+- locally stored;
+- uploading;
+- synchronized;
+- failed.
+
+Never display unsynchronized evidence as successfully stored on the server.
+
+---
+
+## 13.12 Offline Activity Updates
+
+When connectivity is unavailable, supported activity updates should be stored locally.
+
+The frontend should:
+
+1. preserve supported pending updates locally;
+2. clearly indicate that synchronization is pending;
+3. detect restored connectivity;
+4. attempt synchronization;
+5. update the UI after backend confirmation.
+
+The frontend must never treat locally stored data as authoritative backend state.
+
+---
+
+## 13.13 Offline Evidence Failure
+
+If locally stored evidence is lost before successful synchronization, it cannot be treated as submitted evidence.
+
+The frontend should clearly inform the member that the evidence must be captured again.
+
+Do not create placeholder evidence records for files that no longer exist.
+
+---
+
+## 13.14 Activity Submission
+
+When the member completes an activity, the submission is sent to the backend for review.
+
+The frontend must:
+
+- display submission progress;
+- prevent accidental duplicate submissions;
+- wait for backend confirmation;
+- refresh assignment state after success.
+
+Do not mark an activity as submitted before backend confirmation.
+
+---
+
+## 13.15 Submission Immutability
+
+Once a submission has been successfully completed, the member cannot edit that submitted version.
+
+The member may continue to:
+
+- view the submission;
+- view submitted evidence;
+- view review information.
+
+Editing controls must not remain available for a completed submission.
+
+---
+
+## 13.16 Review States
+
+The Activity Layer review workflow uses:
+
+- `NEEDS_CHANGES`
+- `VERIFIED`
+
+The frontend must not introduce a separate `REJECTED` review state.
+
+`NEEDS_CHANGES` means the member is allowed to correct the identified problems and submit the activity again.
+
+---
+
+## 13.17 Needs Changes
+
+When the backend returns `NEEDS_CHANGES`:
+
+- administrator remarks are mandatory;
+- remarks must be clearly displayed to the member;
+- the required corrections should remain visible;
+- the member must be allowed to continue the activity;
+- the member must be allowed to resubmit after corrections.
+
+The frontend must preserve previous submission and review history for viewing.
+
+---
+
+## 13.18 Verified Activities
+
+When an activity is verified:
+
+- the final submission remains read-only;
+- submitted evidence remains viewable;
+- review information remains viewable;
+- administrator remarks should be displayed when provided.
+
+The frontend must not provide further editing or resubmission actions for a verified activity.
+
+---
+
+## 13.19 Administrator Remarks
+
+Administrator remarks should be presented according to review outcome.
+
+For `NEEDS_CHANGES`:
+
+- remarks are mandatory;
+- remarks should receive strong visual emphasis.
+
+For `VERIFIED`:
+
+- remarks may contain the administrator's completion feedback.
+
+Frontend validation may enforce required remarks for `NEEDS_CHANGES`, but the backend remains authoritative.
+
+---
+
+## 13.20 Evidence History
+
+Evidence attached to successfully submitted activity records remains associated with those records.
+
+The frontend must not provide controls that imply historical submitted evidence can be silently replaced or removed.
+
+Evidence history should remain viewable where authorized.
+
+---
+
+## 13.21 Activity History
+
+Members may view their own Activity History.
+
+Activity History is read-only.
+
+The frontend should:
+
+- use the documented Activity History endpoint;
+- display records chronologically;
+- support documented pagination;
+- render backend-provided categories and metadata appropriately.
+
+Do not construct an authoritative Activity History solely from local frontend state.
+
+---
+
+## 13.22 Administrator Review Queue
+
+The administrator review interface should prioritize activities requiring review.
+
+The frontend may provide:
+
+- filtering;
+- sorting;
+- pagination;
+- search where supported.
+
+Filtering must use documented API capabilities.
+
+Do not invent unsupported backend filters.
+
+---
+
+## 13.23 Review Responsibility
+
+For the current scope, there is one administrator/reviewer.
+
+The frontend should therefore avoid introducing:
+
+- reviewer assignment workflows;
+- reviewer selection;
+- multi-reviewer coordination;
+- reviewer workload balancing.
+
+These capabilities require explicit future approval.
+
+---
+
+## 13.24 Activity Templates
+
+Only administrators may manage activity templates.
+
+The frontend may provide approved operations for:
+
+- creating templates;
+- editing templates;
+- applying templates;
+- viewing templates.
+
+Applying a template creates new independent activities.
+
+Changes to a template must not visually imply that previously created activities will also change.
+
+---
+
+## 13.25 Activity Reports
+
+Activity reporting should use backend-generated report data.
+
+The frontend is responsible for:
+
+- requesting reports;
+- displaying generation progress;
+- downloading completed reports;
+- communicating failures.
+
+The frontend must not reproduce authoritative report calculations locally.
+
+Detailed filtering may be performed after export where the approved reporting workflow expects CSV-based analysis.
+
+---
+
+## 13.26 Bulk Operations
+
+Approved administrator workflows may support bulk operations.
+
+Bulk interfaces must:
+
+- clearly show selected records;
+- show the number of selected records;
+- require confirmation for destructive actions;
+- display partial or complete backend failures accurately.
+
+The frontend must not assume every item in a bulk request succeeded unless confirmed by the backend.
+
+---
+
+## 13.27 Lazy Loading
+
+Lazy loading should be used where it improves initial load performance without harming core workflows.
+
+Good candidates include:
+
+- Activity Management;
+- Activity Templates;
+- Review Queue;
+- Activity Reports;
+- large evidence previews.
+
+Frequently used critical screens should not be fragmented unnecessarily.
+
+Lazy loading is a performance technique, not a business requirement.
+
+---
+
+## 13.28 Loading and Duplicate Actions
+
+While a mutating Activity Layer request is being processed:
+
+- provide visible loading feedback;
+- disable the triggering action when duplicate execution would be unsafe;
+- avoid submitting the same request multiple times.
+
+After completion, synchronize the affected server state.
+
+---
+
+## 13.29 Backend Error Handling
+
+Activity Layer errors should follow the same API error standards as the rest of the application.
+
+Examples include:
+
+- assignment conflict;
+- invalid activity state;
+- evidence limit exceeded;
+- unauthorized operation;
+- submission conflict;
+- review conflict.
+
+Display the backend-provided user-safe explanation when available.
+
+Never silently bypass a backend error.
+
+---
+
+## 13.30 Activity Permissions
+
+Member interfaces may expose only member-authorized operations.
+
+Administrator interfaces may expose only administrator-authorized operations.
+
+Hiding an action in the UI is not security.
+
+The backend must still authorize every operation.
+
+---
+
+## 13.31 API Contract Protection
+
+Activity Layer development must follow `API_contract.md` exactly.
+
+Frontend contributors and AI agents must never independently modify the API contract.
+
+If the frontend requires something not currently provided:
+
+1. Stop the affected implementation.
+2. Explain the requirement.
+3. Record a proposed improvement in `enhancements.md` where appropriate.
+4. Wait for approval.
+5. Continue only after the approved documentation process is complete.
+
+Do not modify frontend behavior to create an undocumented API contract.
+
+---
+
+## 13.32 Phase 3 Frontend Principles
+
+All Activity Layer frontend development should follow these principles:
+
+- backend state is authoritative;
+- API contracts are never changed without approval;
+- members interact only with their own assignments;
+- administrators control activity management and review;
+- submissions become read-only after completion;
+- `NEEDS_CHANGES` supports correction and resubmission;
+- `REJECTED` is not part of the review workflow;
+- evidence limits are clearly communicated;
+- offline state is never presented as synchronized state;
+- assignment conflicts must be resolved rather than bypassed;
+- templates create independent activities;
+- historical information remains viewable;
+- UI behavior remains consistent with the existing design system;
+- accessibility remains mandatory;
+- frontend business logic remains minimal.

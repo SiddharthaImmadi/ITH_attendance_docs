@@ -1018,68 +1018,6 @@ Deep Linking should emphasize:
 - reliability;
 - predictable behavior.
 
-# 12. Error Routes
-
-Error Routes provide dedicated navigation experiences for exceptional situations.
-
-Rather than leaving users without guidance, the application should present clear recovery paths whenever navigation cannot continue.
-
----
-
-## 12.1 Purpose
-
-Error Routes support situations such as:
-
-- unknown routes;
-- unavailable resources;
-- unauthorized access;
-- unexpected navigation failures.
-
----
-
-## 12.2 Unknown Routes
-
-If users navigate to an unknown destination, the application should present an appropriate "Page Not Found" experience.
-
-Users should always have a clear path back into the application.
-
----
-
-## 12.3 Unauthorized Access
-
-Users attempting to access restricted functionality should receive an appropriate access-denied experience.
-
-Sensitive information should never be exposed.
-
----
-
-## 12.4 Resource Unavailability
-
-If a requested resource is unavailable, the application should explain the situation without exposing unnecessary technical information.
-
-Recovery actions should remain obvious.
-
----
-
-## 12.5 Navigation Recovery
-
-Error routes should encourage users to continue using the application by providing meaningful navigation options such as:
-
-- return to dashboard;
-- return to previous page;
-- return to login;
-- access available features.
-
----
-
-## 12.6 Design Principles
-
-Error Routes should emphasize:
-
-- clarity;
-- recovery;
-- consistency;
-- user guidance.
 
 # 12. Error Routes
 
@@ -1144,7 +1082,7 @@ Error Routes should emphasize:
 - consistency;
 - user guidance.
 
-# 14. Accessibility
+13. Accessibility
 
 Routing and navigation should remain accessible to all supported users.
 
@@ -1154,7 +1092,7 @@ Accessible routing improves usability for every user.
 
 ---
 
-## 14.1 Purpose
+#13.1 Purpose
 
 Accessible navigation supports:
 
@@ -1167,7 +1105,7 @@ Accessibility should be considered throughout the routing architecture.
 
 ---
 
-## 14.2 Keyboard Navigation
+#13.2 Keyboard Navigation
 
 Users should be able to navigate throughout the application using only a keyboard.
 
@@ -1177,7 +1115,7 @@ Interactive navigation elements should always receive visible focus.
 
 ---
 
-## 14.3 Navigation Feedback
+#13.3 Navigation Feedback
 
 Users should always understand:
 
@@ -1189,7 +1127,7 @@ The active destination should be clearly distinguishable.
 
 ---
 
-## 14.4 Consistency
+#13.4 Consistency
 
 Navigation behavior should remain consistent across every application screen.
 
@@ -1197,7 +1135,7 @@ Users should not need to learn different navigation patterns for different workf
 
 ---
 
-## 14.5 Design Principles
+#13.5 Design Principles
 
 Accessibility should emphasize:
 
@@ -1206,7 +1144,7 @@ Accessibility should emphasize:
 - consistency;
 - predictability.
 
-# 15. Performance Considerations
+14. Performance Considerations
 
 Routing contributes to overall application performance by organizing navigation efficiently and minimizing unnecessary work during route transitions.
 
@@ -1214,7 +1152,7 @@ Performance improvements should enhance user experience without affecting naviga
 
 ---
 
-## 15.1 Objectives
+#14.1 Objectives
 
 Routing should strive to:
 
@@ -1225,7 +1163,7 @@ Routing should strive to:
 
 ---
 
-## 15.2 Efficient Navigation
+#14.2 Efficient Navigation
 
 Navigation should transition efficiently between related application areas.
 
@@ -1233,7 +1171,7 @@ Only information required for the destination should be prepared during navigati
 
 ---
 
-## 15.3 Route Organization
+#14.3 Route Organization
 
 Logical organization reduces routing complexity.
 
@@ -1241,7 +1179,7 @@ Clearly separated route groups simplify maintenance while improving navigation p
 
 ---
 
-## 15.4 Scalability
+#14.4 Scalability
 
 The routing architecture should support future application growth without requiring significant restructuring.
 
@@ -1249,7 +1187,7 @@ New application features should integrate naturally into existing route groups w
 
 ---
 
-## 15.5 Design Principles
+#14.5 Design Principles
 
 Performance should emphasize:
 
@@ -1258,7 +1196,7 @@ Performance should emphasize:
 - maintainability;
 - responsiveness.
 
-# 16. Future Expansion
+15. Future Expansion
 
 The routing architecture should accommodate future business requirements without requiring fundamental changes to existing navigation.
 
@@ -1266,7 +1204,7 @@ A scalable routing strategy reduces future maintenance effort.
 
 ---
 
-## 16.1 Extensibility
+#15.1 Extensibility
 
 New functional areas should integrate into the existing route hierarchy whenever practical.
 
@@ -1274,7 +1212,7 @@ Expanding existing navigation structures is generally preferable to creating unr
 
 ---
 
-## 16.2 Backward Compatibility
+#15.2 Backward Compatibility
 
 Future routing changes should preserve existing navigation whenever possible.
 
@@ -1282,7 +1220,7 @@ Stable navigation improves user familiarity and reduces unnecessary disruption.
 
 ---
 
-## 16.3 Feature Integration
+#15.3 Feature Integration
 
 Future capabilities should integrate consistently with existing:
 
@@ -1295,7 +1233,7 @@ Consistency simplifies long-term application evolution.
 
 ---
 
-## 16.4 Design Principles
+#15.4 Design Principles
 
 Future expansion should emphasize:
 
@@ -1304,7 +1242,7 @@ Future expansion should emphasize:
 - maintainability;
 - flexibility.
 
-# 17. Routing Summary
+16. Routing Summary
 
 The routing architecture organizes navigation into clearly defined categories while maintaining separation between authentication, administrator functionality, member functionality, shared experiences, and error handling.
 
@@ -1319,7 +1257,7 @@ The routing architecture organizes navigation into clearly defined categories wh
 
 ---
 
-## 17.1 Navigation Responsibilities
+#16.1 Navigation Responsibilities
 
 | Navigation Area | Primary Responsibility |
 |-----------------|------------------------|
@@ -1332,7 +1270,7 @@ The routing architecture organizes navigation into clearly defined categories wh
 
 ---
 
-## 17.2 Routing Principles Summary
+#16.2 Routing Principles Summary
 
 The routing architecture is designed to provide:
 
@@ -1344,7 +1282,7 @@ The routing architecture is designed to provide:
 
 These principles guide every navigation decision within the application.
 
-# 18. Conclusion
+17. Conclusion
 
 The Frontend Routing architecture defines how users navigate throughout the InnoTech Hub Attendance System while maintaining clear separation between navigation, authentication, authorization, and business logic.
 
@@ -1369,3 +1307,270 @@ Implementation-specific details, including routing libraries, navigation APIs, r
 
 Together with the Frontend UI Specification and Frontend State Management documents, this routing architecture provides the navigation foundation for a scalable, maintainable, and consistent frontend application.
 
+# 18. Phase 3 Activity Layer Routing
+
+Phase 3 extends the routing architecture by introducing Activity Management, Activity Assignments, Progress Tracking, Evidence Submission, Activity Review, Activity Templates, and Activity Reports.
+
+The routing structure continues to separate navigation from backend authorization while supporting administrator and member workflows.
+
+---
+
+## 18.1 Objectives
+
+The Activity Layer routing architecture is designed to:
+
+- organize activity-related navigation;
+- separate administrator and member experiences;
+- support efficient operational workflows;
+- enable deep linking to activities;
+- remain scalable for future enhancements.
+
+---
+
+## 18.2 Administrator Routes
+
+Administrator routing introduces the following functional areas:
+
+- Activity Dashboard
+- Activity Management
+- Activity Details
+- Volunteer Assignments
+- Activity Reviews
+- Activity Templates
+- Activity Reports
+
+These routes remain accessible only to authenticated administrators.
+
+---
+
+## 18.3 Member Routes
+
+Member routing introduces:
+
+- My Activities
+- Activity Details
+- Progress Timeline
+- Evidence Upload
+- Submission Status
+- Review Feedback
+
+Members may access only their assigned activities.
+
+---
+
+## 18.4 Route Hierarchy
+
+```text
+Dashboard
+
+├── Events
+
+│   ├── Event Details
+
+│   ├── Activities
+
+│   │   ├── Activity Details
+
+│   │   ├── Assignments
+
+│   │   ├── Progress
+
+│   │   ├── Evidence
+
+│   │   └── Reviews
+
+│   └── Reports
+
+└── Templates
+```
+
+The hierarchy groups related workflows while minimizing unnecessary navigation depth.
+
+---
+
+## 18.5 Activity Navigation Flow
+
+Administrator workflow:
+
+```text
+Dashboard
+
+↓
+
+Events
+
+↓
+
+Activity Management
+
+↓
+
+Activity Details
+
+↓
+
+Assignments
+
+↓
+
+Reviews
+
+↓
+
+Reports
+```
+
+Member workflow:
+
+```text
+Dashboard
+
+↓
+
+My Activities
+
+↓
+
+Activity Details
+
+↓
+
+Progress Updates
+
+↓
+
+Evidence Upload
+
+↓
+
+Submit
+
+↓
+
+Review Result
+```
+
+Navigation should naturally guide users through the complete activity lifecycle.
+
+---
+
+## 18.6 Route Protection
+
+Activity routes continue using protected navigation.
+
+Members:
+
+- may access only their own assignments;
+- may submit progress;
+- may upload evidence;
+- may view their own review results.
+
+Administrators:
+
+- may manage activities;
+- may assign volunteers;
+- may review submissions;
+- may manage templates;
+- may generate reports.
+
+Routing reflects backend authorization but never replaces it.
+
+---
+
+## 18.7 Deep Linking
+
+Deep links should support:
+
+- activity details;
+- assignment details;
+- review requests;
+- template details;
+- generated reports.
+
+Authentication and authorization must always be validated before displaying protected resources.
+
+---
+
+## 18.8 Navigation Recovery
+
+When navigation is interrupted:
+
+- preserve current workflow whenever possible;
+- restore users to the most appropriate activity screen;
+- preserve selected filters;
+- preserve search state;
+- preserve pagination.
+
+---
+
+## 18.9 Lazy Loading
+
+The following areas should support lazy loading:
+
+- Activity Management
+- Activity Reports
+- Activity Templates
+- Review Queue
+
+Frequently accessed dashboards may remain eagerly loaded.
+
+---
+
+## 18.10 Breadcrumb Navigation
+
+Activity workflows should expose breadcrumb navigation.
+
+Example:
+
+```text
+Dashboard
+
+>
+
+Events
+
+>
+
+Event Details
+
+>
+
+Activities
+
+>
+
+Activity Details
+```
+
+Breadcrumbs improve navigation within multi-step workflows.
+
+---
+
+## 18.11 URL Organization
+
+Activity routes should extend the existing hierarchy rather than introducing unrelated URL patterns.
+
+Examples include:
+
+- activities
+- assignments
+- reviews
+- templates
+- reports
+
+URL organization should remain predictable and stable.
+
+---
+
+## 18.12 Navigation Principles
+
+Phase 3 routing continues the existing navigation philosophy.
+
+Routing should emphasize:
+
+- predictable navigation;
+- role-aware experiences;
+- minimal navigation depth;
+- reusable layouts;
+- scalable organization;
+- backend-authoritative security.
