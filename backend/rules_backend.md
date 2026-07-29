@@ -1922,3 +1922,262 @@ The backend must ensure that:
 - chronological ordering is preserved;
 - audit history remains available for authorized administrative access.
 
+# 14. Activity Management Rules
+
+## Purpose
+
+Activity Management allows administrators to create, assign, review, and manage volunteer activities performed during an event.
+
+Activities are independent of attendance records and follow their own lifecycle.
+
+The backend is the sole authority for all activity-related business decisions.
+
+---
+
+## 14.1 Backend Authority
+
+The backend is responsible for:
+
+- validating activity operations;
+- enforcing activity lifecycle rules;
+- assigning volunteers;
+- validating submissions;
+- reviewing completed activities;
+- maintaining activity history.
+
+Clients must never determine activity outcomes.
+
+---
+
+## 14.2 Activity Ownership
+
+Activities may only be created and managed by administrators.
+
+Members cannot:
+
+- create activities;
+- modify activities;
+- publish activities;
+- cancel activities;
+- archive activities.
+
+---
+
+## 14.3 Activity Lifecycle
+
+Every activity progresses through the following lifecycle.
+
+```
+DRAFT
+
+↓
+
+PUBLISHED
+
+↓
+
+ARCHIVED
+
+OR
+
+↓
+
+CANCELLED
+```
+
+Only the backend may perform lifecycle transitions.
+
+---
+
+## 14.4 Assignment Rules
+
+Published activities may be assigned to one or more volunteers.
+
+The backend must ensure:
+
+- assignments reference existing activities;
+- assignments reference existing volunteers;
+- duplicate assignments are rejected;
+- each volunteer receives at most one assignment per activity.
+
+Database constraints remain the final safeguard against duplicate assignments.
+
+---
+
+## 14.5 Assignment Lifecycle
+
+Each assignment progresses independently.
+
+```
+ASSIGNED
+
+↓
+
+IN_PROGRESS
+
+↓
+
+UNDER_REVIEW
+
+↓
+
+VERIFIED
+```
+
+or
+
+```
+UNDER_REVIEW
+
+↓
+
+NEEDS_CHANGES
+
+↓
+
+IN_PROGRESS
+```
+
+The backend controls all assignment state transitions.
+
+---
+
+## 14.6 Progress Updates
+
+Progress updates:
+
+- belong to one assignment;
+- are append-only;
+- remain chronologically ordered;
+- cannot be modified after submission.
+
+Historical progress updates must remain preserved.
+
+---
+
+## 14.7 Evidence Rules
+
+Evidence belongs to progress updates.
+
+The backend must enforce:
+
+- live capture only;
+- maximum ten photographs;
+- maximum two videos;
+- maximum sixty-second video duration;
+- evidence optimization before storage.
+
+Evidence becomes immutable after activity submission.
+
+---
+
+## 14.8 Review Rules
+
+Only administrators may review submitted activities.
+
+Review decisions:
+
+- VERIFIED
+- NEEDS_CHANGES
+
+Requirements:
+
+- Needs Changes requires reviewer remarks.
+- Every review creates a new historical review record.
+- Previous reviews remain unchanged.
+
+---
+
+## 14.9 Template Rules
+
+Templates may only be managed by administrators.
+
+Templates:
+
+- define reusable activity structures;
+- generate new activities;
+- never modify previously generated activities.
+
+Generated activities become independent records.
+
+---
+
+## 14.10 Authorization Rules
+
+Members may:
+
+- view assigned activities;
+- submit progress updates;
+- upload evidence;
+- submit activities for review;
+- view their own activity history.
+
+Administrators may:
+
+- manage activities;
+- assign volunteers;
+- review submissions;
+- manage templates;
+- generate reports.
+
+Ownership validation must be enforced before returning protected resources.
+
+---
+
+## 14.11 Automatic System Actions
+
+Successful activity operations may automatically generate:
+
+- notifications;
+- activity history records;
+- audit log records.
+
+These actions are performed entirely by backend services.
+
+---
+
+## 14.12 Validation Rules
+
+The backend must reject operations when:
+
+- activity does not exist;
+- assignment does not exist;
+- assignment already completed;
+- duplicate assignment detected;
+- evidence limits exceeded;
+- activity state is invalid;
+- user lacks permission.
+
+Validation must occur before persistent data is modified.
+
+---
+
+## 14.13 Error Handling
+
+Examples include:
+
+- activity not found;
+- duplicate assignment;
+- assignment not found;
+- invalid activity state;
+- evidence validation failed;
+- review already completed;
+- insufficient permissions.
+
+Responses must follow the standard API error format.
+
+---
+
+## 14.14 Data Integrity
+
+The backend must ensure:
+
+- activities remain associated with their events;
+- assignments remain associated with activities;
+- progress history remains immutable;
+- review history remains immutable;
+- evidence remains permanently associated with submitted activities;
+- templates never modify existing activities;
+- duplicate assignments cannot occur;
+- all activity operations execute atomically where required.
+

@@ -723,3 +723,336 @@ All new components should follow these principles:
 - Built using Tailwind CSS and shadcn/ui.
 - Consistent with the established design system.
 - Optimized for desktop-first layouts while remaining responsive.
+
+# 12. Phase 3 Activity Layer Component Architecture
+
+Phase 3 extends the component architecture by introducing reusable components that support activity planning, volunteer assignments, progress tracking, evidence submission, administrative review, templates, and activity reporting.
+
+The same architectural principles continue to apply:
+
+- presentation separated from business logic;
+- reusable components;
+- strong typing;
+- consistent design system;
+- accessibility;
+- responsive layouts.
+
+---
+
+## 12.1 Activity Feature Structure
+
+```
+src/
+
+├── components/
+
+│   └── features/
+
+│       └── activity/
+
+│           ├── ActivityCard.tsx
+│           ├── ActivityList.tsx
+│           ├── ActivityHeader.tsx
+│           ├── ActivitySummary.tsx
+│           ├── ActivityDetail.tsx
+│           ├── ActivityTimeline.tsx
+│           ├── TimelineEntry.tsx
+│           ├── AssignmentPanel.tsx
+│           ├── VolunteerSelector.tsx
+│           ├── ProgressEditor.tsx
+│           ├── ProgressHistory.tsx
+│           ├── EvidenceGallery.tsx
+│           ├── EvidenceUploader.tsx
+│           ├── ImagePreview.tsx
+│           ├── VideoPreview.tsx
+│           ├── ReviewPanel.tsx
+│           ├── ReviewSummary.tsx
+│           ├── TemplateCard.tsx
+│           ├── TemplateList.tsx
+│           ├── ActivityReportCard.tsx
+│           └── ActivityStatusBadge.tsx
+```
+
+The Activity feature should remain isolated from attendance components while reusing common components whenever practical.
+
+---
+
+## 12.2 Activity Detail Composition
+
+The Activity Detail page should be composed of small reusable components.
+
+```
+ActivityDetail
+
+├── ActivityHeader
+
+├── ActivitySummary
+
+├── AssignmentPanel
+
+├── ActivityTimeline
+
+├── ProgressHistory
+
+├── EvidenceGallery
+
+├── ReviewSummary
+
+└── ActivityActions
+```
+
+Avoid implementing the entire screen as one large component.
+
+---
+
+## 12.3 Activity Card
+
+The Activity Card provides a summarized view of an activity.
+
+Typical information includes:
+
+- activity title;
+- priority;
+- status;
+- assigned volunteers;
+- progress summary.
+
+The component should remain presentation-focused.
+
+---
+
+## 12.4 Assignment Components
+
+Assignment functionality should be divided into focused components.
+
+Example:
+
+```
+AssignmentPanel
+
+├── VolunteerSelector
+
+├── AssignmentList
+
+└── AssignmentStatus
+```
+
+Assignment management logic belongs in parent containers or hooks.
+
+---
+
+## 12.5 Timeline Components
+
+The timeline should remain reusable throughout the application.
+
+Example:
+
+```typescript
+interface ActivityTimelineProps {
+    entries: TimelineEntry[];
+}
+```
+
+The component should render timeline information only.
+
+Data retrieval belongs elsewhere.
+
+---
+
+## 12.6 Evidence Components
+
+Evidence functionality should be separated into reusable components.
+
+Examples include:
+
+- EvidenceUploader;
+- EvidenceGallery;
+- ImagePreview;
+- VideoPreview.
+
+Each component should perform a single responsibility.
+
+---
+
+## 12.7 Review Components
+
+Administrative review should consist of reusable presentation components.
+
+Example:
+
+```
+ReviewPanel
+
+├── SubmissionSummary
+
+├── EvidenceGallery
+
+├── ReviewRemarks
+
+└── ReviewActions
+```
+
+Business decisions remain outside presentation components.
+
+---
+
+## 12.8 Template Components
+
+Reusable activity templates should be represented through dedicated components.
+
+Examples include:
+
+- TemplateCard;
+- TemplateList;
+- TemplatePreview.
+
+Template selection and creation should remain independent concerns.
+
+---
+
+## 12.9 Status Components
+
+Activity-related status indicators should use reusable components.
+
+Examples include:
+
+```
+<ActivityStatusBadge />
+
+<ReviewStatusBadge />
+
+<PriorityBadge />
+```
+
+Avoid duplicating badge styling throughout the application.
+
+---
+
+## 12.10 Upload Components
+
+Upload functionality should provide reusable behavior for photographs and videos.
+
+Components should communicate:
+
+- upload progress;
+- upload success;
+- upload failure;
+- retry availability.
+
+Upload logic should remain independent from presentation.
+
+---
+
+## 12.11 Empty State Components
+
+Reusable empty states should support situations including:
+
+- no activities;
+- no assignments;
+- no templates;
+- no progress history;
+- no reports.
+
+Empty states should encourage the user's next logical action.
+
+---
+
+## 12.12 Loading Components
+
+Activity interfaces should use reusable loading components.
+
+Examples include:
+
+- ActivitySkeleton;
+- TimelineSkeleton;
+- GallerySkeleton;
+- ReviewSkeleton.
+
+Loading indicators should closely resemble the final layout.
+
+---
+
+## 12.13 Error Components
+
+Reusable error components should communicate:
+
+- loading failures;
+- upload failures;
+- synchronization failures;
+- permission failures.
+
+Recovery actions should remain obvious.
+
+---
+
+## 12.14 Component Communication
+
+Activity components should communicate using parent-owned state.
+
+Typical flow:
+
+```
+Container Component
+
+↓
+
+Fetch Activity Data
+
+↓
+
+Pass Props
+
+↓
+
+Presentation Components
+```
+
+Presentation components should never request backend data directly.
+
+---
+
+## 12.15 Activity Hooks
+
+Business behavior should remain inside reusable hooks.
+
+Examples include:
+
+- useActivities()
+- useActivity()
+- useAssignments()
+- useProgress()
+- useEvidence()
+- useReview()
+- useTemplates()
+
+Hooks should coordinate backend communication while components focus on rendering.
+
+---
+
+## 12.16 Accessibility
+
+Activity components should support:
+
+- keyboard navigation;
+- screen readers;
+- visible focus indicators;
+- descriptive labels;
+- accessible media previews.
+
+Accessibility should be considered during component design rather than added afterward.
+
+---
+
+## 12.17 Phase 3 Design Principles
+
+All Activity Layer components should be:
+
+- small and composable;
+- reusable across multiple pages;
+- presentation-focused;
+- strongly typed;
+- responsive;
+- accessible;
+- consistent with the design system;
+- independent of business logic.
+

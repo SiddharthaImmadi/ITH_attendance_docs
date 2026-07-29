@@ -26,39 +26,58 @@
 
 ### Added
 
-- Phase 3 Activity Layer documentation completed.
-- Activity Management architecture documented.
-- Activity Assignment workflow documented.
-- Activity Progress Tracking documented.
-- Activity Evidence management documented.
-- Activity Review workflow documented.
-- Activity Template system documented.
-- Phase 3 backend testing strategy documented.
-- Phase 3 backend implementation roadmap documented.
+- `docs(activity)` Phase 3 Activity Layer documentation completed for backend and frontend.
+- `docs(activity)` Activity Management architecture and workflows documented.
+- `docs(activity)` Activity Assignment workflow documented.
+- `docs(activity)` Activity Progress Tracking documented.
+- `docs(activity)` Activity Evidence management documented.
+- `docs(activity)` Activity Review and resubmission workflow documented.
+- `docs(activity)` Activity Template system documented.
+- `docs(activity)` Activity History behavior documented.
+- `docs(activity)` Activity reporting requirements documented.
+- `docs(activity)` Activity assignment notification behavior documented.
+- `docs(activity)` Supported offline activity synchronization behavior documented.
+- `docs(backend)` Phase 3 backend testing strategy documented.
+- `docs(backend)` Phase 3 backend implementation roadmap documented.
+- `docs(frontend)` Phase 3 frontend UI, routing, state, component, design, rules, and implementation guidance documented.
 
 ### Changed
 
-- `PRD.md` extended with complete Phase 3 requirements.
-- `API_contract.md` extended with the complete Activity Layer API.
-- `backend_database_schema.md` extended with Phase 3 database tables and relationships.
-- `backend_architecture.md` extended with Activity Layer architecture.
-- `backend_services.md` extended with Activity Layer services.
-- `backend_api_implementation.md` extended with Phase 3 implementation guidance.
-- `backend_testing.md` extended with Phase 3 testing strategy.
-- `backend_todo.md` extended with complete Phase 3 implementation milestones.
-- `backend_authentication.md` extended with Phase 3 authorization rules.
-- `backend_environment.md` extended with Activity Layer configuration.
-- `progress.md` updated to reflect completion of Phase 3 documentation.
+- `docs(prd)` `PRD.md` extended with Phase 3 Activity Layer requirements.
+- `docs(api)` `API_contract.md` extended with the approved Activity Layer API.
+- `docs(database)` `backend_database_schema.md` extended with Phase 3 tables and relationships.
+- `docs(backend)` `backend_architecture.md` extended with Activity Layer architecture.
+- `docs(backend)` `backend_services.md` extended with Activity Layer services.
+- `docs(backend)` `backend_api_implementation.md` extended with Phase 3 implementation guidance.
+- `docs(backend)` `backend_testing.md` extended with Phase 3 testing strategy.
+- `docs(backend)` `backend_todo.md` extended with Phase 3 implementation milestones.
+- `docs(backend)` `backend_authentication.md` extended with Phase 3 authorization rules.
+- `docs(backend)` `backend_environment.md` extended with Activity Layer configuration.
+- `docs(backend)` `rules_backend.md` extended with Activity Layer business rules.
+- `docs(frontend)` `frontend_ui_spec.md` extended with Phase 3 Activity Layer screens and workflows.
+- `docs(frontend)` `frontend_routing.md` extended with Activity Layer navigation and route behavior.
+- `docs(frontend)` `frontend_state_management.md` extended with Activity, Assignment, Progress, Evidence, Review, Template, Report, and offline state guidance.
+- `docs(frontend)` `frontend_component_guidelines.md` extended with Activity Layer component architecture.
+- `docs(frontend)` `frontend_design_system.md` extended with Activity Layer visual standards.
+- `docs(frontend)` `rules_frontend.md` extended with Phase 3 frontend behavior and implementation rules.
+- `docs(frontend)` `frontend_todo.md` extended with the complete Activity Management implementation checklist.
+- `docs(progress)` `progress.md` updated to reflect completion of both backend and frontend Phase 3 documentation.
 
 ### Fixed
 
-- Documentation structure standardized across backend documentation.
-- Cross-document terminology aligned for Activities, Assignments, Reviews, Templates, and Evidence.
-- Documentation flow aligned with the backend implementation sequence.
+- `docs(activity)` Activity Review workflow standardized around `NEEDS_CHANGES` and `VERIFIED`.
+- `docs(activity)` Removed the need for a separate `REJECTED` state from the Activity Review workflow.
+- `docs(activity)` Activity submission behavior clarified: completed submissions are read-only and remain viewable.
+- `docs(activity)` Evidence limits standardized to a maximum of 10 photographs and 2 videos, with each video under 1 minute.
+- `docs(activity)` Template behavior clarified so generated activities remain independent records.
+- `docs(activity)` Offline behavior clarified so supported pending data is stored locally and synchronized when connectivity returns.
+- `docs(frontend)` Frontend documentation structure aligned with the finalized Activity Layer workflows.
+- `docs(backend)` Backend documentation flow aligned with the implementation sequence.
 
 ### Removed
 
-- None.
+- `docs(activity)` Separate `REJECTED` outcome from the Phase 3 Activity Review workflow.
+
 ---
 
 ## [v0.1.2] — 2026-07-20
