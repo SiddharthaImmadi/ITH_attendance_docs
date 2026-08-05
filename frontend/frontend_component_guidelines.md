@@ -1056,3 +1056,187 @@ All Activity Layer components should be:
 - consistent with the design system;
 - independent of business logic.
 
+# 13. Phase 4 Production Component Architecture
+
+Phase 4 extends the component architecture to support production-ready capabilities including offline operation, automatic synchronization, audit and security management, and operational status monitoring.
+
+These components continue following the existing architectural principles:
+
+- presentation separated from business logic;
+- reusable components;
+- strong typing;
+- accessibility;
+- responsive layouts;
+- backend authority.
+
+---
+
+## 13.1 Production Feature Structure
+
+```
+src/
+
+├── components/
+
+│   └── features/
+
+│       ├── synchronization/
+│       │   ├── SyncStatusIndicator.tsx
+│       │   ├── SyncStatusPanel.tsx
+│       │   └── SyncStatusBadge.tsx
+│       │
+│       ├── audit/
+│       │   ├── AuditFilterBar.tsx
+│       │   ├── AuditTable.tsx
+│       │   ├── SecurityEventTable.tsx
+│       │   ├── AuditSummaryCards.tsx
+│       │   └── EventDetailDrawer.tsx
+│       │
+│       └── production/
+│           ├── OfflineBanner.tsx
+│           ├── ConnectionStatus.tsx
+│           └── ProductionStatusBadge.tsx
+```
+
+Production components should remain independent from attendance and activity components whenever practical.
+
+---
+
+## 13.2 Offline Components
+
+Offline functionality should be represented through reusable presentation components.
+
+Examples include:
+
+- OfflineBanner;
+- ConnectionStatus;
+- SyncStatusIndicator.
+
+These components should communicate connectivity status without exposing implementation details.
+
+---
+
+## 13.3 Synchronization Components
+
+Synchronization should use reusable components shared throughout the application.
+
+Examples include:
+
+```
+<SyncStatusIndicator />
+
+<SyncStatusPanel />
+
+<SyncStatusBadge />
+```
+
+The global synchronization indicator should remain lightweight and accessible from every authenticated screen.
+
+Synchronization logic belongs inside reusable hooks rather than presentation components.
+
+---
+
+## 13.4 Audit & Security Components
+
+The Audit & Security experience should be composed from reusable components.
+
+Example:
+
+```
+AuditSecurityPage
+
+├── AuditSummaryCards
+
+├── AuditFilterBar
+
+├── AuditTable
+
+├── SecurityEventTable
+
+└── EventDetailDrawer
+```
+
+Each component should maintain a single responsibility.
+
+Audit and security information should remain visually unified while consuming independent backend data.
+
+---
+
+## 13.5 Production Status Components
+
+Production status should be communicated using reusable components.
+
+Examples include:
+
+- ConnectionStatus;
+- ProductionStatusBadge;
+- SyncStatusBadge.
+
+Status components should communicate operational information consistently throughout the application.
+
+---
+
+## 13.6 Component Communication
+
+Production components should continue using parent-owned state.
+
+Typical flow:
+
+```
+Container Component
+
+↓
+
+Reusable Hooks
+
+↓
+
+Presentation Components
+```
+
+Presentation components should never communicate directly with backend services.
+
+---
+
+## 13.7 Production Hooks
+
+Production functionality should remain inside reusable hooks.
+
+Examples include:
+
+- useOfflineQueue()
+- useSynchronization()
+- useAuditLogs()
+- useSecurityEvents()
+
+Hooks should coordinate backend communication, synchronization, and state updates while presentation components focus exclusively on rendering.
+
+---
+
+## 13.8 Accessibility
+
+Production components should support:
+
+- keyboard navigation;
+- screen readers;
+- visible focus indicators;
+- accessible status announcements;
+- meaningful icons with accompanying text.
+
+Connectivity and synchronization status should be understandable without relying solely on color.
+
+---
+
+## 13.9 Phase 4 Design Principles
+
+All Phase 4 production components should be:
+
+- small and composable;
+- strongly typed;
+- reusable;
+- presentation-focused;
+- independent of business logic;
+- accessible;
+- responsive;
+- consistent with the existing design system;
+- suitable for production-ready operational workflows.

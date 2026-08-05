@@ -3895,3 +3895,418 @@ The Activity Layer follows these principles:
 - repository abstraction;
 - standardized validation;
 - thin route handlers.
+
+# 22. Phase 4 Production Hardening Implementation
+
+Phase 4 extends the backend implementation by introducing production hardening capabilities while preserving the implementation architecture established during Phases 1–3.
+
+Unlike previous phases, Phase 4 focuses on operational reliability rather than introducing new business functionality.
+
+The backend remains the authoritative source of truth for every operation.
+
+---
+
+## 22.1 Production Hardening Flow
+
+Production hardening extends the existing request pipeline.
+
+```text
+Client Request
+
+↓
+
+Authentication
+
+↓
+
+Authorization
+
+↓
+
+Schema Validation
+
+↓
+
+Spoofing Detection
+
+↓
+
+Business Validation
+
+↓
+
+Business Service
+
+↓
+
+Repository Layer
+
+↓
+
+Database
+
+↓
+
+Immediate Background Processing
+
+↓
+
+Response
+```
+
+Immediate Background Processing may include:
+
+- audit logging;
+- notification generation;
+- synchronization result generation;
+- security event recording.
+
+The request lifecycle remains consistent across all APIs.
+
+---
+
+## 22.2 Offline Synchronization Implementation
+
+Offline operations are synchronized through a dedicated Synchronization Service.
+
+The frontend maintains the offline queue using IndexedDB.
+
+When connectivity is restored, the frontend submits the entire synchronization queue in a single request.
+
+Implementation flow:
+
+```text
+Synchronization Request
+
+↓
+
+Synchronization Service
+
+↓
+
+Validate Queue
+
+↓
+
+Replay Operations
+
+↓
+
+Business Services
+
+↓
+
+Database
+
+↓
+
+Synchronization Result
+
+↓
+
+Response
+```
+
+Each synchronized operation follows the same implementation pipeline as an online request.
+
+Business rules are never duplicated for synchronization processing.
+
+---
+
+## 22.3 Synchronization Validation
+
+Before replaying queued operations, the backend validates:
+
+- request integrity;
+- operation ordering where required;
+- authenticated user;
+- authorization;
+- payload validity.
+
+Invalid operations are rejected individually while allowing valid operations to continue where appropriate.
+
+The backend determines the final synchronization outcome.
+
+---
+
+## 22.4 Spoofing Detection Implementation
+
+Spoofing detection occurs before business validation.
+
+Implementation flow:
+
+```text
+Incoming Request
+
+↓
+
+Spoofing Detection Service
+
+↓
+
+Evaluate Device
+
+↓
+
+Evaluate Location
+
+↓
+
+Generate Assessment
+
+↓
+
+Continue Processing
+```
+
+The service evaluates:
+
+- mock GPS;
+- impossible travel;
+- abnormal movement;
+- emulator detection where supported;
+- device time manipulation;
+- rooted or jailbroken devices where supported.
+
+The service returns a detailed assessment object describing all detected indicators.
+
+Detection itself does not perform enforcement.
+
+Administrative decisions remain separate from detection.
+
+---
+
+## 22.5 Audit Logging Implementation
+
+Audit logging is coordinated through the Immediate Background Processing layer.
+
+Implementation flow:
+
+```text
+Successful Business Operation
+
+↓
+
+Immediate Background Processing
+
+↓
+
+AuditLogService
+
+↓
+
+Audit Repository
+
+↓
+
+Database
+```
+
+Only business-significant operations generate audit records.
+
+Audit records remain immutable after creation.
+
+Business responses should not be delayed by audit persistence.
+
+---
+
+## 22.6 Backup Implementation
+
+The Backup Service supports both scheduled and administrator-initiated backups.
+
+Manual backup flow:
+
+```text
+Administrator Request
+
+↓
+
+Authentication
+
+↓
+
+Authorization
+
+↓
+
+Backup Service
+
+↓
+
+Generate Backup
+
+↓
+
+Verify Backup
+
+↓
+
+Persist Metadata
+
+↓
+
+Response
+```
+
+Scheduled backup flow:
+
+```text
+Scheduler
+
+↓
+
+Backup Service
+
+↓
+
+Generate Backup
+
+↓
+
+Verify Backup
+
+↓
+
+Persist Metadata
+```
+
+Backup files remain external to PostgreSQL.
+
+Only backup metadata is stored within the application database.
+
+---
+
+## 22.7 Background Processing Implementation
+
+Background processing is divided into two independent execution paths.
+
+### Immediate Background Processing
+
+Executed immediately after successful business operations.
+
+Responsibilities include:
+
+- audit logging;
+- notification generation;
+- synchronization completion;
+- security event recording.
+
+---
+
+### Scheduled Background Processing
+
+Executed independently of user requests.
+
+Responsibilities include:
+
+- scheduled backups;
+- backup verification;
+- audit retention cleanup;
+- operational maintenance;
+- future scheduled jobs.
+
+The two execution paths remain isolated from each other.
+
+---
+
+## 22.8 Service Collaboration
+
+Production hardening services collaborate with existing business services while preserving service ownership.
+
+Example attendance workflow:
+
+```text
+Attendance Service
+
+↓
+
+Presence Service
+
+↓
+
+Spoofing Detection Service
+
+↓
+
+Repository
+
+↓
+
+Immediate Background Processing
+
+↓
+
+Response
+```
+
+Synchronization workflow:
+
+```text
+Synchronization Service
+
+↓
+
+Attendance Service
+
+↓
+
+Presence Service
+
+↓
+
+Activity Service
+
+↓
+
+Synchronization Result
+```
+
+Business services remain responsible for business rules.
+
+Production services provide operational capabilities.
+
+---
+
+## 22.9 Error Handling
+
+Production hardening introduces additional standardized errors.
+
+Examples include:
+
+```python
+SYNC_CONFLICT
+
+INVALID_SYNC_QUEUE
+
+SPOOFING_DETECTED
+
+BACKUP_FAILED
+
+BACKUP_VERIFICATION_FAILED
+```
+
+These errors follow the same standardized response model used throughout the backend.
+
+---
+
+## 22.10 Implementation Principles
+
+Phase 4 implementation follows these principles:
+
+- preserve existing implementation architecture;
+- backend remains authoritative;
+- synchronization reuses existing business services;
+- spoofing detection precedes business processing;
+- audit logging executes asynchronously;
+- backups support both scheduled and manual execution;
+- immediate and scheduled background processing remain isolated;
+- business rules remain centralized;
+- implementation remains independently testable.
+
+---
+
+## 22.11 Phase 4 Summary
+
+Phase 4 extends the backend implementation with production hardening capabilities while preserving the implementation patterns established throughout previous phases.
+
+The resulting implementation improves reliability, synchronization, security monitoring, auditability, recoverability, and operational readiness without changing existing API contracts or business workflows.

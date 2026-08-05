@@ -987,3 +987,346 @@ Priority order:
 5. Template generation
 
 Business logic inside the Activity services should receive the highest level of automated test coverage.
+
+# 14. Phase 4 Testing Strategy
+
+Phase 4 introduces production hardening through offline synchronization, audit logging, spoofing detection, backup management, and background processing.
+
+These capabilities require extensive testing beyond traditional business workflows to ensure operational reliability, security, and recoverability.
+
+---
+
+## 14.1 Test Structure
+
+Extend the existing structure.
+
+```
+tests/
+
+├── test_sync.py
+├── test_audit_logs.py
+├── test_spoofing.py
+├── test_backups.py
+├── test_background_processing.py
+
+├── unit/
+│   ├── test_synchronization_service.py
+│   ├── test_audit_log_service.py
+│   ├── test_spoofing_detection_service.py
+│   ├── test_backup_service.py
+│   └── test_background_processing_service.py
+
+└── integration/
+    └── test_phase4_workflow.py
+```
+
+---
+
+## 14.2 Unit Tests
+
+Service layer tests should verify production services independently of API endpoints.
+
+### Synchronization Service
+
+- queue validation;
+- queue replay;
+- synchronization ordering;
+- duplicate operation detection;
+- conflict resolution;
+- synchronization result generation.
+
+### Audit Log Service
+
+- audit record creation;
+- immutable audit records;
+- before and after value recording;
+- actor recording;
+- timestamp generation.
+
+### Spoofing Detection Service
+
+- mock GPS detection;
+- impossible travel detection;
+- abnormal movement detection;
+- device evaluation;
+- suspicious behaviour accumulation;
+- confidence score generation.
+
+### Backup Service
+
+- manual backup creation;
+- scheduled backup execution;
+- backup verification;
+- backup metadata persistence;
+- backup failure handling.
+
+### Background Processing Service
+
+- immediate background task execution;
+- scheduled background task execution;
+- task scheduling;
+- execution ordering;
+- failure recovery.
+
+---
+
+## 14.3 API Integration Tests
+
+Create endpoint tests for:
+
+### Synchronization
+
+- synchronization request processing;
+- synchronization result generation;
+- synchronization conflict handling;
+- invalid synchronization payloads.
+
+### Backup
+
+- administrator backup execution;
+- backup status retrieval;
+- backup verification results.
+
+### Authentication
+
+- login rate limiting;
+- account locking;
+- administrator unlock;
+- JWT revocation.
+
+---
+
+## 14.4 Offline Synchronization Tests
+
+Verify the complete synchronization lifecycle.
+
+```
+Offline Operations
+
+↓
+
+Queue Creation
+
+↓
+
+Synchronization Request
+
+↓
+
+Queue Validation
+
+↓
+
+Replay Operations
+
+↓
+
+Business Services
+
+↓
+
+Database
+
+↓
+
+Synchronization Result
+```
+
+Required scenarios:
+
+- successful synchronization;
+- duplicate operations;
+- partial synchronization failures;
+- conflict resolution;
+- invalid payloads;
+- operation ordering;
+- repeated synchronization requests.
+
+Business rules must remain identical to online requests.
+
+---
+
+## 14.5 Audit Log Tests
+
+Verify:
+
+- audit record creation;
+- immutable audit records;
+- correct actor recording;
+- correct entity recording;
+- before values;
+- after values;
+- timestamps;
+- administrator retrieval.
+
+Audit history must never be modified after creation.
+
+---
+
+## 14.6 Spoofing Detection Tests
+
+Create simulated scenarios for:
+
+- mock GPS;
+- impossible travel;
+- abnormal GPS movement;
+- repeated suspicious behaviour;
+- configurable threshold escalation;
+- administrator notification generation.
+
+Verify that spoofing detection records security events without automatically blocking users.
+
+---
+
+## 14.7 Backup Tests
+
+Verify:
+
+Manual backups:
+
+- successful execution;
+- metadata persistence;
+- verification success.
+
+Scheduled backups:
+
+- scheduled execution;
+- automatic verification;
+- failure detection;
+- administrator notification.
+
+Recovery tests:
+
+- failed verification;
+- invalid backup;
+- backup metadata consistency.
+
+Previously verified backups must remain available when a new backup fails.
+
+---
+
+## 14.8 Background Processing Tests
+
+Immediate Background Processing:
+
+Verify:
+
+- audit logging;
+- notification generation;
+- synchronization completion;
+- security event recording.
+
+Scheduled Background Processing:
+
+Verify:
+
+- scheduled backup execution;
+- backup verification;
+- retention cleanup;
+- maintenance jobs.
+
+Immediate and scheduled processing should be tested independently.
+
+---
+
+## 14.9 Authorization & Security Tests
+
+Verify:
+
+Administrators:
+
+- can execute manual backups;
+- can revoke user sessions;
+- can unlock locked accounts;
+- can access audit history;
+- can review spoofing events.
+
+Members:
+
+- cannot access production administration endpoints;
+- cannot modify audit logs;
+- cannot execute backups;
+- cannot revoke sessions.
+
+Security tests should verify all production endpoints enforce authorization correctly.
+
+---
+
+## 14.10 Performance Tests
+
+Verify:
+
+- large synchronization queues;
+- audit log retrieval performance;
+- spoofing evaluation latency;
+- scheduled job execution;
+- backup execution scalability;
+- background task responsiveness.
+
+Ensure production services remain responsive under expected operational load.
+
+---
+
+## 14.11 Error Handling Tests
+
+Verify expected responses for:
+
+- synchronization conflict;
+- invalid synchronization payload;
+- backup failure;
+- backup verification failure;
+- account locked;
+- login rate limit exceeded;
+- revoked JWT;
+- spoofing detection events;
+- unauthorized administrator operations.
+
+Responses must continue following the standardized API error format.
+
+---
+
+## 14.12 Acceptance Criteria
+
+Each Phase 4 capability should include tests covering:
+
+| Feature | Required Tests |
+|----------|----------------|
+| Offline Synchronization | Queue replay, ordering, conflict resolution |
+| Audit Logging | Creation, immutability, history |
+| Spoofing Detection | Detection, threshold, notification |
+| Backup Management | Manual, scheduled, verification, recovery |
+| Background Processing | Immediate and scheduled execution |
+| Production Security | Rate limiting, session revocation, authorization |
+
+---
+
+## 14.13 Coverage Goal
+
+**Phase 4 target: 95% minimum backend coverage**
+
+Priority order:
+
+1. Synchronization
+2. Authentication security
+3. Audit logging
+4. Spoofing detection
+5. Backup management
+6. Background processing
+
+Production infrastructure inside `app/services/` should receive the highest level of automated test coverage.
+
+---
+
+## 14.14 Phase 4 Testing Principles
+
+Phase 4 testing follows these principles:
+
+- verify production reliability;
+- validate operational recoverability;
+- preserve business rule consistency;
+- ensure synchronization behaves identically to online operations;
+- verify immutable audit history;
+- validate backup integrity through automatic verification;
+- test production security under normal and abnormal conditions;
+- isolate immediate and scheduled background processing;
+- preserve backward compatibility with all previous phases. 

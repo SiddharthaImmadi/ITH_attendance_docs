@@ -873,3 +873,285 @@
 - [ ] No known critical defects
 - [ ] Ready for frontend development
 - [ ] Ready for system integration
+
+# Backend Development To-Do List — Phase 4
+
+## Milestone 20: Offline Synchronization
+
+### Database
+
+- [ ] Verify synchronization uses existing business tables
+- [ ] Confirm no offline queue is stored in PostgreSQL
+- [ ] Create migration updates if synchronization metadata is required
+- [ ] Verify database consistency during synchronization
+
+### Synchronization Service
+
+- [ ] Create SynchronizationService
+- [ ] Implement process_sync()
+- [ ] Implement validate_queue()
+- [ ] Implement replay_operations()
+- [ ] Implement resolve_conflicts()
+- [ ] Preserve operation ordering
+- [ ] Generate synchronization results
+- [ ] Prevent duplicate synchronized operations
+
+### API
+
+- [ ] Create synchronization endpoint
+- [ ] Accept complete synchronization queue
+- [ ] Validate synchronization payload
+- [ ] Return synchronization result summary
+- [ ] Handle synchronization conflicts
+- [ ] Handle partial synchronization failures
+
+### Validation
+
+- [ ] Validate synchronization payload integrity
+- [ ] Validate authenticated user
+- [ ] Validate operation ordering
+- [ ] Validate duplicate operations
+- [ ] Preserve business validation rules
+
+### Testing
+
+- [ ] Test successful synchronization
+- [ ] Test partial failures
+- [ ] Test conflict resolution
+- [ ] Test duplicate operations
+- [ ] Test queue ordering
+- [ ] Test large synchronization batches
+
+---
+
+## Milestone 21: Audit Logging
+
+### Database
+
+- [ ] Extend audit_logs table
+- [ ] Add previous_values
+- [ ] Add new_values
+- [ ] Add retention configuration
+- [ ] Create required indexes
+- [ ] Run migrations
+
+### Audit Service
+
+- [ ] Create AuditLogService
+- [ ] Implement record_event()
+- [ ] Implement get_audit_history()
+- [ ] Implement get_entity_history()
+- [ ] Preserve immutable audit records
+
+### Integration
+
+- [ ] Integrate authentication audit logging
+- [ ] Integrate attendance audit logging
+- [ ] Integrate activity audit logging
+- [ ] Integrate administrator audit logging
+- [ ] Integrate backup audit logging
+
+### Validation
+
+- [ ] Verify immutable audit history
+- [ ] Verify before and after values
+- [ ] Verify actor information
+- [ ] Verify timestamps
+
+### Testing
+
+- [ ] Test audit record creation
+- [ ] Test immutable audit history
+- [ ] Test before and after value recording
+- [ ] Test audit retrieval
+- [ ] Test administrator access
+
+---
+
+## Milestone 22: Spoofing Detection
+
+### Database
+
+- [ ] Create spoofing_events table
+- [ ] Create indexes
+- [ ] Run migrations
+
+### Spoofing Detection Service
+
+- [ ] Create SpoofingDetectionService
+- [ ] Implement evaluate_location()
+- [ ] Implement detect_mock_location()
+- [ ] Implement detect_impossible_travel()
+- [ ] Implement evaluate_device()
+- [ ] Implement generate_assessment()
+
+### Security
+
+- [ ] Record suspicious events
+- [ ] Calculate repeated suspicious behaviour
+- [ ] Notify administrators
+- [ ] Preserve spoofing event history
+
+### Validation
+
+- [ ] Validate device profile
+- [ ] Validate location consistency
+- [ ] Validate configurable spoofing threshold
+- [ ] Generate detailed spoofing assessment
+
+### Testing
+
+- [ ] Test mock GPS detection
+- [ ] Test impossible travel detection
+- [ ] Test abnormal movement detection
+- [ ] Test repeated suspicious behaviour
+- [ ] Test administrator notifications
+
+---
+
+## Milestone 23: Backup & Recovery
+
+### Database
+
+- [ ] Create backup_metadata table
+- [ ] Create indexes
+- [ ] Run migrations
+
+### Backup Service
+
+- [ ] Create BackupService
+- [ ] Implement manual backup execution
+- [ ] Implement scheduled backup execution
+- [ ] Implement verify_backup()
+- [ ] Implement get_backup_status()
+- [ ] Persist backup metadata
+
+### Recovery
+
+- [ ] Verify backup integrity
+- [ ] Preserve previously verified backups
+- [ ] Handle verification failures
+- [ ] Notify administrators
+
+### Validation
+
+- [ ] Validate backup completion
+- [ ] Validate backup metadata
+- [ ] Validate automatic backup verification
+
+### Testing
+
+- [ ] Test manual backup execution
+- [ ] Test scheduled backup execution
+- [ ] Test backup verification
+- [ ] Test backup failure handling
+- [ ] Test backup metadata persistence
+
+---
+
+## Milestone 24: Production Hardening
+
+### Authentication Security
+
+- [ ] Implement login rate limiting
+- [ ] Implement temporary account locking
+- [ ] Implement administrator account unlock
+- [ ] Implement administrator JWT revocation
+- [ ] Revoke all active user sessions
+
+### Background Processing
+
+- [ ] Create BackgroundProcessingService
+- [ ] Implement Immediate Background Tasks
+- [ ] Implement Scheduled Background Tasks
+- [ ] Configure background job scheduler
+- [ ] Verify task isolation
+
+### Environment Configuration
+
+- [ ] Add Phase 4 environment variables
+- [ ] Configure synchronization settings
+- [ ] Configure backup settings
+- [ ] Configure spoofing thresholds
+- [ ] Configure audit retention
+
+### Performance
+
+- [ ] Review synchronization performance
+- [ ] Optimize audit queries
+- [ ] Optimize spoofing evaluation
+- [ ] Optimize scheduled background jobs
+
+### Security
+
+- [ ] Verify administrator authorization
+- [ ] Verify protected production endpoints
+- [ ] Verify audit log protection
+- [ ] Verify backup protection
+
+### Testing
+
+- [ ] Test login rate limiting
+- [ ] Test session revocation
+- [ ] Test scheduled background jobs
+- [ ] Test background processing
+- [ ] Test production configuration
+
+---
+
+## Milestone 25: Final Verification & Production Readiness
+
+### Documentation Verification
+
+- [ ] Verify implementation matches PRD.md
+- [ ] Verify implementation matches API_contract.md
+- [ ] Verify implementation matches backend_database_schema.md
+- [ ] Verify implementation matches backend_architecture.md
+- [ ] Verify implementation matches backend_services.md
+- [ ] Verify implementation matches backend_api_implementation.md
+- [ ] Verify implementation matches backend_authentication.md
+- [ ] Verify implementation matches backend_environment.md
+- [ ] Verify implementation matches backend_testing.md
+- [ ] Verify implementation follows rules_backend.md
+
+### Production Verification
+
+- [ ] Verify offline synchronization
+- [ ] Verify audit logging
+- [ ] Verify spoofing detection
+- [ ] Verify backup execution
+- [ ] Verify backup verification
+- [ ] Verify production configuration
+
+### Security Verification
+
+- [ ] Verify login rate limiting
+- [ ] Verify administrator session revocation
+- [ ] Verify administrator permissions
+- [ ] Verify member permissions
+- [ ] Verify protected production endpoints
+
+### Testing Verification
+
+- [ ] Run complete unit test suite
+- [ ] Run complete integration test suite
+- [ ] Verify 95% backend coverage target
+- [ ] Verify performance benchmarks
+- [ ] Verify recovery scenarios
+
+### Repository Verification
+
+- [ ] Cross-check implementation with Repository A documentation
+- [ ] Verify API contracts have not been modified
+- [ ] Verify backward compatibility
+- [ ] Update progress.md
+- [ ] Add Phase 4 changelog entry
+
+### Production Readiness Checklist
+
+- [ ] All Phase 4 milestones completed
+- [ ] All documentation updated
+- [ ] All tests passing
+- [ ] Backup verification successful
+- [ ] Production configuration validated
+- [ ] Ready for deployment

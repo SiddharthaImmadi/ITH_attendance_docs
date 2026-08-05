@@ -177,3 +177,190 @@ Local-first development remains the project strategy until Phase 4.
 
 Cloud deployment, CI/CD, production infrastructure, backups and deployment automation remain
 outside the scope of Phase 2 and will be introduced during the Production Hardening phase.
+
+---
+
+# 15. Production Environment
+
+Phase 4 introduces production deployment guidance for the InnoTech Hub Attendance System.
+
+The deployment architecture should remain provider-agnostic, allowing the application to be deployed using any supported infrastructure that satisfies the project's operational requirements.
+
+Typical deployment architecture includes:
+
+- Backend application
+- Frontend application
+- PostgreSQL database
+- Object/file storage where applicable
+- HTTPS-enabled reverse proxy
+- Backup storage
+
+Deployment providers may change over time without affecting the application architecture.
+
+---
+
+# 16. Backend Deployment
+
+The backend should be deployed as an independent service.
+
+Deployment requirements include:
+
+- Production Python environment
+- Installed project dependencies
+- Environment variables
+- Database connectivity
+- HTTPS support
+- Migration execution before application startup
+
+Before exposing the backend publicly:
+
+- Apply all pending database migrations.
+- Verify application startup.
+- Verify API documentation loads successfully where enabled.
+- Verify authentication endpoints.
+- Verify production logging.
+
+The backend must never start against an outdated database schema.
+
+---
+
+# 17. Frontend Deployment
+
+The frontend should be deployed independently of the backend.
+
+Deployment requirements include:
+
+- Production build generation
+- Correct backend API URL
+- HTTPS configuration
+- Environment variable configuration
+
+Before deployment:
+
+```bash
+npm install
+npm run build
+```
+
+Verify the generated production build before publishing.
+
+Frontend deployments should reference the production backend rather than local development services.
+
+---
+
+# 18. Production Configuration
+
+Production environments should use dedicated configuration values.
+
+Typical production configuration includes:
+
+- Database connection string
+- JWT secret
+- Token expiration settings
+- Allowed CORS origins
+- Media storage location
+- Logging configuration
+
+Production secrets must never be committed to version control.
+
+Development and production environments should remain completely independent.
+
+---
+
+# 19. Database Backup & Recovery
+
+Production deployments must support reliable backup and recovery procedures.
+
+Recommended practices include:
+
+- Scheduled database backups
+- Manual backup capability
+- Automatic backup verification
+- Administrator-controlled restoration
+- Recovery logging
+
+All backup operations should follow the documented backend backup workflow introduced during Phase 4.
+
+Recovery procedures should be verified periodically.
+
+---
+
+# 20. Deployment Verification
+
+Every production deployment should be verified before being considered complete.
+
+Recommended verification checklist:
+
+- [ ] Backend service is running.
+- [ ] Frontend is accessible.
+- [ ] HTTPS is functioning correctly.
+- [ ] Database connectivity is verified.
+- [ ] Database migrations completed successfully.
+- [ ] Authentication works correctly.
+- [ ] Attendance workflows function correctly.
+- [ ] Presence Monitoring functions correctly.
+- [ ] Activity Management functions correctly.
+- [ ] Offline synchronization functions correctly.
+- [ ] Audit & Security features function correctly.
+- [ ] Backup Management functions correctly.
+- [ ] Existing functionality remains unaffected.
+
+Production deployment should only be considered successful after all verification steps pass.
+
+---
+
+# 21. Monitoring & Maintenance
+
+Production deployments should include operational monitoring.
+
+Recommended monitoring areas include:
+
+- Application availability
+- Backend logs
+- Frontend errors
+- Database health
+- Synchronization failures
+- Backup execution
+- Backup verification
+- Security events
+
+Monitoring solutions remain deployment-provider independent.
+
+The chosen monitoring platform may change without affecting application functionality.
+
+---
+
+# 22. Rollback Strategy
+
+If a deployment introduces unexpected issues:
+
+1. Stop further deployment activities.
+2. Restore the previous stable application version.
+3. Verify application availability.
+4. Verify database integrity.
+5. Investigate the deployment issue.
+6. Correct the issue.
+7. Repeat deployment verification before redeployment.
+
+Rollback procedures should prioritize restoring service availability while preserving application data.
+
+Production deployments should always allow recovery to the previous stable release.
+
+---
+
+# 23. Phase 4 Production Readiness Checklist
+
+Before considering the system production-ready, verify:
+
+- [ ] Production environment is configured.
+- [ ] HTTPS is enabled.
+- [ ] Environment variables are configured securely.
+- [ ] Database migrations are current.
+- [ ] Backup scheduling is configured.
+- [ ] Backup verification succeeds.
+- [ ] Recovery procedure has been tested.
+- [ ] Offline synchronization is verified.
+- [ ] Audit & Security functionality is verified.
+- [ ] Existing application functionality remains unaffected.
+- [ ] Documentation is current.
+- [ ] All relevant tests pass.

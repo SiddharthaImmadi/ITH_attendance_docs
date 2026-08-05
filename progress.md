@@ -519,3 +519,200 @@ Frontend behavior authority:
 
 Any implementation conflict with the documentation should be resolved before changing the documented contract.
 
+# Updated (2026-08-05, Phase 4 Production Hardening Documentation)
+
+## Documentation Status
+
+The Phase 4 documentation review and extension is currently in progress.
+
+Phase 4 focuses on preparing the InnoTech Hub Attendance System for production readiness while preserving the architecture and functionality established during Phases 1–3.
+
+The documentation continues to follow the project's guiding principles:
+
+- extend existing documentation rather than rewrite it;
+- preserve API contracts;
+- preserve backward compatibility;
+- keep the backend authoritative;
+- introduce production capabilities without changing existing user-facing functionality.
+
+---
+
+## Current Phase
+
+**Phase 4 — Production Hardening Documentation**
+
+---
+
+## Current Milestone
+
+**Phase 4 Documentation Review & Extension**
+
+Current objectives:
+
+- Extend all remaining documentation for Phase 4.
+- Preserve all existing architectural decisions.
+- Document production-ready capabilities.
+- Finalize implementation guidance before development begins.
+
+---
+
+## Documentation Status
+
+### Core Documents
+
+| Document | Status |
+|----------|--------|
+| `README.md` | ✅ Complete |
+| `system_architecture.md` | ✅ Phase 4 complete |
+| `PRD.md` | ✅ Phase 4 complete |
+| `API_contract.md` | ✅ Phase 4 complete |
+| `deployment_guide.md` | 🚧 Phase 4 review in progress |
+
+### Backend Documents
+
+| Document | Status |
+|----------|--------|
+| `backend_database_schema.md` | ✅ Phase 4 complete |
+| `backend_architecture.md` | ✅ Phase 4 complete |
+| `backend_services.md` | ✅ Phase 4 complete |
+| `backend_api_implementation.md` | ✅ Phase 4 complete |
+| `backend_testing.md` | ✅ Phase 4 complete |
+| `backend_todo.md` | ✅ Phase 4 complete |
+| `backend_authentication.md` | ✅ Phase 4 complete |
+| `backend_environment.md` | ✅ Phase 4 complete |
+| `rules_backend.md` | ✅ Phase 4 complete |
+
+### Frontend Documents
+
+| Document | Status |
+|----------|--------|
+| `frontend_ui_spec.md` | ✅ Phase 4 complete |
+| `frontend_routing.md` | ✅ Phase 4 complete |
+| `frontend_state_management.md` | ✅ Phase 4 complete |
+| `frontend_component_guidelines.md` | ✅ Phase 4 complete |
+| `frontend_design_system.md` | ✅ Phase 4 complete |
+| `rules_frontend.md` | ✅ Phase 4 complete |
+| `frontend_todo.md` | 🚧 Phase 4 extension in progress |
+
+---
+
+## Development Status
+
+| Area | Status |
+|------|--------|
+| Core Documentation | 🚧 In Progress |
+| Backend Documentation | ✅ Complete |
+| Frontend Documentation | 🚧 In Progress |
+| Backend Development | ⏳ Pending |
+| Frontend Development | ⏳ Pending |
+| Integration Testing | ⏳ Pending |
+| Production Deployment | ⏳ Pending |
+
+---
+
+## Repository Status
+
+### Repository A — Documentation
+
+- ✅ Documentation remains the authoritative reference.
+- ✅ Repository archived and read-only.
+- ✅ Phase 4 documentation continues following the established architecture.
+
+### Repository B — Development
+
+- ✅ Documentation synchronized with Repository A.
+- ⏳ Awaiting completion of Phase 4 documentation.
+- ⏳ Production implementation begins after documentation completion.
+
+---
+
+## Phase 4 Scope
+
+Phase 4 introduces production hardening while preserving all existing application functionality.
+
+Major capabilities include:
+
+- Offline operation
+- Automatic synchronization
+- Audit logging
+- Security monitoring
+- Spoofing detection support
+- Backup management
+- Production deployment guidance
+- Production verification
+- Operational monitoring
+- Recovery and rollback planning
+
+No existing user-facing business functionality is replaced during Phase 4.
+
+---
+
+## Immediate Next Steps
+
+1. Complete the remaining Phase 4 documentation.
+2. Finalize deployment documentation.
+3. Finalize frontend implementation roadmap.
+4. Review the complete documentation set.
+5. Begin Phase 4 implementation using the approved roadmaps.
+6. Continue updating `progress.md` after every working session.
+
+---
+
+## Implementation Rules
+
+The following rules remain mandatory:
+
+- Preserve API contracts.
+- Preserve backward compatibility.
+- Extend documentation instead of rewriting.
+- Backend remains authoritative.
+- Frontend must not duplicate backend business rules.
+- Run relevant tests after every completed milestone.
+- Cross-check implementation against Repository A after every milestone.
+- Record proposed architectural changes in `enhancements.md`.
+- Stop and request clarification whenever documentation conflicts are identified.
+
+---
+
+## Phase 4 Key Decisions
+
+The following production decisions are finalized:
+
+- Offline-first frontend architecture.
+- Automatic synchronization.
+- Global synchronization status indicator.
+- Persistent offline queue.
+- Audit Logs remain read-only.
+- Audit Logs and Security Monitoring share a unified administrator interface.
+- Backup restoration is administrator controlled.
+- Automatic backup verification.
+- Spoofing events generate logs and administrator notifications without automatic enforcement.
+- Backend remains the single source of truth.
+- Production deployment remains hosting-provider independent.
+- Rollback should restore the previous stable deployment.
+
+---
+
+## Overall Progress
+
+| Phase | Documentation | Implementation |
+|-------|---------------|----------------|
+| Phase 1 | ✅ Complete | ✅ Complete |
+| Phase 2 | ✅ Complete | ✅ Complete |
+| Phase 3 | ✅ Complete | ⏳ Planned |
+| Phase 4 | 🚧 In Progress | ⏳ Not Started |
+
+---
+
+## Notes for Next Session
+
+Continue the Phase 4 documentation review until every document has been extended and verified.
+
+After documentation completion:
+
+1. Review the complete documentation set.
+2. Cross-check consistency across all documents.
+3. Begin backend implementation using `backend_todo.md`.
+4. Begin frontend implementation using `frontend_todo.md`.
+5. Verify implementation after every milestone.
+6. Keep Repository A as the authoritative documentation reference.

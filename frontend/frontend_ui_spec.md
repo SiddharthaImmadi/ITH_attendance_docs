@@ -3575,3 +3575,231 @@ The Activity Layer should emphasize:
 - reusable interface patterns;
 - accessibility;
 - consistency.
+
+# 16. Phase 4 Production Experience
+
+Phase 4 extends the user interface with production-ready capabilities while preserving the user experience introduced in previous phases.
+
+The primary focus is operational reliability rather than introducing new business functionality.
+
+Phase 4 adds support for:
+
+- offline operation;
+- synchronization status;
+- audit and security management;
+- backup management;
+- production feedback;
+- improved operational visibility.
+
+---
+
+## 16.1 Offline Experience
+
+Members should be able to continue using supported application features even when network connectivity is unavailable.
+
+Offline actions are stored locally and automatically synchronized once connectivity is restored.
+
+The application should clearly communicate the current connectivity state without interrupting the user's workflow.
+
+---
+
+## 16.2 Global Synchronization Status
+
+Synchronization status is displayed globally throughout the application.
+
+Recommended states include:
+
+```text
+🟢 Online
+
+🟠 Offline • 3 Pending
+
+🔄 Syncing...
+
+✅ Synced
+```
+
+The synchronization indicator should:
+
+- remain visible while offline;
+- display the number of pending operations;
+- automatically update as synchronization progresses;
+- briefly display successful synchronization before returning to the normal online state.
+
+Members should never need to manually synchronize queued operations.
+
+---
+
+## 16.3 Offline User Feedback
+
+When offline, the interface should reassure users that actions are being safely stored.
+
+Example messaging:
+
+- "You're offline. Changes will sync automatically."
+- "Waiting for connection..."
+- "Synchronization completed."
+
+Technical implementation details should not be exposed to users.
+
+---
+
+## 16.4 Audit & Security Management
+
+Administrators access operational history through a unified **Audit & Security** screen.
+
+The screen combines:
+
+### Audit Logs
+
+- Authentication events
+- Attendance changes
+- Activity changes
+- Administrative actions
+- Backup events
+
+### Security Events
+
+- Spoofing detections
+- Suspicious logins
+- Repeated suspicious behaviour
+- Account lock events
+- Security alerts
+
+Filtering options should include:
+
+- date;
+- user;
+- event type;
+- severity.
+
+Audit records are view-only and cannot be modified.
+
+---
+
+## 16.5 Backup Management
+
+Backup management is available through a dedicated administrator screen.
+
+The interface should provide:
+
+- backup history;
+- manual backup execution;
+- backup verification status;
+- backup timestamps;
+- backup result summaries.
+
+Only authorized administrators may access backup management.
+
+---
+
+## 16.6 Synchronization Failure
+
+If synchronization cannot be completed, members receive a simple, user-friendly notification.
+
+Example:
+
+```
+Synchronization failed.
+
+We'll retry automatically when a connection is available.
+```
+
+The interface should not expose individual synchronization errors or failed operations.
+
+---
+
+## 16.7 Loading States
+
+Production features should provide clear loading indicators.
+
+Examples include:
+
+- synchronization in progress;
+- backup generation;
+- audit history loading;
+- security event retrieval.
+
+Loading indicators should remain consistent with the existing design system.
+
+---
+
+## 16.8 Empty States
+
+Examples include:
+
+### Audit & Security
+
+"No audit records available."
+
+"No security events detected."
+
+### Backup Management
+
+"No backups available."
+
+### Synchronization
+
+"Everything is synchronized."
+
+Empty states should reassure users without implying system errors.
+
+---
+
+## 16.9 Error States
+
+Error messages should be concise and actionable.
+
+Examples:
+
+- Unable to load audit history.
+- Backup could not be completed.
+- Security events could not be retrieved.
+- Connection lost.
+- Synchronization temporarily unavailable.
+
+Internal implementation details should never be displayed.
+
+---
+
+## 16.10 Responsive Design
+
+Phase 4 interfaces should remain usable across supported devices.
+
+Administrator screens should:
+
+- preserve table readability;
+- support scrolling where required;
+- maintain consistent spacing;
+- remain accessible on smaller displays.
+
+Member synchronization indicators should remain visible without interfering with normal navigation.
+
+---
+
+## 16.11 Accessibility
+
+Production interfaces should continue following established accessibility standards.
+
+This includes:
+
+- clear status indicators;
+- readable notifications;
+- keyboard accessibility;
+- sufficient color contrast;
+- meaningful icons with accompanying text where appropriate.
+
+---
+
+## 16.12 Design Principles
+
+Phase 4 follows these interface principles:
+
+- production features should not complicate normal workflows;
+- offline capability should feel seamless;
+- synchronization should be automatic;
+- operational information should be administrator-focused;
+- audit history remains read-only;
+- security monitoring supports administrator decision-making;
+- production feedback should be clear but unobtrusive;
+- preserve the existing design language established in previous phases.

@@ -389,3 +389,184 @@ Principles:
 - media stored outside source code;
 - database configuration remains unchanged;
 - environment-specific configuration remains supported.
+
+# 14. Phase 4 Environment Extensions
+
+Phase 4 extends the backend environment configuration to support production hardening.
+
+The existing authentication, database, logging, and media configuration remain unchanged.
+
+Phase 4 introduces configuration for:
+
+- offline synchronization;
+- audit logging;
+- spoofing detection;
+- login protection;
+- backup management;
+- scheduled background processing.
+
+---
+
+## 14.1 Additional Environment Variables
+
+The following optional environment variables are introduced.
+
+| Variable | Type | Default | Required | Notes |
+|---|---|---|---|---|
+| `MAX_LOGIN_ATTEMPTS` | int | `5` | no | Maximum failed login attempts before account lock |
+| `ACCOUNT_LOCK_MINUTES` | int | `15` | no | Temporary account lock duration |
+| `SPOOFING_ALERT_THRESHOLD` | int | `3` | no | Number of suspicious events before administrator notification |
+| `MAX_SYNC_BATCH_SIZE` | int | `500` | no | Maximum operations processed in a single synchronization request |
+| `SYNC_TIMEOUT_SECONDS` | int | `120` | no | Synchronization request timeout |
+| `AUDIT_RETENTION_DAYS` | int | Organization Defined | no | Audit retention policy |
+| `BACKUP_STORAGE_PATH` | string | `./backups` | no | Directory used to store database backup files |
+| `BACKUP_VERIFICATION_ENABLED` | bool | `true` | no | Automatically verify completed backups |
+| `BACKUP_RETENTION_DAYS` | int | Organization Defined | no | Backup retention policy |
+
+---
+
+## 14.2 Updated `.env.example`
+
+Append the following values.
+
+```env
+# Phase 4 Production Hardening
+
+MAX_LOGIN_ATTEMPTS=5
+
+ACCOUNT_LOCK_MINUTES=15
+
+SPOOFING_ALERT_THRESHOLD=3
+
+MAX_SYNC_BATCH_SIZE=500
+
+SYNC_TIMEOUT_SECONDS=120
+
+AUDIT_RETENTION_DAYS=<organization_defined>
+
+BACKUP_STORAGE_PATH=./backups
+
+BACKUP_VERIFICATION_ENABLED=true
+
+BACKUP_RETENTION_DAYS=<organization_defined>
+```
+
+---
+
+## 14.3 Backup Configuration
+
+Phase 4 introduces configurable backup management.
+
+Backup configuration controls:
+
+- backup storage location;
+- verification behavior;
+- retention policy.
+
+Backup files remain external to PostgreSQL.
+
+Only backup metadata is stored within the application database.
+
+Every completed backup should automatically undergo verification before being considered valid.
+
+If verification fails:
+
+- mark backup as failed;
+- notify administrators;
+- preserve previous verified backups.
+
+---
+
+## 14.4 Synchronization Configuration
+
+Offline synchronization is configurable through environment variables.
+
+Configuration controls:
+
+- maximum synchronization batch size;
+- synchronization timeout;
+- operational tuning.
+
+The frontend continues maintaining the offline queue using IndexedDB.
+
+The backend remains responsible for processing synchronization requests.
+
+---
+
+## 14.5 Authentication Security Configuration
+
+Authentication security introduces configurable protection.
+
+Configuration includes:
+
+- failed login threshold;
+- temporary account lock duration;
+- spoofing alert threshold.
+
+These values remain configurable without requiring application changes.
+
+---
+
+## 14.6 Environment Profiles
+
+Production hardening features should be configured according to deployment environment.
+
+| Feature | Development | Staging | Production |
+|---|---|---|---|
+| Audit Logging | Enabled | Enabled | Enabled |
+| Login Rate Limiting | Optional | Enabled | Enabled |
+| Spoofing Detection | Optional | Enabled | Enabled |
+| Automatic Backup Verification | Optional | Enabled | Enabled |
+| Scheduled Background Jobs | Optional | Enabled | Enabled |
+
+These profiles represent recommended operational defaults.
+
+Individual deployments may override them through environment configuration.
+
+---
+
+## 14.7 Logging Configuration
+
+Production logging should additionally capture:
+
+- authentication events;
+- synchronization operations;
+- spoofing detections;
+- backup execution;
+- backup verification;
+- scheduled job execution.
+
+Sensitive information must never be written to logs.
+
+---
+
+## 14.8 Deployment Checklist
+
+Before deploying Phase 4 verify:
+
+- backup directory exists;
+- backup directory permissions are correct;
+- automatic verification is enabled;
+- synchronization configuration is valid;
+- login protection thresholds are configured;
+- audit retention policy is configured;
+- backup retention policy is configured;
+- scheduled background processing is operational.
+
+---
+
+## 14.9 Environment Principles
+
+Phase 4 extends the existing environment strategy.
+
+Principles:
+
+- configuration through environment variables;
+- production features remain configurable;
+- no hard-coded operational limits;
+- backup verification remains automatic;
+- synchronization remains configurable;
+- security thresholds remain configurable;
+- deployment environments remain independent;
+- preserve backward compatibility.
+

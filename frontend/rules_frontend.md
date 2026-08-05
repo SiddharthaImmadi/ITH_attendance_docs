@@ -1495,3 +1495,190 @@ All Activity Layer frontend development should follow these principles:
 - UI behavior remains consistent with the existing design system;
 - accessibility remains mandatory;
 - frontend business logic remains minimal.
+
+# 14. Phase 4 Production Rules
+
+Phase 4 extends the frontend rules to support production-ready capabilities including offline operation, automatic synchronization, audit and security management, backup administration, and production monitoring.
+
+All existing frontend engineering rules remain applicable.
+
+The backend remains the authoritative source for all business decisions.
+
+---
+
+## 14.1 Offline-First Operation
+
+The frontend should continue operating whenever supported features are available offline.
+
+Offline operation must:
+
+- preserve supported user actions locally;
+- clearly communicate synchronization status;
+- synchronize automatically when connectivity returns.
+
+The frontend must never present locally stored information as authoritative backend state.
+
+---
+
+## 14.2 Synchronization Rules
+
+Synchronization is performed automatically by the frontend.
+
+Users should not be required to manually initiate synchronization during normal operation.
+
+Synchronization should:
+
+- preserve operation order;
+- validate backend responses;
+- refresh affected application state after completion.
+
+Business validation remains the responsibility of the backend.
+
+---
+
+## 14.3 Offline Queue Rules
+
+Offline operations are temporarily stored within the local synchronization queue.
+
+Pending operations:
+
+- must remain in creation order;
+- must not be edited;
+- must not be deleted;
+- remain pending until synchronized or rejected by the backend.
+
+The frontend should never silently discard queued operations.
+
+---
+
+## 14.4 Connectivity Status
+
+The global synchronization indicator should remain available throughout all authenticated areas of the application.
+
+Typical states include:
+
+- Online
+- Offline
+- Syncing
+- Synced
+- Sync Pending
+
+Connectivity feedback should remain lightweight while clearly communicating application status.
+
+---
+
+## 14.5 Audit & Security
+
+Audit history and security events are administrator-only features.
+
+The frontend should:
+
+- request information from documented backend endpoints;
+- display records exactly as returned;
+- support approved filtering;
+- present audit history as read-only.
+
+Audit history must never be modified by the frontend.
+
+Audit information should not be cached for offline viewing.
+
+---
+
+## 14.6 Backup Management
+
+Backup management is restricted to authorized administrators.
+
+The frontend should:
+
+- display backup history;
+- display verification status;
+- allow manual backup execution;
+- display backup progress.
+
+Only one backup request may execute at a time.
+
+While a backup is running, additional backup actions should remain unavailable.
+
+---
+
+## 14.7 Automatic Retry
+
+If synchronization fails:
+
+- preserve queued operations;
+- continue displaying synchronization status;
+- retry automatically when connectivity becomes available.
+
+The frontend should not require manual synchronization during normal operation.
+
+---
+
+## 14.8 Background Synchronization
+
+Background synchronization should:
+
+- minimize disruption;
+- avoid duplicate synchronization requests;
+- refresh only affected application state;
+- preserve current navigation whenever practical.
+
+Synchronization should operate transparently without interrupting the user's workflow.
+
+---
+
+## 14.9 Error Handling
+
+Production errors should continue following existing frontend error handling standards.
+
+Examples include:
+
+- synchronization failure;
+- backup failure;
+- audit retrieval failure;
+- security event retrieval failure;
+- connection loss.
+
+Only user-safe backend messages should be displayed.
+
+Internal implementation details must never be exposed.
+
+---
+
+## 14.10 API Contract Protection
+
+Phase 4 implementation must continue following `API_contract.md`.
+
+Frontend contributors and AI development agents must never independently modify:
+
+- API endpoints;
+- request models;
+- response models;
+- authentication flows;
+- synchronization contracts.
+
+If additional API capabilities are required:
+
+1. Stop implementation.
+2. Explain the requirement.
+3. Record the proposal in `enhancements.md` where appropriate.
+4. Wait for approval.
+5. Continue only after the approved documentation process.
+
+---
+
+## 14.11 Phase 4 Frontend Principles
+
+All Phase 4 frontend development should follow these principles:
+
+- backend state remains authoritative;
+- offline operation should feel seamless;
+- synchronization is automatic;
+- queued operations remain ordered and immutable;
+- audit history is read-only;
+- security events are administrator-focused;
+- backup management is administrator-only;
+- only one backup operation executes at a time;
+- connectivity status remains visible;
+- frontend business logic remains minimal;
+- accessibility remains mandatory;
+- existing architectural patterns should be extended rather than replaced.

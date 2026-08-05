@@ -1978,3 +1978,182 @@ Before Phase 3 frontend implementation is considered complete:
 - [ ] Verify existing functionality remains unaffected
 - [ ] Cross-check implementation against Repository A documentation
 
+# Phase 4 — Production Hardening
+
+Phase 4 focuses on preparing the application for production deployment by introducing offline capabilities, automatic synchronization, operational monitoring, backup management, and production hardening.
+
+Each milestone should be completed, tested, and verified before moving to the next milestone.
+
+---
+
+# Milestone 18 — Offline Foundation
+
+Purpose:
+
+Establish the frontend infrastructure required for reliable offline operation.
+
+Implementation Areas:
+
+- Connectivity detection
+- Offline queue foundation
+- Local persistence
+- Offline state management
+- Offline navigation
+- Offline UI foundation
+- Queue persistence
+- Queue recovery
+
+Verification:
+
+- Offline detection works correctly
+- Queue persists after application restart
+- Offline state is restored correctly
+- Run relevant tests
+- Cross-check implementation with documentation
+
+---
+
+# Milestone 19 — Synchronization
+
+Purpose:
+
+Implement automatic synchronization between locally queued operations and backend services.
+
+Implementation Areas:
+
+- Automatic synchronization
+- Global synchronization indicator
+- Synchronization status panel
+- Synchronization progress
+- Synchronization success notification
+- Queue replay
+- Queue ordering
+- Automatic retry
+- Synchronization error handling
+- Synchronization state updates
+
+Verification:
+
+- Automatic synchronization works correctly
+- Queue ordering is preserved
+- Retry behavior functions correctly
+- Synchronization indicator reflects current state
+- Run relevant tests
+- Cross-check implementation with documentation
+
+---
+
+# Milestone 20 — Audit & Security
+
+Purpose:
+
+Implement administrator operational monitoring for audit history and security events.
+
+Implementation Areas:
+
+- Audit & Security page
+- Audit history
+- Security events
+- Filtering
+- Pagination
+- Read-only audit records
+- Administrator routing
+- State management
+- Loading states
+- Empty states
+- Error handling
+
+Verification:
+
+- Audit history displays correctly
+- Security events display correctly
+- Filtering works correctly
+- Administrator permissions are enforced
+- Run relevant tests
+- Cross-check implementation with documentation
+
+---
+
+# Milestone 21 — Backup Management
+
+Purpose:
+
+Implement administrator backup management interfaces.
+
+Implementation Areas:
+
+- Backup Management page
+- Backup history
+- Manual backup
+- Verification status
+- Backup progress
+- Running state
+- Prevent duplicate backup requests
+- Loading states
+- Error handling
+
+Verification:
+
+- Backup history displays correctly
+- Manual backup works correctly
+- Running state is displayed correctly
+- Administrator permissions are enforced
+- Run relevant tests
+- Cross-check implementation with documentation
+
+---
+
+# Milestone 22 — Production UX & Hardening
+
+Purpose:
+
+Improve production readiness through user experience, accessibility, security, and performance enhancements.
+
+Implementation Areas:
+
+- Production loading states
+- Production empty states
+- Production error states
+- Responsive improvements
+- Accessibility improvements
+- Route protection review
+- Performance optimization
+- React Query optimization
+- Lazy loading review
+- Production notifications
+
+Verification:
+
+- Accessibility requirements are satisfied
+- Responsive behavior is verified
+- Route protection is verified
+- Performance improvements are validated
+- Run relevant tests
+- Cross-check implementation with documentation
+
+---
+
+# Milestone 23 — Phase 4 Final Verification
+
+Purpose:
+
+Verify that all Phase 4 functionality complies with the approved architecture, documentation, and API contract before implementation is considered complete.
+
+Verification:
+
+- Verify UI matches `frontend_ui_spec.md`
+- Verify routing matches `frontend_routing.md`
+- Verify state behavior matches `frontend_state_management.md`
+- Verify components follow `frontend_component_guidelines.md`
+- Verify visual behavior follows `frontend_design_system.md`
+- Verify implementation follows `rules_frontend.md`
+- Verify all requests match `API_contract.md`
+- Verify backend remains authoritative
+- Verify offline synchronization implementation
+- Verify Audit & Security implementation
+- Verify Backup Management implementation
+- Verify all Phase 4 frontend tests pass
+- Verify existing Phase 1 functionality remains unaffected
+- Verify existing Phase 2 functionality remains unaffected
+- Verify existing Phase 3 functionality remains unaffected
+- Cross-check implementation against Repository A documentation

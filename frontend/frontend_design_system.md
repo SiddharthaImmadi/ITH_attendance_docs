@@ -2059,3 +2059,204 @@ Phase 3 interfaces should emphasize:
 - responsive evidence handling;
 - accessibility;
 - visual consistency.
+
+# 16. Phase 4 Production Design System
+
+Phase 4 extends the design system to support production-ready capabilities including offline operation, automatic synchronization, audit and security management, backup management, and operational feedback.
+
+The production experience should reuse the existing visual language rather than introducing feature-specific styling.
+
+---
+
+## 16.1 Production Design Principles
+
+Production interfaces should emphasize:
+
+- operational clarity;
+- unobtrusive system feedback;
+- consistent status presentation;
+- predictable interaction;
+- accessibility;
+- visual consistency.
+
+Production features should assist users without distracting from their primary tasks.
+
+---
+
+## 16.2 Connectivity Status Indicators
+
+The application should provide a consistent global synchronization indicator throughout authenticated areas.
+
+Recommended visual treatment:
+
+| Status | Recommended Color |
+|--------|-------------------|
+| Online | Emerald |
+| Offline | Amber |
+| Syncing | Blue |
+| Synced | Emerald |
+| Sync Pending | Amber |
+
+Example states:
+
+```text
+🟢 Online
+
+🟠 Offline • 3 Pending
+
+🔄 Syncing...
+
+✅ Synced
+```
+
+The synchronization indicator should remain lightweight while clearly communicating the application's current connectivity state.
+
+---
+
+## 16.3 Synchronization Feedback
+
+Synchronization should provide immediate visual feedback without interrupting the current workflow.
+
+Recommended feedback includes:
+
+- global synchronization indicator;
+- synchronization progress animation;
+- success confirmation toast.
+
+Example notification:
+
+> ✅ Synchronization completed.
+
+Synchronization feedback should disappear automatically after successful completion.
+
+---
+
+## 16.4 Audit & Security Interface
+
+Audit Logs and Security Monitoring should share a unified visual design.
+
+Recommended interface sections include:
+
+- summary information;
+- filters;
+- audit history;
+- security events;
+- event details.
+
+Audit records remain read-only.
+
+Security events should remain visually distinguishable through icons and descriptive labels rather than introducing additional severity color systems.
+
+---
+
+## 16.5 Backup Management
+
+Backup management should follow existing administrative interface patterns.
+
+Recommended information includes:
+
+- backup history;
+- backup execution status;
+- verification status;
+- execution timestamps;
+- administrator actions.
+
+Backup workflows should reuse existing cards, tables, dialogs, and buttons defined throughout the design system.
+
+---
+
+## 16.6 Backup Status
+
+Backup operations should communicate their current lifecycle clearly.
+
+Recommended states include:
+
+- Scheduled
+- Running
+- Verified
+- Verification Failed
+
+Running operations should display a loading animation.
+
+Completed states should reuse the application's existing semantic styling rather than introducing backup-specific color definitions.
+
+---
+
+## 16.7 Loading & Processing
+
+Production features should continue using existing loading patterns.
+
+Examples include:
+
+- synchronization;
+- audit history retrieval;
+- security event loading;
+- backup execution;
+- backup verification.
+
+Skeleton loaders should be preferred for page content.
+
+Progress indicators should be used only for operations with meaningful execution time.
+
+---
+
+## 16.8 Responsive Design
+
+Production interfaces should remain responsive across supported devices.
+
+Administrator interfaces should preserve:
+
+- readable tables;
+- consistent spacing;
+- efficient filtering;
+- accessible navigation.
+
+The global synchronization indicator should remain visible without interfering with navigation.
+
+---
+
+## 16.9 Accessibility
+
+Production interfaces inherit all accessibility requirements defined in Section 13.
+
+Additionally:
+
+- synchronization status should not rely solely on color;
+- connectivity indicators should include descriptive text;
+- loading animations should remain accessible;
+- audit history should remain keyboard navigable;
+- backup workflows should provide accessible status updates.
+
+---
+
+## 16.10 Motion
+
+Production motion should remain subtle and purposeful.
+
+Recommended uses include:
+
+- synchronization progress;
+- loading indicators;
+- toast appearance;
+- dialog transitions.
+
+Animations should communicate application state without delaying user interaction.
+
+Reduced-motion preferences must continue to be respected.
+
+---
+
+## 16.11 Phase 4 Design Principles
+
+Phase 4 extends the existing design language while preserving visual consistency.
+
+Production interfaces should emphasize:
+
+- seamless offline operation;
+- unobtrusive synchronization feedback;
+- clear operational visibility;
+- reusable interface patterns;
+- administrator-focused production workflows;
+- accessibility;
+- responsive layouts;
+- consistency with all previous phases.

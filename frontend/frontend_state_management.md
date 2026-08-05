@@ -2058,3 +2058,203 @@ The Activity Layer state architecture should emphasize:
 - efficient caching;
 - offline resilience;
 - scalable organization.
+# 23. Phase 4 Production State Management
+
+Phase 4 extends the frontend state architecture to support production-ready capabilities including offline operation, automatic synchronization, audit management, and security monitoring.
+
+These additions preserve the existing architectural principles while introducing new state categories required for production environments.
+
+The backend remains the authoritative source for all business information.
+
+---
+
+## 23.1 Objectives
+
+The Phase 4 state architecture is designed to:
+
+- support offline-first operation;
+- manage synchronization state;
+- preserve locally queued operations;
+- support administrator audit workflows;
+- support security monitoring;
+- maintain predictable state lifecycles.
+
+---
+
+## 23.2 Offline Queue State
+
+Offline Queue State represents business operations temporarily stored while network connectivity is unavailable.
+
+Examples include:
+
+- pending attendance operations;
+- pending activity updates;
+- pending evidence submissions;
+- pending synchronization requests.
+
+The Offline Queue State exists only on the frontend.
+
+Business validation continues to occur only after synchronization with the backend.
+
+---
+
+## 23.3 Synchronization State
+
+Synchronization State represents the current synchronization lifecycle.
+
+Typical synchronization states include:
+
+- online;
+- offline;
+- sync pending;
+- synchronizing;
+- synchronized.
+
+Synchronization State is shared throughout the application to support the global synchronization indicator.
+
+---
+
+## 23.4 Audit State
+
+Audit State supports administrator access to audit history.
+
+Examples include:
+
+- retrieved audit records;
+- active filters;
+- pagination state;
+- selected audit record;
+- loading status.
+
+Audit information originates from the backend and remains read-only.
+
+---
+
+## 23.5 Security Monitoring State
+
+Security Monitoring State supports administrator visibility into production security events.
+
+Examples include:
+
+- spoofing events;
+- suspicious login events;
+- repeated suspicious behaviour;
+- security alerts;
+- loading status.
+
+Although presented together with Audit Logs, Security Monitoring State remains independent because it represents a separate category of backend information.
+
+---
+
+## 23.6 State Synchronization
+
+Phase 4 introduces additional synchronization responsibilities.
+
+Synchronization should automatically update:
+
+- Offline Queue State;
+- Synchronization State;
+- Audit State;
+- Security Monitoring State.
+
+Only affected state should refresh whenever practical.
+
+---
+
+## 23.7 Offline Persistence
+
+Offline Queue State should persist locally across application restarts.
+
+Synchronization State should be reconstructed automatically when the application starts.
+
+Temporary UI State should not persist beyond its intended interaction unless explicitly designed as a user preference.
+
+---
+
+## 23.8 Synchronization Lifecycle
+
+Offline operations follow a predictable lifecycle.
+
+```text
+Online
+
+↓
+
+Offline
+
+↓
+
+Queue Operations
+
+↓
+
+Connectivity Restored
+
+↓
+
+Synchronizing
+
+↓
+
+Backend Validation
+
+↓
+
+Queue Cleared
+```
+
+The frontend should automatically update synchronization state throughout this lifecycle.
+
+---
+
+## 23.9 Error Recovery
+
+If synchronization cannot be completed:
+
+- preserve queued operations;
+- maintain synchronization state;
+- retry synchronization when appropriate;
+- communicate synchronization status to the user.
+
+Queued operations should never be discarded solely because synchronization temporarily fails.
+
+---
+
+## 23.10 Cache Management
+
+Phase 4 extends cache management for administrator functionality.
+
+Examples include:
+
+- audit history;
+- security event history.
+
+Cached production information should refresh after successful synchronization with backend services.
+
+---
+
+## 23.11 Background Updates
+
+Background synchronization should continue updating:
+
+- synchronization status;
+- audit information;
+- security events.
+
+Background updates should remain efficient and avoid unnecessary network activity.
+
+---
+
+## 23.12 Design Principles
+
+The Phase 4 state architecture should emphasize:
+
+- offline-first operation;
+- backend authority;
+- predictable synchronization;
+- minimal duplication;
+- resilient local persistence;
+- independent state ownership;
+- efficient background updates;
+- scalable production architecture.
+

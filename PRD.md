@@ -320,3 +320,21 @@ These remain scheduled for future phases as described in `development_roadmap.md
 | F23 | Administrator verifies an activity | Activity becomes **Verified** and the member receives a confirmation notification |
 | F24 | Administrator generates an activity report | Report contains activity, assignment, evidence, review, and statistical information |
 | F25 | Administrator generates a report for archived activities | Archived activities remain available for reporting and auditing |
+
+
+11. Phase 4 Product Requirements
+
+11.1 Goals
+
+11.2 Functional Requirements
+    • Offline Synchronization
+    • Audit Logging
+    • Spoofing Detection
+    • Backup & Recovery
+    • Production Deployment
+
+11.3 Non-Functional Requirements
+
+11.4 Non-Goals
+
+11.5 Acceptance Criteria

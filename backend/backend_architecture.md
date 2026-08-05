@@ -1881,107 +1881,6 @@ The Event Management Architecture follows these principles:
 
 These principles ensure reliable event management throughout the application.
 
-# Activity Management Architecture
-
-The Activity Management module provides administrators with the ability to create, assign, monitor, and review volunteer activities during an event.
-
-Activities belong to events and are independent of attendance records.
-
-The module is composed of the following components:
-
-- Activity Management
-- Activity Assignment
-- Progress Tracking
-- Evidence Management
-- Review Workflow
-- Template Management
-
----
-
-## Component Flow
-
-```
-Administrator
-
-      │
-
-      ▼
-
-Activity Service
-
-      │
-
-      ▼
-
-Activity Assignment Service
-
-      │
-
-      ▼
-
-Activity Progress Service
-
-      │
-
-      ▼
-
-Activity Review Service
-
-      │
-
-      ▼
-
-Repositories
-
-      │
-
-      ▼
-
-PostgreSQL Database
-```
-
----
-
-## Data Flow
-
-```
-Activity
-
-      │
-
-      ▼
-
-Assignments
-
-      │
-
-      ▼
-
-Progress Updates
-
-      │
-
-      ▼
-
-Evidence
-
-      │
-
-      ▼
-
-Reviews
-```
-
----
-
-## Design Principles
-
-- Activities are independent of attendance records.
-- One activity may be assigned to multiple volunteers.
-- Each volunteer maintains an independent execution lifecycle.
-- Evidence belongs to progress updates.
-- Review history is preserved.
-- Templates generate new draft activities without modifying existing activities.
 
 # Activity Management Architecture
 
@@ -4632,7 +4531,307 @@ Scalability is achieved through:
 - reusable activity templates;
 - on-demand report generation.
 
-# 31. Conclusion
+
+# Phase 4 Backend Architecture Extension
+
+## Objectives
+## Architectural Continuity
+## Production Hardening Layer
+## Background Processing Architecture
+### Immediate Background Tasks
+### Scheduled Background Tasks
+## Synchronization Architecture
+## Spoofing Detection Architecture
+## Backup Architecture
+## Service Collaboration
+## Design Principles
+## Phase 4 Summary
+
+# 31. Phase 4 Backend Architecture Extension
+
+Phase 4 extends the backend architecture by introducing production hardening capabilities.
+
+Unlike previous phases, Phase 4 does not introduce new business domains. Instead, it strengthens the operational characteristics of the backend through reliable synchronization, comprehensive auditing, security monitoring, backup management, and background processing.
+
+The existing layered architecture established during Phases 1–3 remains unchanged.
+
+---
+
+## 31.1 Objectives
+
+The Phase 4 backend architecture is designed to:
+
+- support reliable offline synchronization;
+- improve production readiness;
+- centralize audit logging;
+- detect suspicious client behaviour;
+- automate operational tasks;
+- support backup and recovery;
+- preserve backward compatibility;
+- maintain modular service boundaries.
+
+---
+
+## 31.2 Architectural Continuity
+
+Phase 4 preserves all architectural principles established during previous phases.
+
+The following remain unchanged:
+
+- layered architecture;
+- service-oriented business logic;
+- repository abstraction;
+- transactional database operations;
+- JWT authentication;
+- asynchronous request processing;
+- domain-oriented modules.
+
+Production hardening is implemented by extending existing services and infrastructure rather than redesigning the backend.
+
+---
+
+## 31.3 Production Hardening Layer
+
+A dedicated Production Hardening Layer is introduced to provide shared operational capabilities across the backend.
+
+```
+Business Services
+
+        │
+
+        ▼
+
+Production Hardening Layer
+
+        │
+
+        ├── Synchronization Service
+
+        ├── Spoofing Detection Service
+
+        ├── Audit Log Service
+
+        ├── Backup Service
+
+        └── Background Processing
+```
+
+The Production Hardening Layer provides infrastructure services without owning business workflows.
+
+---
+
+## 31.4 Background Processing Architecture
+
+Certain backend responsibilities execute outside the normal request-response lifecycle.
+
+Background processing is divided into two independent categories:
+
+- Immediate Background Tasks
+- Scheduled Background Tasks
+
+This separation improves maintainability, scalability, and operational troubleshooting.
+
+---
+
+### 31.4.1 Immediate Background Tasks
+
+Immediate background tasks execute immediately after successful business operations.
+
+Typical responsibilities include:
+
+- audit log persistence;
+- notification delivery;
+- synchronization processing;
+- security event recording;
+- future asynchronous business operations.
+
+These tasks should not delay client responses while maintaining operational consistency.
+
+---
+
+### 31.4.2 Scheduled Background Tasks
+
+Scheduled background tasks execute independently of user requests.
+
+Typical responsibilities include:
+
+- backup execution;
+- backup verification;
+- audit retention cleanup;
+- log maintenance;
+- scheduled operational maintenance;
+- future scheduled jobs.
+
+Scheduled processing remains isolated from request handling.
+
+---
+
+## 31.5 Synchronization Architecture
+
+Offline synchronization is coordinated through a dedicated Synchronization Service.
+
+Responsibilities include:
+
+- receiving synchronization requests;
+- validating synchronization payloads;
+- processing queued operations;
+- resolving synchronization conflicts;
+- coordinating affected business services;
+- returning synchronization results.
+
+The backend remains the authoritative source of truth.
+
+The frontend maintains the offline queue using IndexedDB.
+
+---
+
+## 31.6 Spoofing Detection Architecture
+
+Spoofing detection is implemented as a dedicated backend service.
+
+The Spoofing Detection Service evaluates:
+
+- mock location detection;
+- impossible travel;
+- abnormal GPS movement;
+- emulator detection where supported;
+- device time manipulation;
+- rooted or jailbroken devices where supported;
+- repeated suspicious behaviour.
+
+Detection results generate security events rather than directly enforcing administrative actions.
+
+Administrative review remains responsible for enforcement decisions.
+
+---
+
+## 31.7 Backup Architecture
+
+Backup management is coordinated through a dedicated Backup Service.
+
+Responsibilities include:
+
+- initiating backups;
+- tracking backup status;
+- validating backup completion;
+- verifying backup integrity;
+- coordinating recovery procedures;
+- maintaining backup metadata.
+
+Backup files remain external to PostgreSQL while operational metadata remains stored within the application database.
+
+---
+
+## 31.8 Service Collaboration
+
+Phase 4 introduces additional collaboration between existing business services and production services.
+
+Example request flow:
+
+```
+Attendance Service
+
+        │
+
+        ▼
+
+Presence Service
+
+        │
+
+        ▼
+
+Spoofing Detection Service
+
+        │
+
+        ▼
+
+Audit Log Service
+
+        │
+
+        ▼
+
+Immediate Background Processing
+```
+
+Synchronization workflow:
+
+```
+Synchronization Service
+
+        │
+
+        ▼
+
+Attendance Service
+
+        │
+
+        ▼
+
+Presence Service
+
+        │
+
+        ▼
+
+Activity Service
+```
+
+Scheduled workflow:
+
+```
+Scheduler
+
+        │
+
+        ▼
+
+Backup Service
+
+        │
+
+        ▼
+
+Backup Verification
+
+        │
+
+        ▼
+
+Backup Metadata
+```
+
+Each service continues to own only its respective business or operational responsibility.
+
+---
+
+## 31.9 Design Principles
+
+Phase 4 follows the following architectural principles:
+
+- extend existing architecture rather than redesigning it;
+- preserve single responsibility across services;
+- separate business services from production infrastructure;
+- isolate request processing from scheduled processing;
+- maintain backend authority;
+- preserve transactional consistency;
+- support independent testing;
+- support future scalability;
+- remain deployment-platform agnostic.
+
+---
+
+## 31.10 Phase 4 Summary
+
+Phase 4 extends the backend architecture with production hardening capabilities while preserving the layered, modular, and service-oriented architecture established throughout Phases 1–3.
+
+The resulting architecture improves operational reliability, security, auditability, recoverability, and maintainability without altering existing business workflows or API contracts.
+
+
+# 32. Conclusion
 
 The backend architecture establishes a modular, layered, and service-oriented foundation for the InnoTech Hub Attendance system.
 
@@ -4661,3 +4860,6 @@ The architecture additionally supports:
 The modular architecture allows future Activity Layer enhancements to be implemented without affecting the existing attendance and presence monitoring modules.
 
 Following these architectural principles ensures that the backend remains consistent with the project's API contracts, database schema, and business rules while providing a stable platform for future development.
+
+
+

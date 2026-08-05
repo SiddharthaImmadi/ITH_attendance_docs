@@ -1574,3 +1574,227 @@ Routing should emphasize:
 - reusable layouts;
 - scalable organization;
 - backend-authoritative security.
+
+# 19. Phase 4 Production Routing
+
+Phase 4 extends the routing architecture to support production-ready operational capabilities without changing the existing navigation philosophy.
+
+The routing architecture continues to separate navigation from backend authorization while introducing routes for operational management, backup administration, synchronization awareness, and security monitoring.
+
+---
+
+## 19.1 Objectives
+
+Phase 4 routing is designed to:
+
+- support offline-first navigation;
+- provide production administration routes;
+- improve operational visibility;
+- support deep linking for operational workflows;
+- preserve existing navigation patterns.
+
+---
+
+## 19.2 Administrator Routes
+
+Phase 4 introduces the following administrator route groups:
+
+- Audit & Security
+- Backup Management
+
+These routes remain accessible only to authenticated administrators.
+
+---
+
+## 19.3 Member Experience
+
+Member routing continues uninterrupted while offline.
+
+Users may continue navigating throughout supported application areas.
+
+Offline operation should not interrupt normal navigation.
+
+Only actions requiring backend communication are synchronized when connectivity returns.
+
+---
+
+## 19.4 Route Hierarchy
+
+```text
+Dashboard
+
+├── Events
+
+├── Activities
+
+├── Reports
+
+├── Administration
+
+│   ├── Audit & Security
+
+│   └── Backup Management
+
+├── Profile
+
+└── Settings
+```
+
+Phase 4 extends the existing hierarchy without restructuring previous navigation.
+
+---
+
+## 19.5 Offline Navigation
+
+Navigation continues normally while the application is offline.
+
+Supported offline screens remain accessible.
+
+The application should never redirect users to a dedicated offline page.
+
+Instead, synchronization occurs automatically when connectivity returns.
+
+---
+
+## 19.6 Synchronization Status
+
+Synchronization status is available globally throughout the application.
+
+Typical states include:
+
+```text
+🟢 Online
+
+🟠 Offline • 3 Pending
+
+🔄 Syncing...
+
+✅ Synced
+```
+
+Selecting the synchronization indicator should open a lightweight status panel displaying:
+
+- current connection state;
+- pending operation count;
+- synchronization progress.
+
+The panel provides operational feedback without interrupting the current workflow.
+
+---
+
+## 19.7 Route Protection
+
+Phase 4 routes continue using protected navigation.
+
+Administrators may access:
+
+- Audit & Security;
+- Backup Management.
+
+Members may never access production administration routes.
+
+Routing reflects backend authorization while preserving backend authority.
+
+---
+
+## 19.8 Navigation Flow
+
+Administrator operational workflow:
+
+```text
+Dashboard
+
+↓
+
+Administration
+
+├── Audit & Security
+
+└── Backup Management
+```
+
+Member synchronization workflow:
+
+```text
+Dashboard
+
+↓
+
+Offline Usage
+
+↓
+
+Automatic Synchronization
+
+↓
+
+Continue Workflow
+```
+
+Navigation should remain uninterrupted regardless of synchronization state.
+
+---
+
+## 19.9 Deep Linking
+
+Production administration supports deep linking.
+
+Examples include:
+
+- individual audit records;
+- security events;
+- backup details;
+- backup history.
+
+When a protected deep link is opened:
+
+- authentication is verified;
+- authorization is verified;
+- navigation continues to the requested destination when permitted.
+
+Deep linking must never bypass backend authorization.
+
+---
+
+## 19.10 Navigation Recovery
+
+When connectivity is restored:
+
+- synchronization begins automatically;
+- current navigation is preserved;
+- users remain on their current screen whenever practical;
+- synchronization feedback is displayed without interrupting navigation.
+
+Recovery should feel seamless to users.
+
+---
+
+## 19.11 Responsive Navigation
+
+Administrator production routes should remain usable across supported devices.
+
+Navigation should:
+
+- preserve hierarchy;
+- minimize unnecessary transitions;
+- support scrolling where appropriate;
+- maintain consistent navigation patterns.
+
+The global synchronization indicator should remain visible without obstructing application navigation.
+
+---
+
+## 19.12 Routing Principles
+
+Phase 4 extends the existing routing philosophy.
+
+Routing should emphasize:
+
+- offline-first navigation;
+- uninterrupted workflows;
+- administrator-focused operational management;
+- predictable navigation;
+- backend-authoritative security;
+- scalable route organization;
+- seamless synchronization;
+- deep-link support for operational workflows.

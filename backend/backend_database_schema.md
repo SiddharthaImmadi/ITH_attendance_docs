@@ -2996,6 +2996,207 @@ These mechanisms help maintain data integrity during normal operations and recov
 
 ---
 
+
+
+# Phase 4 Database Extension
+
+Phase 4 extends the existing database schema to support production hardening.
+
+Rather than introducing new business entities, this phase adds operational capabilities that improve reliability, security, recoverability, and maintainability while preserving complete backward compatibility with Phases 1–3.
+
+---
+
+## 1 Objectives
+
+The Phase 4 database extension introduces support for:
+
+- centralized audit logging improvements;
+- spoofing detection history;
+- backup metadata;
+- production operational monitoring;
+- configurable data retention.
+
+The Offline Synchronization queue is intentionally **not** stored in PostgreSQL. Pending offline operations remain the responsibility of the frontend using IndexedDB.
+
+---
+
+## 2 Audit Log Enhancements
+
+The existing `audit_logs` table is extended to support richer auditing.
+
+Additional information recorded for business-significant updates includes:
+
+| Column | Type | Description |
+|----------|------|-------------|
+| previous_values | JSONB | Object containing values before the change |
+| new_values | JSONB | Object containing values after the change |
+| retention_until | TIMESTAMP | Optional retention expiration based on configured policy |
+
+These additions allow administrators to understand exactly what changed without modifying historical records.
+
+Audit logs remain immutable after creation.
+
+Only business-significant actions are recorded.
+
+Examples include:
+
+- authentication
+- attendance lifecycle
+- activity management
+- assignment changes
+- review decisions
+- administrator operations
+- backup execution
+- configuration changes
+
+Routine internal database updates should not generate audit records.
+
+---
+
+## 3 Spoofing Events
+
+A new table stores every detected spoofing event.
+
+### Table: `spoofing_events`
+
+| Column | Type | Description |
+|----------|------|-------------|
+| id | UUID | Primary key |
+| attendance_id | UUID FK | Related attendance session (nullable when not applicable) |
+| event_id | UUID FK | Related event |
+| user_id | UUID FK | User involved |
+| detection_type | VARCHAR | Detection category |
+| confidence | DECIMAL | Detection confidence score |
+| description | TEXT | Detection details |
+| device_information | JSONB | Device metadata used during evaluation |
+| location_snapshot | JSONB | GPS information captured during detection |
+| created_at | TIMESTAMP | Detection timestamp |
+
+Each suspicious event is stored independently.
+
+Repeated suspicious behaviour is determined from accumulated historical events rather than a separate score table.
+
+---
+
+## 4 Backup Metadata
+
+Production backup operations are tracked using metadata stored within PostgreSQL.
+
+### Table: `backup_metadata`
+
+| Column | Type | Description |
+|----------|------|-------------|
+| id | UUID | Primary key |
+| backup_type | VARCHAR | Full, incremental, differential |
+| started_at | TIMESTAMP | Backup start |
+| completed_at | TIMESTAMP | Backup completion |
+| status | VARCHAR | Pending, Running, Completed, Failed |
+| verification_status | VARCHAR | Verification result |
+| retention_until | TIMESTAMP | Configured expiration |
+| initiated_by | UUID FK | Administrator (nullable for automated backups) |
+| notes | TEXT | Additional information |
+| created_at | TIMESTAMP | Record creation |
+
+This table stores metadata only.
+
+Actual backup files remain external to the application database.
+
+---
+
+## 5 Relationships
+
+Phase 4 introduces the following relationships:
+
+```
+users
+ │
+ ├──────────────┐
+ │              │
+ ▼              ▼
+audit_logs   spoofing_events
+                   │
+                   ▼
+             attendance
+
+events
+ │
+ ▼
+spoofing_events
+
+users
+ │
+ ▼
+backup_metadata (initiated_by)
+```
+
+These relationships provide complete traceability while preserving existing business relationships.
+
+---
+
+## 6 Indexing Strategy
+
+Recommended indexes include:
+
+### audit_logs
+
+- user_id
+- created_at
+- action
+- entity_type
+
+### spoofing_events
+
+- attendance_id
+- event_id
+- user_id
+- detection_type
+- created_at
+
+### backup_metadata
+
+- status
+- started_at
+- completed_at
+
+These indexes improve reporting, auditing, and administrative queries.
+
+---
+
+## 7 Migration Strategy
+
+Phase 4 migrations should:
+
+1. Extend the existing `audit_logs` table.
+2. Create the `spoofing_events` table.
+3. Create the `backup_metadata` table.
+4. Create required indexes.
+5. Preserve all existing production data.
+
+No existing tables should require destructive schema changes.
+
+---
+
+## 8 Design Principles
+
+The Phase 4 schema follows these principles:
+
+- extend existing schema rather than redesign it;
+- preserve backward compatibility;
+- maintain immutable audit history;
+- separate operational data from business data;
+- keep synchronization state outside PostgreSQL;
+- support production monitoring;
+- support disaster recovery;
+- remain independently extensible.
+
+---
+
+## 9 Phase 4 Summary
+
+Phase 4 extends the database schema with production-oriented capabilities while preserving the business model established throughout Phases 1–3.
+
+The resulting schema improves auditability, operational visibility, security monitoring, and backup management without altering the existing Attendance, Presence, or Activity Management data model.
+
 # Conclusion
 
 The database schema provides the persistent data model for the InnoTech Hub Attendance System.

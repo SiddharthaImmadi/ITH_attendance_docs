@@ -804,3 +804,304 @@ Phase 3 extends authorization while preserving:
 - short-lived access tokens;
 - dependency-based authorization;
 - centralized authorization logic.
+
+# 15. Phase 4 Authentication & Authorization Extensions
+
+Phase 4 preserves the existing JWT-based authentication architecture while extending backend security for production readiness.
+
+No changes are required to:
+
+- password hashing;
+- JWT generation;
+- JWT verification;
+- JWT payload structure;
+- authentication dependencies.
+
+Phase 4 introduces production security capabilities including:
+
+- authentication audit logging;
+- login rate limiting;
+- device profile monitoring;
+- suspicious login detection;
+- administrator session revocation;
+- production security monitoring.
+
+---
+
+## 15.1 Authentication Flow
+
+The authentication lifecycle is extended with additional security checks.
+
+```
+Login Request
+
+↓
+
+Rate Limit Validation
+
+↓
+
+Credential Verification
+
+↓
+
+JWT Generation
+
+↓
+
+Authentication Audit
+
+↓
+
+Device Profile Capture
+
+↓
+
+Suspicious Login Evaluation
+
+↓
+
+Response
+```
+
+Authentication continues using stateless JWT tokens.
+
+Security monitoring operates independently from authentication.
+
+---
+
+## 15.2 Login Rate Limiting
+
+To reduce brute-force attacks, login attempts are rate limited.
+
+Policy:
+
+- maximum 5 consecutive failed login attempts;
+- account locked for 15 minutes;
+- successful login resets the failed-attempt counter;
+- administrators may manually unlock accounts.
+
+Rate limiting applies only to authentication endpoints.
+
+---
+
+## 15.3 Device Profile Monitoring
+
+Authentication events capture a lightweight device profile.
+
+Examples include:
+
+- browser information;
+- operating system;
+- device type;
+- user-agent;
+- other non-invasive request metadata.
+
+Device profiles are used only for:
+
+- audit history;
+- suspicious behaviour analysis;
+- administrator investigations.
+
+Device profiles are not used as an authentication factor.
+
+---
+
+## 15.4 Suspicious Authentication Detection
+
+Authentication events are evaluated for suspicious behaviour.
+
+Examples include:
+
+- login from an unfamiliar device;
+- repeated spoofing indicators;
+- abnormal authentication patterns;
+- other production security signals.
+
+When suspicious behaviour is detected:
+
+- login continues;
+- a security event is created;
+- administrators are notified;
+- the event becomes part of the audit history.
+
+The system does not automatically block authentication based solely on suspicious indicators.
+
+---
+
+## 15.5 Authentication Audit Logging
+
+Every authentication-related event generates an audit record.
+
+Examples include:
+
+- successful login;
+- failed login;
+- account lock;
+- administrator unlock;
+- token revocation;
+- suspicious login detection;
+- logout events where applicable.
+
+Audit records remain immutable.
+
+Authentication auditing uses the centralized AuditLogService.
+
+---
+
+## 15.6 JWT Revocation
+
+Phase 4 introduces administrator-controlled JWT revocation.
+
+Administrators may revoke all active sessions belonging to a user.
+
+Typical use cases include:
+
+- compromised accounts;
+- suspicious activity;
+- security incidents;
+- administrative enforcement.
+
+Revoked sessions require users to authenticate again before accessing protected resources.
+
+---
+
+## 15.7 Session Management
+
+Session management continues using stateless JWT authentication.
+
+When administrator revocation occurs:
+
+```
+Administrator
+
+↓
+
+Revoke User Sessions
+
+↓
+
+Invalidate All Active Tokens
+
+↓
+
+User Re-authenticates
+```
+
+All active sessions for the affected user are revoked together.
+
+Selective per-device revocation is not implemented.
+
+---
+
+## 15.8 Authorization Continuity
+
+Authorization continues using the existing role-based and ownership-based model.
+
+Phase 4 introduces no new user roles.
+
+Existing authorization rules remain unchanged.
+
+Business services continue validating:
+
+- authenticated identity;
+- administrator permissions;
+- ownership requirements;
+- resource access.
+
+---
+
+## 15.9 Security Event Handling
+
+Security-related authentication events follow a consistent workflow.
+
+```
+Authentication Event
+
+↓
+
+Security Evaluation
+
+↓
+
+Audit Recording
+
+↓
+
+Administrator Notification
+
+↓
+
+Administrative Review
+```
+
+The backend records security events without automatically enforcing account restrictions.
+
+Final enforcement decisions remain under administrator control.
+
+---
+
+## 15.10 Error Responses
+
+Additional authentication responses introduced by Phase 4 include:
+
+```
+401 UNAUTHORIZED
+```
+
+Invalid or revoked token.
+
+```
+403 FORBIDDEN
+```
+
+Insufficient permissions.
+
+```
+423 LOCKED
+```
+
+Account temporarily locked after excessive failed login attempts.
+
+```
+429 TOO_MANY_REQUESTS
+```
+
+Rate limit exceeded.
+
+Error responses continue following the standardized backend response format.
+
+---
+
+## 15.11 Testing Requirements
+
+Authentication testing should verify:
+
+- login rate limiting;
+- automatic account lock after repeated failures;
+- administrator account unlock;
+- device profile recording;
+- authentication audit generation;
+- suspicious login detection;
+- administrator session revocation;
+- revoked token rejection;
+- existing authorization rules remain unchanged.
+
+---
+
+## 15.12 Phase 4 Security Principles
+
+Phase 4 extends the authentication architecture while preserving previous security guarantees.
+
+Principles:
+
+- preserve stateless JWT authentication;
+- authenticate every protected request;
+- authorize every sensitive operation;
+- never trust client-provided identity;
+- derive identity from verified JWT tokens;
+- audit all authentication events;
+- detect suspicious behaviour without automatic enforcement;
+- maintain administrator-controlled security decisions;
+- revoke all active sessions when administrative revocation occurs;
+- preserve backward compatibility with previous phases.
