@@ -4187,3 +4187,3739 @@ Older changelog entries must remain immutable.
 - No Phase 1 endpoint was removed.
 - Existing request and response formats remain supported.
 - Phase 2 functionality is additive and does not introduce breaking changes.
+
+Phase 3 
+# Activity Management
+
+## Administrator
+
+POST   /activities
+
+GET    /activities
+
+GET    /activities/{activityId}
+
+PATCH  /activities/{activityId}
+
+POST   /activities/{activityId}/publish
+
+POST   /activities/{activityId}/cancel
+
+POST   /activities/{activityId}/archive
+
+---
+
+# Activity Assignments
+
+## Administrator
+
+POST   /activities/{activityId}/assignments
+
+GET    /activities/{activityId}/assignments
+
+PATCH  /assignments/{assignmentId}
+
+POST   /assignments/{assignmentId}/cancel
+
+---
+
+## Member
+
+GET    /members/me/assignments
+
+GET    /assignments/{assignmentId}
+
+---
+
+# Activity Progress
+
+## Member
+
+POST   /assignments/{assignmentId}/start
+
+POST   /assignments/{assignmentId}/progress
+
+GET    /assignments/{assignmentId}/progress
+
+POST   /assignments/{assignmentId}/submit
+
+---
+
+# Activity Evidence
+
+## Member
+
+POST   /progress/{progressId}/evidence
+
+GET    /progress/{progressId}/evidence
+
+DELETE /progress/{progressId}/evidence/{evidenceId}
+
+---
+
+# Activity Review
+
+## Administrator
+
+GET    /reviews/pending
+
+GET    /reviews/{reviewId}
+
+POST   /reviews/{reviewId}/verify
+
+POST   /reviews/{reviewId}/needs-changes
+
+---
+
+## Member
+
+GET    /assignments/{assignmentId}/review
+
+---
+
+# Activity Templates
+
+## Administrator
+
+POST   /activity-templates
+
+GET    /activity-templates
+
+GET    /activity-templates/{templateId}
+
+PATCH  /activity-templates/{templateId}
+
+POST   /activity-templates/{templateId}/apply
+
+POST   /activity-templates/{templateId}/archive
+
+---
+
+# Activity Reports
+
+## Administrator
+
+POST   /activity-reports
+
+GET    /activity-reports/{reportId}
+
+GET    /activity-reports/summary
+
+---
+
+# Activity History
+
+## Member
+
+GET    /members/me/activity-history
+
+GET    /assignments/{assignmentId}/history
+
+---
+
+## Administrator
+
+GET    /activities/{activityId}/history
+
+
+# Create Activity
+
+Creates a new activity in **Draft** status. Activities remain editable until they are published.
+
+## Endpoint
+
+`POST /activities`
+
+## Authentication
+
+**Required**
+
+Administrator access only.
+
+## Request Body
+
+```json
+{
+  "title": "Campus Clean-Up Drive",
+  "description": "Monthly campus cleaning initiative.",
+  "category": "Community Service",
+  "location": "Main Campus",
+  "startTime": "2026-09-15T09:00:00Z",
+  "endTime": "2026-09-15T12:00:00Z",
+  "maxParticipants": 40,
+  "requiresEvidence": true,
+  "minimumPhotoCount": 2,
+  "maximumPhotoCount": 10,
+  "minimumVideoCount": 0,
+  "maximumVideoCount": 2,
+  "maximumVideoDurationSeconds": 60,
+  "instructions": [
+    "Wear your volunteer ID.",
+    "Report to the event coordinator before starting."
+  ]
+}
+```
+
+## Request Fields
+
+| Field | Type | Required | Description |
+|--------|------|----------|-------------|
+| title | String | Yes | Activity title. |
+| description | String | Yes | Detailed description of the activity. |
+| category | String | Yes | Activity category. |
+| location | String | Yes | Activity location or venue. |
+| startTime | ISO-8601 Datetime | Yes | Planned activity start date and time. |
+| endTime | ISO-8601 Datetime | Yes | Planned activity end date and time. |
+| maxParticipants | Integer | Yes | Maximum number of members that may be assigned. |
+| requiresEvidence | Boolean | Yes | Indicates whether evidence submission is mandatory. |
+| minimumPhotoCount | Integer | No | Minimum number of required photographs. |
+| maximumPhotoCount | Integer | No | Maximum number of allowed photographs. Maximum: 10. |
+| minimumVideoCount | Integer | No | Minimum number of required videos. |
+| maximumVideoCount | Integer | No | Maximum number of allowed videos. Maximum: 2. |
+| maximumVideoDurationSeconds | Integer | No | Maximum duration of each uploaded video in seconds. Maximum: 60. |
+| instructions | Array<String> | No | Instructions displayed to assigned members. |
+
+## Validation Rules
+
+- Title cannot be empty.
+- Description cannot be empty.
+- Start time must be earlier than end time.
+- Maximum participants must be greater than zero.
+- Maximum photo count cannot exceed **10**.
+- Maximum video count cannot exceed **2**.
+- Maximum video duration cannot exceed **60 seconds**.
+- Minimum values cannot exceed their corresponding maximum values.
+- Activities are always created in the **DRAFT** state.
+
+## Successful Response
+
+**HTTP 201 Created**
+
+```json
+{
+  "activityId": "a8b2d0c4-76d9-4db7-a58f-3d2dbf6b96c8",
+  "status": "DRAFT",
+  "message": "Activity created successfully."
+}
+```
+
+## Business Rules
+
+- Newly created activities always begin in the **DRAFT** state.
+- Only administrators may create activities.
+- Draft activities are visible only to administrators.
+- Draft activities may be edited.
+- Draft activities cannot be assigned to members.
+- Draft activities cannot receive progress updates.
+- Draft activities must be published before they become available for assignment.
+- Activity creation is automatically recorded in the Audit Log.
+
+## Possible Errors
+
+| HTTP Status | Description |
+|-------------|-------------|
+| 400 | Invalid request body. |
+| 401 | Authentication required. |
+| 403 | Administrator permission required. |
+| 409 | Activity schedule conflicts with an existing activity. |
+| 422 | Validation failed. |
+| 500 | Internal server error. |
+
+# List Activities
+
+Returns a paginated list of activities available to the authenticated administrator.
+
+## Endpoint
+
+`GET /activities`
+
+## Authentication
+
+**Required**
+
+Administrator access only.
+
+## Query Parameters
+
+| Parameter | Type | Required | Description |
+|----------|------|----------|-------------|
+| page | Integer | No | Page number. Default: `1`. |
+| pageSize | Integer | No | Number of records per page. Default: `20`. |
+| status | String | No | Filter by activity status (`DRAFT`, `ACTIVE`, `CANCELLED`, `ARCHIVED`). |
+| category | String | No | Filter by activity category. |
+| search | String | No | Search by activity title or description. |
+| startDate | ISO-8601 Datetime | No | Return activities starting on or after this date. |
+| endDate | ISO-8601 Datetime | No | Return activities ending on or before this date. |
+| sortBy | String | No | Sort field. Default: `startTime`. |
+| sortOrder | String | No | `asc` or `desc`. Default: `asc`. |
+
+## Successful Response
+
+**HTTP 200 OK**
+
+```json
+{
+  "page": 1,
+  "pageSize": 20,
+  "totalRecords": 42,
+  "totalPages": 3,
+  "activities": [
+    {
+      "activityId": "a8b2d0c4-76d9-4db7-a58f-3d2dbf6b96c8",
+      "title": "Campus Clean-Up Drive",
+      "category": "Community Service",
+      "location": "Main Campus",
+      "startTime": "2026-09-15T09:00:00Z",
+      "endTime": "2026-09-15T12:00:00Z",
+      "status": "ACTIVE",
+      "assignedMembers": 28,
+      "maxParticipants": 40
+    }
+  ]
+}
+```
+
+## Business Rules
+
+- Only administrators may retrieve the complete activity list.
+- Activities are returned using pagination.
+- Multiple filters may be combined.
+- Search performs a partial match on supported fields.
+- Results may be sorted using supported sort fields.
+- Archived activities remain searchable.
+- Cancelled activities remain visible for historical purposes.
+
+## Possible Errors
+
+| HTTP Status | Description |
+|-------------|-------------|
+| 401 | Authentication required. |
+| 403 | Administrator permission required. |
+| 422 | Invalid query parameters. |
+| 500 | Internal server error. |
+
+# Get Activity Details
+
+Returns the complete details of a single activity.
+
+## Endpoint
+
+`GET /activities/{activityId}`
+
+## Authentication
+
+**Required**
+
+Administrator access only.
+
+## Path Parameters
+
+| Parameter | Type | Description |
+|----------|------|-------------|
+| activityId | UUID | Unique Activity identifier. |
+
+## Successful Response
+
+**HTTP 200 OK**
+
+```json
+{
+  "activityId": "a8b2d0c4-76d9-4db7-a58f-3d2dbf6b96c8",
+  "title": "Campus Clean-Up Drive",
+  "description": "Monthly campus cleaning initiative.",
+  "category": "Community Service",
+  "location": "Main Campus",
+  "startTime": "2026-09-15T09:00:00Z",
+  "endTime": "2026-09-15T12:00:00Z",
+  "status": "ACTIVE",
+  "maxParticipants": 40,
+  "assignedMembers": 28,
+  "requiresEvidence": true,
+  "minimumPhotoCount": 2,
+  "maximumPhotoCount": 10,
+  "minimumVideoCount": 0,
+  "maximumVideoCount": 2,
+  "maximumVideoDurationSeconds": 60,
+  "instructions": [
+    "Wear your volunteer ID.",
+    "Report to the event coordinator before starting."
+  ],
+  "createdAt": "2026-08-01T10:15:30Z",
+  "updatedAt": "2026-08-03T14:42:18Z",
+  "createdBy": {
+    "userId": "2e4e2b60-88b0-4b07-b8b8-1d8d6d76d2c9",
+    "name": "John Doe"
+  }
+}
+```
+
+## Business Rules
+
+- Only administrators may retrieve complete activity details.
+- The response contains the latest activity configuration.
+- Draft, Active, Cancelled and Archived activities may all be retrieved.
+- Assigned member count reflects the current assignment state.
+- Historical activities remain accessible for reporting and auditing purposes.
+
+## Possible Errors
+
+| HTTP Status | Description |
+|-------------|-------------|
+| 401 | Authentication required. |
+| 403 | Administrator permission required. |
+| 404 | Activity not found. |
+| 500 | Internal server error. |
+
+# Update Activity
+
+Updates an existing activity.
+
+Only activities in the **DRAFT** state may be updated.
+
+## Endpoint
+
+`PATCH /activities/{activityId}`
+
+## Authentication
+
+**Required**
+
+Administrator access only.
+
+## Path Parameters
+
+| Parameter | Type | Description |
+|----------|------|-------------|
+| activityId | UUID | Unique Activity identifier. |
+
+## Request Body
+
+```json
+{
+  "title": "Campus Clean-Up Drive 2026",
+  "description": "Updated activity description.",
+  "category": "Community Service",
+  "location": "Main Campus",
+  "startTime": "2026-09-15T09:30:00Z",
+  "endTime": "2026-09-15T12:30:00Z",
+  "maxParticipants": 50,
+  "requiresEvidence": true,
+  "minimumPhotoCount": 2,
+  "maximumPhotoCount": 10,
+  "minimumVideoCount": 0,
+  "maximumVideoCount": 2,
+  "maximumVideoDurationSeconds": 60,
+  "instructions": [
+    "Arrive 15 minutes before the activity starts.",
+    "Wear your volunteer ID."
+  ]
+}
+```
+
+## Request Fields
+
+| Field | Type | Required | Description |
+|--------|------|----------|-------------|
+| title | String | Yes | Activity title. |
+| description | String | Yes | Detailed description of the activity. |
+| category | String | Yes | Activity category. |
+| location | String | Yes | Activity location or venue. |
+| startTime | ISO-8601 Datetime | Yes | Planned activity start date and time. |
+| endTime | ISO-8601 Datetime | Yes | Planned activity end date and time. |
+| maxParticipants | Integer | Yes | Maximum number of members that may be assigned. |
+| requiresEvidence | Boolean | Yes | Indicates whether evidence submission is mandatory. |
+| minimumPhotoCount | Integer | No | Minimum number of required photographs. |
+| maximumPhotoCount | Integer | No | Maximum number of allowed photographs. Maximum: 10. |
+| minimumVideoCount | Integer | No | Minimum number of required videos. |
+| maximumVideoCount | Integer | No | Maximum number of allowed videos. Maximum: 2. |
+| maximumVideoDurationSeconds | Integer | No | Maximum duration of each uploaded video in seconds. Maximum: 60. |
+| instructions | Array<String> | No | Instructions displayed to assigned members. |
+
+## Validation Rules
+
+- Activity must exist.
+- Only activities in the **DRAFT** state may be updated.
+- Title cannot be empty.
+- Description cannot be empty.
+- Start time must be earlier than end time.
+- Maximum participants must be greater than zero.
+- Maximum photo count cannot exceed **10**.
+- Maximum video count cannot exceed **2**.
+- Maximum video duration cannot exceed **60 seconds**.
+- Minimum values cannot exceed their corresponding maximum values.
+
+## Successful Response
+
+**HTTP 200 OK**
+
+```json
+{
+  "activityId": "a8b2d0c4-76d9-4db7-a58f-3d2dbf6b96c8",
+  "status": "DRAFT",
+  "message": "Activity updated successfully."
+}
+```
+
+## Business Rules
+
+- Only administrators may update activities.
+- Only Draft activities may be updated.
+- Published (Active), Cancelled, and Archived activities cannot be modified.
+- Updating an activity does not change its status.
+- Every successful update is automatically recorded in the Audit Log.
+
+## Possible Errors
+
+| HTTP Status | Description |
+|-------------|-------------|
+| 400 | Invalid request body. |
+| 401 | Authentication required. |
+| 403 | Administrator permission required. |
+| 404 | Activity not found. |
+| 409 | Activity cannot be updated in its current state. |
+| 422 | Validation failed. |
+| 500 | Internal server error. |
+
+# Publish Activity
+
+Publishes a Draft activity and makes it available for member assignments.
+
+Only activities in the **DRAFT** state may be published.
+
+## Endpoint
+
+`POST /activities/{activityId}/publish`
+
+## Authentication
+
+**Required**
+
+Administrator access only.
+
+## Path Parameters
+
+| Parameter | Type | Description |
+|----------|------|-------------|
+| activityId | UUID | Unique Activity identifier. |
+
+## Successful Response
+
+**HTTP 200 OK**
+
+```json
+{
+  "activityId": "a8b2d0c4-76d9-4db7-a58f-3d2dbf6b96c8",
+  "status": "ACTIVE",
+  "message": "Activity published successfully."
+}
+```
+
+## Business Rules
+
+- Only administrators may publish activities.
+- Only activities in the **DRAFT** state may be published.
+- Publishing changes the activity status from **DRAFT** to **ACTIVE**.
+- Published activities become visible to eligible members.
+- Published activities become available for member assignment.
+- Published activities can receive progress updates and evidence submissions after members are assigned.
+- Publishing an activity is automatically recorded in the Audit Log.
+
+## Possible Errors
+
+| HTTP Status | Description |
+|-------------|-------------|
+| 401 | Authentication required. |
+| 403 | Administrator permission required. |
+| 404 | Activity not found. |
+| 409 | Activity is not in the Draft state. |
+| 500 | Internal server error. |
+
+# Cancel Activity
+
+Cancels an activity and prevents any further participation.
+
+Only activities in the **DRAFT** or **ACTIVE** state may be cancelled.
+
+## Endpoint
+
+`POST /activities/{activityId}/cancel`
+
+## Authentication
+
+**Required**
+
+Administrator access only.
+
+## Path Parameters
+
+| Parameter | Type | Description |
+|----------|------|-------------|
+| activityId | UUID | Unique Activity identifier. |
+
+## Request Body
+
+```json
+{
+  "reason": "Event postponed due to severe weather conditions."
+}
+```
+
+## Request Fields
+
+| Field | Type | Required | Description |
+|--------|------|----------|-------------|
+| reason | String | Yes | Reason for cancelling the activity. |
+
+## Validation Rules
+
+- Activity must exist.
+- Only activities in the **DRAFT** or **ACTIVE** state may be cancelled.
+- Cancellation reason cannot be empty.
+
+## Successful Response
+
+**HTTP 200 OK**
+
+```json
+{
+  "activityId": "a8b2d0c4-76d9-4db7-a58f-3d2dbf6b96c8",
+  "status": "CANCELLED",
+  "message": "Activity cancelled successfully."
+}
+```
+
+## Business Rules
+
+- Only administrators may cancel activities.
+- Cancelling changes the activity status to **CANCELLED**.
+- Cancelled activities cannot receive new member assignments.
+- Members with existing assignments can no longer submit progress or evidence for the cancelled activity.
+- Cancelled activities remain available for reporting, history, and auditing purposes.
+- Activity cancellation is automatically recorded in the Audit Log.
+
+## Possible Errors
+
+| HTTP Status | Description |
+|-------------|-------------|
+| 400 | Invalid request body. |
+| 401 | Authentication required. |
+| 403 | Administrator permission required. |
+| 404 | Activity not found. |
+| 409 | Activity cannot be cancelled in its current state. |
+| 422 | Validation failed. |
+| 500 | Internal server error. |
+
+# Archive Activity
+
+Archives an activity for long-term retention.
+
+Archived activities become read-only and remain available for reporting, history, and auditing purposes.
+
+Only activities in the **DRAFT**, **ACTIVE**, or **CANCELLED** state may be archived.
+
+## Endpoint
+
+`POST /activities/{activityId}/archive`
+
+## Authentication
+
+**Required**
+
+Administrator access only.
+
+## Path Parameters
+
+| Parameter | Type | Description |
+|----------|------|-------------|
+| activityId | UUID | Unique Activity identifier. |
+
+## Successful Response
+
+**HTTP 200 OK**
+
+```json
+{
+  "activityId": "a8b2d0c4-76d9-4db7-a58f-3d2dbf6b96c8",
+  "status": "ARCHIVED",
+  "message": "Activity archived successfully."
+}
+```
+
+## Business Rules
+
+- Only administrators may archive activities.
+- Activities in the **DRAFT**, **ACTIVE**, and **CANCELLED** states may be archived.
+- Archiving changes the activity status to **ARCHIVED**.
+- Archived activities become read-only.
+- Archived activities cannot be modified.
+- Archived activities cannot receive new member assignments.
+- Archived activities cannot receive progress updates.
+- Archived activities cannot receive evidence submissions.
+- Archived activities remain available in reports.
+- Archived activities remain accessible through Activity History.
+- Activity archival is automatically recorded in the Audit Log.
+
+## Possible Errors
+
+| HTTP Status | Description |
+|-------------|-------------|
+| 401 | Authentication required. |
+| 403 | Administrator permission required. |
+| 404 | Activity not found. |
+| 409 | Activity cannot be archived in its current state. |
+| 500 | Internal server error. |
+
+# Assign Members to Activity
+
+Assigns one or more members to an active activity.
+
+Only **ACTIVE** activities may receive new assignments.
+
+## Endpoint
+
+`POST /activities/{activityId}/assignments`
+
+## Authentication
+
+**Required**
+
+Administrator access only.
+
+## Path Parameters
+
+| Parameter | Type | Description |
+|----------|------|-------------|
+| activityId | UUID | Unique Activity identifier. |
+
+## Request Body
+
+```json
+{
+  "memberIds": [
+    "3b9d4e8f-86d8-4b52-9d6d-0b1ef61d5d18",
+    "62d0d4d7-6b3d-4a5b-b7c4-df47a7d2c80f"
+  ],
+  "dueDate": "2026-09-20T18:00:00Z",
+  "notes": "Complete the assigned tasks before the due date."
+}
+```
+
+## Request Fields
+
+| Field | Type | Required | Description |
+|--------|------|----------|-------------|
+| memberIds | Array<UUID> | Yes | List of members to assign. |
+| dueDate | ISO-8601 Datetime | No | Assignment completion deadline. |
+| notes | String | No | Additional instructions for assigned members. |
+
+## Validation Rules
+
+- Activity must exist.
+- Activity must be in the **ACTIVE** state.
+- At least one member must be selected.
+- All selected members must exist.
+- Duplicate member assignments are not permitted.
+- Total assignments cannot exceed the activity's maximum participant limit.
+- Members who are temporarily restricted from volunteering cannot be assigned.
+- Due date, if provided, must not be earlier than the assignment creation time.
+
+## Successful Response
+
+**HTTP 201 Created**
+
+```json
+{
+  "activityId": "a8b2d0c4-76d9-4db7-a58f-3d2dbf6b96c8",
+  "assignedCount": 2,
+  "message": "Members assigned successfully."
+}
+```
+
+## Business Rules
+
+- Only administrators may assign members.
+- Members may only be assigned to **ACTIVE** activities.
+- A member cannot receive duplicate assignments for the same activity.
+- Assignment notifications are automatically generated for newly assigned members.
+- Every successful assignment is automatically recorded in the Audit Log.
+
+## Possible Errors
+
+| HTTP Status | Description |
+|-------------|-------------|
+| 400 | Invalid request body. |
+| 401 | Authentication required. |
+| 403 | Administrator permission required. |
+| 404 | Activity or member not found. |
+| 409 | Assignment conflict or maximum participant limit reached. |
+| 422 | Validation failed. |
+| 500 | Internal server error. |
+
+# Get Activity Assignments
+
+Returns all assignments associated with a specific activity.
+
+## Endpoint
+
+`GET /activities/{activityId}/assignments`
+
+## Authentication
+
+**Required**
+
+Administrator access only.
+
+## Path Parameters
+
+| Parameter | Type | Description |
+|----------|------|-------------|
+| activityId | UUID | Unique Activity identifier. |
+
+## Query Parameters
+
+| Parameter | Type | Required | Description |
+|----------|------|----------|-------------|
+| page | Integer | No | Page number. Default: `1`. |
+| pageSize | Integer | No | Number of records per page. Default: `20`. |
+| status | String | No | Filter by assignment status. |
+| search | String | No | Search by member name or email. |
+| sortBy | String | No | Sort field. Default: `assignedAt`. |
+| sortOrder | String | No | `asc` or `desc`. Default: `desc`. |
+
+## Successful Response
+
+**HTTP 200 OK**
+
+```json
+{
+  "page": 1,
+  "pageSize": 20,
+  "totalRecords": 18,
+  "totalPages": 1,
+  "assignments": [
+    {
+      "assignmentId": "1f23d4c5-6a78-4e8a-b9c1-2d3456789012",
+      "member": {
+        "userId": "3b9d4e8f-86d8-4b52-9d6d-0b1ef61d5d18",
+        "name": "John Doe",
+        "email": "john@example.com"
+      },
+      "status": "ASSIGNED",
+      "assignedAt": "2026-09-10T09:15:00Z",
+      "dueDate": "2026-09-20T18:00:00Z"
+    }
+  ]
+}
+```
+
+## Business Rules
+
+- Only administrators may retrieve activity assignments.
+- Assignments are returned using pagination.
+- Multiple filters may be combined.
+- Search performs a partial match on member name and email.
+- Assignment history remains available even after an activity is cancelled or archived.
+
+## Possible Errors
+
+| HTTP Status | Description |
+|-------------|-------------|
+| 401 | Authentication required. |
+| 403 | Administrator permission required. |
+| 404 | Activity not found. |
+| 422 | Invalid query parameters. |
+| 500 | Internal server error. |
+
+# Update Assignment
+
+Updates an existing activity assignment.
+
+This endpoint allows administrators to modify assignment details before the assignment is completed or cancelled.
+
+## Endpoint
+
+`PATCH /assignments/{assignmentId}`
+
+## Authentication
+
+**Required**
+
+Administrator access only.
+
+## Path Parameters
+
+| Parameter | Type | Description |
+|----------|------|-------------|
+| assignmentId | UUID | Unique Assignment identifier. |
+
+## Request Body
+
+```json
+{
+  "dueDate": "2026-09-22T18:00:00Z",
+  "notes": "Please coordinate with the team leader before starting."
+}
+```
+
+## Request Fields
+
+| Field | Type | Required | Description |
+|--------|------|----------|-------------|
+| dueDate | ISO-8601 Datetime | No | Updated assignment completion deadline. |
+| notes | String | No | Updated instructions for the assigned member. |
+
+## Validation Rules
+
+- Assignment must exist.
+- Completed assignments cannot be updated.
+- Cancelled assignments cannot be updated.
+- Due date, if provided, must not be earlier than the assignment creation time.
+
+## Successful Response
+
+**HTTP 200 OK**
+
+```json
+{
+  "assignmentId": "1f23d4c5-6a78-4e8a-b9c1-2d3456789012",
+  "message": "Assignment updated successfully."
+}
+```
+
+## Business Rules
+
+- Only administrators may update assignments.
+- Updating an assignment does not change its current status.
+- Assignment history is preserved after every update.
+- Every successful update is automatically recorded in the Audit Log.
+- Assigned members are notified when assignment details are updated.
+
+## Possible Errors
+
+| HTTP Status | Description |
+|-------------|-------------|
+| 400 | Invalid request body. |
+| 401 | Authentication required. |
+| 403 | Administrator permission required. |
+| 404 | Assignment not found. |
+| 409 | Assignment cannot be updated in its current state. |
+| 422 | Validation failed. |
+| 500 | Internal server error. |
+
+# Cancel Assignment
+
+Cancels an existing activity assignment.
+
+Only assignments that have not been completed or cancelled may be cancelled.
+
+## Endpoint
+
+`POST /assignments/{assignmentId}/cancel`
+
+## Authentication
+
+**Required**
+
+Administrator access only.
+
+## Path Parameters
+
+| Parameter | Type | Description |
+|----------|------|-------------|
+| assignmentId | UUID | Unique Assignment identifier. |
+
+## Request Body
+
+```json
+{
+  "reason": "Volunteer is unavailable for the scheduled activity."
+}
+```
+
+## Request Fields
+
+| Field | Type | Required | Description |
+|--------|------|----------|-------------|
+| reason | String | Yes | Reason for cancelling the assignment. |
+
+## Validation Rules
+
+- Assignment must exist.
+- Cancellation reason cannot be empty.
+- Completed assignments cannot be cancelled.
+- Cancelled assignments cannot be cancelled again.
+
+## Successful Response
+
+**HTTP 200 OK**
+
+```json
+{
+  "assignmentId": "1f23d4c5-6a78-4e8a-b9c1-2d3456789012",
+  "status": "CANCELLED",
+  "message": "Assignment cancelled successfully."
+}
+```
+
+## Business Rules
+
+- Only administrators may cancel assignments.
+- Cancelling an assignment changes its status to **CANCELLED**.
+- Cancelled assignments cannot receive progress updates.
+- Cancelled assignments cannot receive evidence submissions.
+- Cancelled assignments cannot be submitted for review.
+- Assignment history remains available after cancellation.
+- Assigned members are notified when an assignment is cancelled.
+- Assignment cancellation is automatically recorded in the Audit Log.
+
+## Possible Errors
+
+| HTTP Status | Description |
+|-------------|-------------|
+| 400 | Invalid request body. |
+| 401 | Authentication required. |
+| 403 | Administrator permission required. |
+| 404 | Assignment not found. |
+| 409 | Assignment cannot be cancelled in its current state. |
+| 422 | Validation failed. |
+| 500 | Internal server error. |
+
+# Get My Assignments
+
+Returns a paginated list of activities assigned to the authenticated member.
+
+This endpoint allows members to view both current and historical assignments.
+
+## Endpoint
+
+`GET /members/me/assignments`
+
+## Authentication
+
+**Required**
+
+Member access only.
+
+## Query Parameters
+
+| Parameter | Type | Required | Description |
+|----------|------|----------|-------------|
+| page | Integer | No | Page number. Default: `1`. |
+| pageSize | Integer | No | Number of records per page. Default: `20`. |
+| status | String | No | Filter by assignment status. |
+| category | String | No | Filter by activity category. |
+| search | String | No | Search by activity title. |
+| startDate | ISO-8601 Datetime | No | Return assignments starting on or after this date. |
+| endDate | ISO-8601 Datetime | No | Return assignments ending on or before this date. |
+| sortBy | String | No | Sort field. Default: `startTime`. |
+| sortOrder | String | No | `asc` or `desc`. Default: `asc`. |
+
+## Successful Response
+
+**HTTP 200 OK**
+
+```json
+{
+  "page": 1,
+  "pageSize": 20,
+  "totalRecords": 8,
+  "totalPages": 1,
+  "assignments": [
+    {
+      "assignmentId": "1f23d4c5-6a78-4e8a-b9c1-2d3456789012",
+      "activityId": "a8b2d0c4-76d9-4db7-a58f-3d2dbf6b96c8",
+      "title": "Campus Clean-Up Drive",
+      "category": "Community Service",
+      "location": "Main Campus",
+      "startTime": "2026-09-15T09:00:00Z",
+      "endTime": "2026-09-15T12:00:00Z",
+      "status": "ASSIGNED",
+      "dueDate": "2026-09-20T18:00:00Z"
+    }
+  ]
+}
+```
+
+## Business Rules
+
+- Members may retrieve only their own assignments.
+- Assignments are returned using pagination.
+- Multiple filters may be combined.
+- Search performs a partial match on activity title.
+- Both active and historical assignments are returned.
+- Assignment details reflect the latest activity information available to the member.
+
+## Possible Errors
+
+| HTTP Status | Description |
+|-------------|-------------|
+| 401 | Authentication required. |
+| 403 | Member permission required. |
+| 422 | Invalid query parameters. |
+| 500 | Internal server error. |
+
+# Get Assignment Details
+
+Returns the complete details of a specific assignment for the authenticated member.
+
+This endpoint allows members to view assignment information, progress, submission status, review status, and activity instructions.
+
+## Endpoint
+
+`GET /assignments/{assignmentId}`
+
+## Authentication
+
+**Required**
+
+Member access only.
+
+## Path Parameters
+
+| Parameter | Type | Description |
+|----------|------|-------------|
+| assignmentId | UUID | Unique Assignment identifier. |
+
+## Successful Response
+
+**HTTP 200 OK**
+
+```json
+{
+  "assignmentId": "1f23d4c5-6a78-4e8a-b9c1-2d3456789012",
+  "status": "IN_PROGRESS",
+  "assignedAt": "2026-09-10T09:15:00Z",
+  "dueDate": "2026-09-20T18:00:00Z",
+  "notes": "Complete the assigned tasks before the due date.",
+  "activity": {
+    "activityId": "a8b2d0c4-76d9-4db7-a58f-3d2dbf6b96c8",
+    "title": "Campus Clean-Up Drive",
+    "description": "Monthly campus cleaning initiative.",
+    "category": "Community Service",
+    "location": "Main Campus",
+    "startTime": "2026-09-15T09:00:00Z",
+    "endTime": "2026-09-15T12:00:00Z",
+    "requiresEvidence": true,
+    "minimumPhotoCount": 2,
+    "maximumPhotoCount": 10,
+    "minimumVideoCount": 0,
+    "maximumVideoCount": 2,
+    "maximumVideoDurationSeconds": 60,
+    "instructions": [
+      "Wear your volunteer ID.",
+      "Report to the event coordinator before starting."
+    ]
+  },
+  "progress": {
+    "completionPercentage": 45,
+    "lastUpdated": "2026-09-16T11:42:18Z"
+  },
+  "reviewStatus": null
+}
+```
+
+## Business Rules
+
+- Members may retrieve only their own assignments.
+- Administrators may retrieve any assignment.
+- Assignment details always reflect the latest activity configuration available to the assigned member.
+- Progress information is included when available.
+- Review status is returned after the assignment has been submitted for review.
+- Assignment history is preserved throughout the assignment lifecycle.
+
+## Possible Errors
+
+| HTTP Status | Description |
+|-------------|-------------|
+| 401 | Authentication required. |
+| 403 | Permission denied. |
+| 404 | Assignment not found. |
+| 500 | Internal server error. |
+
+# Start Activity
+
+Marks an assigned activity as started.
+
+Only assignments in the **ASSIGNED** state may be started.
+
+## Endpoint
+
+`POST /assignments/{assignmentId}/start`
+
+## Authentication
+
+**Required**
+
+Member access only.
+
+## Path Parameters
+
+| Parameter | Type | Description |
+|----------|------|-------------|
+| assignmentId | UUID | Unique Assignment identifier. |
+
+## Successful Response
+
+**HTTP 200 OK**
+
+```json
+{
+  "assignmentId": "1f23d4c5-6a78-4e8a-b9c1-2d3456789012",
+  "status": "IN_PROGRESS",
+  "startedAt": "2026-09-15T09:05:32Z",
+  "message": "Activity started successfully."
+}
+```
+
+## Business Rules
+
+- Members may start only their own assignments.
+- Only assignments in the **ASSIGNED** state may be started.
+- Starting an assignment changes its status from **ASSIGNED** to **IN_PROGRESS**.
+- An assignment can only be started once.
+- Progress updates and evidence uploads are permitted only after the assignment has started.
+- The activity must be in the **ACTIVE** state.
+- Activity start is automatically recorded in the Audit Log.
+
+## Possible Errors
+
+| HTTP Status | Description |
+|-------------|-------------|
+| 401 | Authentication required. |
+| 403 | Permission denied. |
+| 404 | Assignment not found. |
+| 409 | Assignment cannot be started in its current state. |
+| 500 | Internal server error. |
+
+# Update Activity Progress
+
+Updates the progress of an activity assignment.
+
+Only assignments in the **IN_PROGRESS** state may receive progress updates.
+
+## Endpoint
+
+`POST /assignments/{assignmentId}/progress`
+
+## Authentication
+
+**Required**
+
+Member access only.
+
+## Path Parameters
+
+| Parameter | Type | Description |
+|----------|------|-------------|
+| assignmentId | UUID | Unique Assignment identifier. |
+
+## Request Body
+
+```json
+{
+  "completionPercentage": 60,
+  "statusNote": "Completed registration desk setup and volunteer briefing."
+}
+```
+
+## Request Fields
+
+| Field | Type | Required | Description |
+|--------|------|----------|-------------|
+| completionPercentage | Integer | Yes | Current completion percentage (0–100). |
+| statusNote | String | No | Progress update provided by the assigned member. |
+
+## Validation Rules
+
+- Assignment must exist.
+- Member must be assigned to the activity.
+- Assignment must be in the **IN_PROGRESS** state.
+- Completion percentage must be between **0** and **100**.
+- Progress cannot be updated after the assignment has been submitted for review.
+- Status note is optional but cannot exceed the maximum supported length.
+
+## Successful Response
+
+**HTTP 200 OK**
+
+```json
+{
+  "assignmentId": "1f23d4c5-6a78-4e8a-b9c1-2d3456789012",
+  "completionPercentage": 60,
+  "lastUpdated": "2026-09-15T10:42:18Z",
+  "message": "Progress updated successfully."
+}
+```
+
+## Business Rules
+
+- Members may update progress only for their own assignments.
+- Progress updates do not change the assignment status.
+- Multiple progress updates are permitted while the assignment remains **IN_PROGRESS**.
+- The latest progress update replaces the previous completion percentage.
+- Every progress update is automatically recorded in the Assignment History.
+- Every successful progress update is automatically recorded in the Audit Log.
+
+## Possible Errors
+
+| HTTP Status | Description |
+|-------------|-------------|
+| 400 | Invalid request body. |
+| 401 | Authentication required. |
+| 403 | Permission denied. |
+| 404 | Assignment not found. |
+| 409 | Assignment cannot receive progress updates in its current state. |
+| 422 | Validation failed. |
+| 500 | Internal server error. |
+
+# Get Activity Progress
+
+Returns the latest progress information for an activity assignment.
+
+## Endpoint
+
+`GET /assignments/{assignmentId}/progress`
+
+## Authentication
+
+**Required**
+
+Member access only.
+
+## Path Parameters
+
+| Parameter | Type | Description |
+|----------|------|-------------|
+| assignmentId | UUID | Unique Assignment identifier. |
+
+## Successful Response
+
+**HTTP 200 OK**
+
+```json
+{
+  "assignmentId": "1f23d4c5-6a78-4e8a-b9c1-2d3456789012",
+  "status": "IN_PROGRESS",
+  "completionPercentage": 60,
+  "statusNote": "Completed registration desk setup and volunteer briefing.",
+  "lastUpdated": "2026-09-15T10:42:18Z",
+  "updatedBy": {
+    "userId": "3b9d4e8f-86d8-4b52-9d6d-0b1ef61d5d18",
+    "name": "John Doe"
+  }
+}
+```
+
+## Business Rules
+
+- Members may retrieve progress only for their own assignments.
+- Administrators may retrieve progress for any assignment.
+- The latest progress information is always returned.
+- Progress history is maintained separately in the Assignment History.
+- Progress remains accessible after submission for review.
+- Progress retrieval does not modify assignment state.
+
+## Possible Errors
+
+| HTTP Status | Description |
+|-------------|-------------|
+| 401 | Authentication required. |
+| 403 | Permission denied. |
+| 404 | Assignment not found. |
+| 500 | Internal server error. |
+
+# Submit Activity
+
+Submits an activity assignment for administrator review.
+
+Only assignments in the **IN_PROGRESS** state may be submitted.
+
+## Endpoint
+
+`POST /assignments/{assignmentId}/submit`
+
+## Authentication
+
+**Required**
+
+Member access only.
+
+## Path Parameters
+
+| Parameter | Type | Description |
+|----------|------|-------------|
+| assignmentId | UUID | Unique Assignment identifier. |
+
+## Request Body
+
+```json
+{
+  "submissionComment": "All assigned tasks have been completed successfully."
+}
+```
+
+## Request Fields
+
+| Field | Type | Required | Description |
+|--------|------|----------|-------------|
+| submissionComment | String | No | Optional comments provided by the member during submission. |
+
+## Validation Rules
+
+- Assignment must exist.
+- Member must be assigned to the activity.
+- Assignment must be in the **IN_PROGRESS** state.
+- All mandatory evidence must be uploaded before submission.
+- Submission comment is optional but cannot exceed the maximum supported length.
+- An assignment cannot be submitted more than once unless it has been returned with **NEEDS_CHANGES**.
+
+## Successful Response
+
+**HTTP 200 OK**
+
+```json
+{
+  "assignmentId": "1f23d4c5-6a78-4e8a-b9c1-2d3456789012",
+  "status": "UNDER_REVIEW",
+  "submittedAt": "2026-09-15T12:08:42Z",
+  "message": "Assignment submitted successfully."
+}
+```
+
+## Business Rules
+
+- Members may submit only their own assignments.
+- Submitting an assignment changes its status from **IN_PROGRESS** to **UNDER_REVIEW**.
+- Progress updates are no longer permitted after submission.
+- Evidence uploads are no longer permitted after submission.
+- The submitted assignment becomes read-only for the member while under review.
+- If the administrator requests changes, the assignment returns to the **NEEDS_CHANGES** state.
+- If the administrator verifies the submission, the assignment moves to the **VERIFIED** state.
+- Assignment submission automatically creates an item in the administrator review queue.
+- Every successful submission is automatically recorded in the Assignment History.
+- Every successful submission is automatically recorded in the Audit Log.
+
+## Possible Errors
+
+| HTTP Status | Description |
+|-------------|-------------|
+| 400 | Invalid request body. |
+| 401 | Authentication required. |
+| 403 | Permission denied. |
+| 404 | Assignment not found. |
+| 409 | Assignment cannot be submitted in its current state. |
+| 422 | Validation failed. |
+| 500 | Internal server error. |
+
+# Upload Activity Evidence
+
+Uploads evidence for an activity assignment.
+
+Evidence may include photographs and videos that demonstrate completion of the assigned work.
+
+Only assignments in the **IN_PROGRESS** or **NEEDS_CHANGES** state may receive new evidence.
+
+## Endpoint
+
+`POST /progress/{progressId}/evidence`
+
+## Authentication
+
+**Required**
+
+Member access only.
+
+## Request Body
+
+**Multipart/Form-Data**
+
+| Field | Type | Required | Description |
+|--------|------|----------|-------------|
+| files | File[] | Yes | One or more image or video files. |
+| description | String | No | Optional description for the uploaded evidence. |
+
+## Validation Rules
+
+- Progress record must exist.
+- Member must own the assignment.
+- Assignment must be in the **IN_PROGRESS** or **NEEDS_CHANGES** state.
+- Only supported image and video formats are accepted.
+- Maximum of **10 photographs** per assignment.
+- Maximum of **2 videos** per assignment.
+- Each uploaded video must not exceed **60 seconds**.
+- Uploads exceeding the configured limits are rejected.
+
+## Successful Response
+
+**HTTP 201 Created**
+
+```json
+{
+  "uploadedFiles": [
+    {
+      "evidenceId": "8c5df86d-1b32-4c72-bb7c-3a82d7a5f1c9",
+      "type": "PHOTO",
+      "fileName": "cleanup_01.jpg"
+    },
+    {
+      "evidenceId": "a51e5a84-0f17-4dc0-bcc0-18d50fceef8d",
+      "type": "VIDEO",
+      "fileName": "cleanup_video.mp4"
+    }
+  ],
+  "message": "Evidence uploaded successfully."
+}
+```
+
+## Business Rules
+
+- Members may upload evidence only for their own assignments.
+- Evidence uploads are permitted only while the assignment is **IN_PROGRESS** or **NEEDS_CHANGES**.
+- Uploaded evidence becomes immediately available for administrator review.
+- Uploaded evidence cannot be modified.
+- Evidence may be deleted only before assignment submission.
+- Every successful upload is automatically recorded in the Assignment History.
+- Every successful upload is automatically recorded in the Audit Log.
+
+## Possible Errors
+
+| HTTP Status | Description |
+|-------------|-------------|
+| 400 | Invalid request body. |
+| 401 | Authentication required. |
+| 403 | Permission denied. |
+| 404 | Progress record not found. |
+| 409 | Assignment cannot accept evidence in its current state. |
+| 413 | Uploaded file exceeds the permitted size. |
+| 415 | Unsupported file format. |
+| 422 | Validation failed. |
+| 500 | Internal server error. |
+
+# Get Activity Evidence
+
+Returns all evidence uploaded for an activity assignment.
+
+## Endpoint
+
+`GET /progress/{progressId}/evidence`
+
+## Authentication
+
+**Required**
+
+Member access only.
+
+Administrators may retrieve evidence for any assignment.
+
+## Path Parameters
+
+| Parameter | Type | Description |
+|----------|------|-------------|
+| progressId | UUID | Unique Progress identifier. |
+
+## Successful Response
+
+**HTTP 200 OK**
+
+```json
+{
+  "progressId": "5d87b81c-f5d0-40aa-8d77-49f8d0d4bdb3",
+  "assignmentId": "1f23d4c5-6a78-4e8a-b9c1-2d3456789012",
+  "evidence": [
+    {
+      "evidenceId": "8c5df86d-1b32-4c72-bb7c-3a82d7a5f1c9",
+      "type": "PHOTO",
+      "fileName": "cleanup_01.jpg",
+      "fileUrl": "/media/evidence/cleanup_01.jpg",
+      "description": "Volunteer team cleaning the auditorium.",
+      "uploadedAt": "2026-09-15T10:25:18Z"
+    },
+    {
+      "evidenceId": "a51e5a84-0f17-4dc0-bcc0-18d50fceef8d",
+      "type": "VIDEO",
+      "fileName": "cleanup_video.mp4",
+      "fileUrl": "/media/evidence/cleanup_video.mp4",
+      "description": "Final inspection of the completed work.",
+      "uploadedAt": "2026-09-15T11:08:52Z"
+    }
+  ]
+}
+```
+
+## Business Rules
+
+- Members may retrieve evidence only for their own assignments.
+- Administrators may retrieve evidence for any assignment.
+- Evidence is returned in chronological order of upload.
+- Uploaded evidence remains available after assignment submission.
+- Historical evidence remains accessible after review completion.
+- Retrieving evidence does not modify assignment state.
+
+## Possible Errors
+
+| HTTP Status | Description |
+|-------------|-------------|
+| 401 | Authentication required. |
+| 403 | Permission denied. |
+| 404 | Progress record not found. |
+| 500 | Internal server error. |
+
+# Delete Activity Evidence
+
+Deletes an uploaded evidence file before the assignment is submitted for review.
+
+Evidence cannot be deleted after the assignment has been submitted.
+
+## Endpoint
+
+`DELETE /progress/{progressId}/evidence/{evidenceId}`
+
+## Authentication
+
+**Required**
+
+Member access only.
+
+Administrators may delete evidence only for moderation purposes.
+
+## Path Parameters
+
+| Parameter | Type | Description |
+|----------|------|-------------|
+| progressId | UUID | Unique Progress identifier. |
+| evidenceId | UUID | Unique Evidence identifier. |
+
+## Successful Response
+
+**HTTP 200 OK**
+
+```json
+{
+  "evidenceId": "8c5df86d-1b32-4c72-bb7c-3a82d7a5f1c9",
+  "message": "Evidence deleted successfully."
+}
+```
+
+## Business Rules
+
+- Members may delete only their own evidence.
+- Evidence may only be deleted while the assignment is in the **IN_PROGRESS** or **NEEDS_CHANGES** state.
+- Evidence cannot be deleted after the assignment has been submitted for review.
+- Deleting evidence updates the assignment's evidence count.
+- If deleting evidence causes the assignment to fall below the minimum required evidence, the assignment cannot be submitted until the requirement is satisfied.
+- Deleted evidence is permanently removed from member access.
+- Evidence deletion is automatically recorded in the Assignment History.
+- Evidence deletion is automatically recorded in the Audit Log.
+
+## Possible Errors
+
+| HTTP Status | Description |
+|-------------|-------------|
+| 401 | Authentication required. |
+| 403 | Permission denied. |
+| 404 | Progress record or evidence not found. |
+| 409 | Evidence cannot be deleted in the current assignment state. |
+| 500 | Internal server error. |
+
+# Get Pending Reviews
+
+Returns all activity submissions that are awaiting administrator review.
+
+Only assignments in the **UNDER_REVIEW** state are returned.
+
+## Endpoint
+
+`GET /reviews/pending`
+
+## Authentication
+
+**Required**
+
+Administrator access only.
+
+## Query Parameters
+
+| Parameter | Type | Required | Description |
+|----------|------|----------|-------------|
+| page | Integer | No | Page number. Default: `1`. |
+| pageSize | Integer | No | Number of records per page. Default: `20`. |
+| activityId | UUID | No | Filter by activity. |
+| memberId | UUID | No | Filter by assigned member. |
+| category | String | No | Filter by activity category. |
+| submittedAfter | ISO-8601 Datetime | No | Return submissions created on or after this date. |
+| submittedBefore | ISO-8601 Datetime | No | Return submissions created on or before this date. |
+| search | String | No | Search by activity title or member name. |
+| sortBy | String | No | Sort field. Default: `submittedAt`. |
+| sortOrder | String | No | `asc` or `desc`. Default: `asc`. |
+
+## Successful Response
+
+**HTTP 200 OK**
+
+```json
+{
+  "page": 1,
+  "pageSize": 20,
+  "totalRecords": 12,
+  "totalPages": 1,
+  "reviews": [
+    {
+      "reviewId": "9d6f2a34-64b7-4e91-8af2-f2dcbeac8d18",
+      "assignmentId": "1f23d4c5-6a78-4e8a-b9c1-2d3456789012",
+      "activityTitle": "Campus Clean-Up Drive",
+      "member": {
+        "userId": "3b9d4e8f-86d8-4b52-9d6d-0b1ef61d5d18",
+        "name": "John Doe"
+      },
+      "submittedAt": "2026-09-15T12:08:42Z",
+      "status": "UNDER_REVIEW"
+    }
+  ]
+}
+```
+
+## Business Rules
+
+- Only administrators may access pending reviews.
+- Only assignments in the **UNDER_REVIEW** state are returned.
+- Results are returned using pagination.
+- Multiple filters may be combined.
+- Search performs a partial match on supported fields.
+- Reviews are returned in ascending order of submission time by default so the oldest pending reviews are processed first.
+
+## Possible Errors
+
+| HTTP Status | Description |
+|-------------|-------------|
+| 401 | Authentication required. |
+| 403 | Administrator permission required. |
+| 422 | Invalid query parameters. |
+| 500 | Internal server error. |
+
+# Get Review Details
+
+Returns the complete details of a submitted activity for administrator review.
+
+## Endpoint
+
+`GET /reviews/{reviewId}`
+
+## Authentication
+
+**Required**
+
+Administrator access only.
+
+## Path Parameters
+
+| Parameter | Type | Description |
+|----------|------|-------------|
+| reviewId | UUID | Unique Review identifier. |
+
+## Successful Response
+
+**HTTP 200 OK**
+
+```json
+{
+  "reviewId": "9d6f2a34-64b7-4e91-8af2-f2dcbeac8d18",
+  "assignmentId": "1f23d4c5-6a78-4e8a-b9c1-2d3456789012",
+  "status": "UNDER_REVIEW",
+  "submittedAt": "2026-09-15T12:08:42Z",
+  "submissionComment": "All assigned tasks have been completed successfully.",
+  "activity": {
+    "activityId": "a8b2d0c4-76d9-4db7-a58f-3d2dbf6b96c8",
+    "title": "Campus Clean-Up Drive",
+    "category": "Community Service",
+    "location": "Main Campus"
+  },
+  "member": {
+    "userId": "3b9d4e8f-86d8-4b52-9d6d-0b1ef61d5d18",
+    "name": "John Doe",
+    "email": "john@example.com"
+  },
+  "progress": {
+    "completionPercentage": 100,
+    "lastUpdated": "2026-09-15T11:58:26Z"
+  },
+  "evidence": [
+    {
+      "evidenceId": "8c5df86d-1b32-4c72-bb7c-3a82d7a5f1c9",
+      "type": "PHOTO",
+      "fileName": "cleanup_01.jpg",
+      "fileUrl": "/media/evidence/cleanup_01.jpg"
+    },
+    {
+      "evidenceId": "a51e5a84-0f17-4dc0-bcc0-18d50fceef8d",
+      "type": "VIDEO",
+      "fileName": "cleanup_video.mp4",
+      "fileUrl": "/media/evidence/cleanup_video.mp4"
+    }
+  ]
+}
+```
+
+## Business Rules
+
+- Only administrators may retrieve review details.
+- Review details include the submitted activity, member information, progress summary, and uploaded evidence.
+- Review details remain available after the review has been completed.
+- Retrieving review details does not modify the assignment or review state.
+
+## Possible Errors
+
+| HTTP Status | Description |
+|-------------|-------------|
+| 401 | Authentication required. |
+| 403 | Administrator permission required. |
+| 404 | Review not found. |
+| 500 | Internal server error. |
+
+# Verify Activity Submission
+
+Verifies a submitted activity and marks it as successfully completed.
+
+Only assignments in the **UNDER_REVIEW** state may be verified.
+
+## Endpoint
+
+`POST /reviews/{reviewId}/verify`
+
+## Authentication
+
+**Required**
+
+Administrator access only.
+
+## Path Parameters
+
+| Parameter | Type | Description |
+|----------|------|-------------|
+| reviewId | UUID | Unique Review identifier. |
+
+## Request Body
+
+```json
+{
+  "reviewComment": "Excellent work. Activity completed successfully."
+}
+```
+
+## Request Fields
+
+| Field | Type | Required | Description |
+|--------|------|----------|-------------|
+| reviewComment | String | No | Optional verification comments for the assigned member. |
+
+## Validation Rules
+
+- Review must exist.
+- Review must be in the **UNDER_REVIEW** state.
+- Review cannot be verified more than once.
+- Review comment is optional but cannot exceed the maximum supported length.
+
+## Successful Response
+
+**HTTP 200 OK**
+
+```json
+{
+  "reviewId": "9d6f2a34-64b7-4e91-8af2-f2dcbeac8d18",
+  "assignmentId": "1f23d4c5-6a78-4e8a-b9c1-2d3456789012",
+  "status": "VERIFIED",
+  "reviewedAt": "2026-09-15T14:25:18Z",
+  "message": "Activity verified successfully."
+}
+```
+
+## Business Rules
+
+- Only administrators may verify activity submissions.
+- Verifying a submission changes the assignment status from **UNDER_REVIEW** to **VERIFIED**.
+- Verified assignments become read-only.
+- Verified assignments cannot receive additional progress updates.
+- Verified assignments cannot receive additional evidence uploads.
+- Verified assignments cannot be resubmitted.
+- Assigned members are notified when their submission has been verified.
+- Activity verification is automatically recorded in the Assignment History.
+- Activity verification is automatically recorded in the Audit Log.
+
+## Possible Errors
+
+| HTTP Status | Description |
+|-------------|-------------|
+| 400 | Invalid request body. |
+| 401 | Authentication required. |
+| 403 | Administrator permission required. |
+| 404 | Review not found. |
+| 409 | Review cannot be verified in its current state. |
+| 422 | Validation failed. |
+| 500 | Internal server error. |
+
+# Request Activity Changes
+
+Requests changes to a submitted activity instead of approving it.
+
+Only assignments in the **UNDER_REVIEW** state may be returned for revision.
+
+## Endpoint
+
+`POST /reviews/{reviewId}/needs-changes`
+
+## Authentication
+
+**Required**
+
+Administrator access only.
+
+## Path Parameters
+
+| Parameter | Type | Description |
+|----------|------|-------------|
+| reviewId | UUID | Unique Review identifier. |
+
+## Request Body
+
+```json
+{
+  "reviewComment": "Please upload clearer photographs of the completed work and provide additional progress details."
+}
+```
+
+## Request Fields
+
+| Field | Type | Required | Description |
+|--------|------|----------|-------------|
+| reviewComment | String | Yes | Reason for requesting changes. |
+
+## Validation Rules
+
+- Review must exist.
+- Review must be in the **UNDER_REVIEW** state.
+- Review comment cannot be empty.
+- Review comment cannot exceed the maximum supported length.
+- A completed review cannot be returned for changes.
+
+## Successful Response
+
+**HTTP 200 OK**
+
+```json
+{
+  "reviewId": "9d6f2a34-64b7-4e91-8af2-f2dcbeac8d18",
+  "assignmentId": "1f23d4c5-6a78-4e8a-b9c1-2d3456789012",
+  "status": "NEEDS_CHANGES",
+  "reviewedAt": "2026-09-15T14:32:47Z",
+  "message": "Changes requested successfully."
+}
+```
+
+## Business Rules
+
+- Only administrators may request changes.
+- Requesting changes changes the assignment status from **UNDER_REVIEW** to **NEEDS_CHANGES**.
+- A review comment is mandatory.
+- Members may update progress after changes are requested.
+- Members may upload additional evidence after changes are requested.
+- Members may edit the assignment and submit it again after addressing the requested changes.
+- Previous review comments remain part of the assignment history.
+- Assigned members are notified when changes are requested.
+- Requesting changes is automatically recorded in the Assignment History.
+- Requesting changes is automatically recorded in the Audit Log.
+
+## Possible Errors
+
+| HTTP Status | Description |
+|-------------|-------------|
+| 400 | Invalid request body. |
+| 401 | Authentication required. |
+| 403 | Administrator permission required. |
+| 404 | Review not found. |
+| 409 | Review cannot be returned for changes in its current state. |
+| 422 | Validation failed. |
+| 500 | Internal server error. |
+
+# Create Activity Template
+
+Creates a reusable activity template that can be used to quickly generate future activities.
+
+Templates are not activities themselves and cannot be assigned to members until they are applied to create a new activity.
+
+## Endpoint
+
+`POST /activity-templates`
+
+## Authentication
+
+**Required**
+
+Administrator access only.
+
+## Request Body
+
+```json
+{
+  "name": "Campus Clean-Up Template",
+  "description": "Reusable template for monthly campus clean-up activities.",
+  "category": "Community Service",
+  "location": "Main Campus",
+  "estimatedDurationMinutes": 180,
+  "maxParticipants": 40,
+  "requiresEvidence": true,
+  "minimumPhotoCount": 2,
+  "maximumPhotoCount": 10,
+  "minimumVideoCount": 0,
+  "maximumVideoCount": 2,
+  "maximumVideoDurationSeconds": 60,
+  "instructions": [
+    "Wear your volunteer ID.",
+    "Report to the event coordinator before starting."
+  ]
+}
+```
+
+## Request Fields
+
+| Field | Type | Required | Description |
+|--------|------|----------|-------------|
+| name | String | Yes | Template name. |
+| description | String | Yes | Template description. |
+| category | String | Yes | Activity category. |
+| location | String | Yes | Default activity location. |
+| estimatedDurationMinutes | Integer | Yes | Estimated activity duration in minutes. |
+| maxParticipants | Integer | Yes | Default maximum participants. |
+| requiresEvidence | Boolean | Yes | Indicates whether evidence is required. |
+| minimumPhotoCount | Integer | No | Minimum required photographs. |
+| maximumPhotoCount | Integer | No | Maximum allowed photographs. Maximum: 10. |
+| minimumVideoCount | Integer | No | Minimum required videos. |
+| maximumVideoCount | Integer | No | Maximum allowed videos. Maximum: 2. |
+| maximumVideoDurationSeconds | Integer | No | Maximum duration per uploaded video. Maximum: 60 seconds. |
+| instructions | Array<String> | No | Default member instructions. |
+
+## Validation Rules
+
+- Template name cannot be empty.
+- Description cannot be empty.
+- Estimated duration must be greater than zero.
+- Maximum participants must be greater than zero.
+- Maximum photo count cannot exceed **10**.
+- Maximum video count cannot exceed **2**.
+- Maximum video duration cannot exceed **60 seconds**.
+- Minimum values cannot exceed their corresponding maximum values.
+
+## Successful Response
+
+**HTTP 201 Created**
+
+```json
+{
+  "templateId": "f47e8d3a-2b72-4c94-9f3b-8d7a2b74a8d2",
+  "message": "Activity template created successfully."
+}
+```
+
+## Business Rules
+
+- Only administrators may create activity templates.
+- Templates serve as reusable blueprints for future activities.
+- Creating a template does not create an activity.
+- Templates may be updated or archived later.
+- Template creation is automatically recorded in the Audit Log.
+
+## Possible Errors
+
+| HTTP Status | Description |
+|-------------|-------------|
+| 400 | Invalid request body. |
+| 401 | Authentication required. |
+| 403 | Administrator permission required. |
+| 409 | Template name already exists. |
+| 422 | Validation failed. |
+| 500 | Internal server error. |
+
+# List Activity Templates
+
+Returns a paginated list of all activity templates.
+
+Templates can be filtered, searched, and sorted to help administrators quickly locate reusable activity configurations.
+
+## Endpoint
+
+`GET /activity-templates`
+
+## Authentication
+
+**Required**
+
+Administrator access only.
+
+## Query Parameters
+
+| Parameter | Type | Required | Description |
+|----------|------|----------|-------------|
+| page | Integer | No | Page number. Default: `1`. |
+| pageSize | Integer | No | Number of records per page. Default: `20`. |
+| category | String | No | Filter by activity category. |
+| search | String | No | Search by template name or description. |
+| archived | Boolean | No | Include archived templates. Default: `false`. |
+| sortBy | String | No | Sort field. Default: `name`. |
+| sortOrder | String | No | `asc` or `desc`. Default: `asc`. |
+
+## Successful Response
+
+**HTTP 200 OK**
+
+```json
+{
+  "page": 1,
+  "pageSize": 20,
+  "totalRecords": 12,
+  "totalPages": 1,
+  "templates": [
+    {
+      "templateId": "f47e8d3a-2b72-4c94-9f3b-8d7a2b74a8d2",
+      "name": "Campus Clean-Up Template",
+      "category": "Community Service",
+      "estimatedDurationMinutes": 180,
+      "maxParticipants": 40,
+      "requiresEvidence": true,
+      "isArchived": false,
+      "createdAt": "2026-09-01T10:15:30Z"
+    }
+  ]
+}
+```
+
+## Business Rules
+
+- Only administrators may retrieve activity templates.
+- Templates are returned using pagination.
+- Multiple filters may be combined.
+- Search performs a partial match on the template name and description.
+- Archived templates are excluded unless explicitly requested.
+- Templates are reusable and remain independent of activities created from them.
+
+## Possible Errors
+
+| HTTP Status | Description |
+|-------------|-------------|
+| 401 | Authentication required. |
+| 403 | Administrator permission required. |
+| 422 | Invalid query parameters. |
+| 500 | Internal server error. |
+
+# Get Activity Template Details
+
+Returns the complete details of a specific activity template.
+
+## Endpoint
+
+`GET /activity-templates/{templateId}`
+
+## Authentication
+
+**Required**
+
+Administrator access only.
+
+## Path Parameters
+
+| Parameter | Type | Description |
+|----------|------|-------------|
+| templateId | UUID | Unique Activity Template identifier. |
+
+## Successful Response
+
+**HTTP 200 OK**
+
+```json
+{
+  "templateId": "f47e8d3a-2b72-4c94-9f3b-8d7a2b74a8d2",
+  "name": "Campus Clean-Up Template",
+  "description": "Reusable template for monthly campus clean-up activities.",
+  "category": "Community Service",
+  "location": "Main Campus",
+  "estimatedDurationMinutes": 180,
+  "maxParticipants": 40,
+  "requiresEvidence": true,
+  "minimumPhotoCount": 2,
+  "maximumPhotoCount": 10,
+  "minimumVideoCount": 0,
+  "maximumVideoCount": 2,
+  "maximumVideoDurationSeconds": 60,
+  "instructions": [
+    "Wear your volunteer ID.",
+    "Report to the event coordinator before starting."
+  ],
+  "isArchived": false,
+  "createdAt": "2026-09-01T10:15:30Z",
+  "updatedAt": "2026-09-05T14:20:12Z",
+  "createdBy": {
+    "userId": "2e4e2b60-88b0-4b07-b8b8-1d8d6d76d2c9",
+    "name": "John Doe"
+  }
+}
+```
+
+## Business Rules
+
+- Only administrators may retrieve activity template details.
+- Templates are read-only through this endpoint.
+- Templates remain available even after being archived.
+- Activities created from a template remain independent of subsequent template changes.
+- Retrieving template details does not modify the template.
+
+## Possible Errors
+
+| HTTP Status | Description |
+|-------------|-------------|
+| 401 | Authentication required. |
+| 403 | Administrator permission required. |
+| 404 | Activity template not found. |
+| 500 | Internal server error. |
+
+# Update Activity Template
+
+Updates an existing activity template.
+
+Updating a template affects only future activities created from the template. Existing activities remain unchanged.
+
+## Endpoint
+
+`PATCH /activity-templates/{templateId}`
+
+## Authentication
+
+**Required**
+
+Administrator access only.
+
+## Path Parameters
+
+| Parameter | Type | Description |
+|----------|------|-------------|
+| templateId | UUID | Unique Activity Template identifier. |
+
+## Request Body
+
+```json
+{
+  "name": "Campus Clean-Up Template",
+  "description": "Updated reusable template for monthly campus clean-up activities.",
+  "category": "Community Service",
+  "location": "Main Campus",
+  "estimatedDurationMinutes": 210,
+  "maxParticipants": 50,
+  "requiresEvidence": true,
+  "minimumPhotoCount": 2,
+  "maximumPhotoCount": 10,
+  "minimumVideoCount": 0,
+  "maximumVideoCount": 2,
+  "maximumVideoDurationSeconds": 60,
+  "instructions": [
+    "Arrive 15 minutes before the scheduled start time.",
+    "Wear your volunteer ID."
+  ]
+}
+```
+
+## Request Fields
+
+| Field | Type | Required | Description |
+|--------|------|----------|-------------|
+| name | String | Yes | Template name. |
+| description | String | Yes | Template description. |
+| category | String | Yes | Activity category. |
+| location | String | Yes | Default activity location. |
+| estimatedDurationMinutes | Integer | Yes | Estimated activity duration in minutes. |
+| maxParticipants | Integer | Yes | Default maximum participants. |
+| requiresEvidence | Boolean | Yes | Indicates whether evidence is required. |
+| minimumPhotoCount | Integer | No | Minimum required photographs. |
+| maximumPhotoCount | Integer | No | Maximum allowed photographs. Maximum: 10. |
+| minimumVideoCount | Integer | No | Minimum required videos. |
+| maximumVideoCount | Integer | No | Maximum allowed videos. Maximum: 2. |
+| maximumVideoDurationSeconds | Integer | No | Maximum duration per uploaded video. Maximum: 60 seconds. |
+| instructions | Array<String> | No | Default member instructions. |
+
+## Validation Rules
+
+- Activity template must exist.
+- Archived templates cannot be updated.
+- Template name cannot be empty.
+- Description cannot be empty.
+- Estimated duration must be greater than zero.
+- Maximum participants must be greater than zero.
+- Maximum photo count cannot exceed **10**.
+- Maximum video count cannot exceed **2**.
+- Maximum video duration cannot exceed **60 seconds**.
+- Minimum values cannot exceed their corresponding maximum values.
+
+## Successful Response
+
+**HTTP 200 OK**
+
+```json
+{
+  "templateId": "f47e8d3a-2b72-4c94-9f3b-8d7a2b74a8d2",
+  "message": "Activity template updated successfully."
+}
+```
+
+## Business Rules
+
+- Only administrators may update activity templates.
+- Archived templates cannot be modified.
+- Updating a template does not affect activities previously created from that template.
+- Updated template values are used only for future activities created from the template.
+- Template updates are automatically recorded in the Audit Log.
+
+## Possible Errors
+
+| HTTP Status | Description |
+|-------------|-------------|
+| 400 | Invalid request body. |
+| 401 | Authentication required. |
+| 403 | Administrator permission required. |
+| 404 | Activity template not found. |
+| 409 | Activity template cannot be updated in its current state. |
+| 422 | Validation failed. |
+| 500 | Internal server error. |
+
+# Apply Activity Template
+
+Creates a new activity using an existing activity template.
+
+Applying a template copies the template configuration into a new independent activity. Future changes to the template do not affect the created activity.
+
+## Endpoint
+
+`POST /activity-templates/{templateId}/apply`
+
+## Authentication
+
+**Required**
+
+Administrator access only.
+
+## Path Parameters
+
+| Parameter | Type | Description |
+|----------|------|-------------|
+| templateId | UUID | Unique Activity Template identifier. |
+
+## Request Body
+
+```json
+{
+  "title": "Campus Clean-Up Drive - September 2026",
+  "location": "North Campus",
+  "startTime": "2026-09-15T09:00:00Z",
+  "endTime": "2026-09-15T12:00:00Z",
+  "maxParticipants": 45
+}
+```
+
+## Request Fields
+
+| Field | Type | Required | Description |
+|--------|------|----------|-------------|
+| title | String | Yes | Title for the new activity. |
+| location | String | No | Overrides the template location. |
+| startTime | ISO-8601 Datetime | Yes | Activity start date and time. |
+| endTime | ISO-8601 Datetime | Yes | Activity end date and time. |
+| maxParticipants | Integer | No | Overrides the template participant limit. |
+
+## Validation Rules
+
+- Activity template must exist.
+- Archived templates cannot be applied.
+- Title cannot be empty.
+- Start time must be earlier than end time.
+- Maximum participants must be greater than zero.
+
+## Successful Response
+
+**HTTP 201 Created**
+
+```json
+{
+  "activityId": "a8b2d0c4-76d9-4db7-a58f-3d2dbf6b96c8",
+  "templateId": "f47e8d3a-2b72-4c94-9f3b-8d7a2b74a8d2",
+  "status": "DRAFT",
+  "message": "Activity created from template successfully."
+}
+```
+
+## Business Rules
+
+- Only administrators may apply activity templates.
+- Applying a template creates a new activity in the **DRAFT** state.
+- The newly created activity is independent of the template.
+- Subsequent changes to the template do not affect previously created activities.
+- Administrators may modify the new activity before publishing.
+- Applying a template is automatically recorded in the Audit Log.
+
+## Possible Errors
+
+| HTTP Status | Description |
+|-------------|-------------|
+| 400 | Invalid request body. |
+| 401 | Authentication required. |
+| 403 | Administrator permission required. |
+| 404 | Activity template not found. |
+| 409 | Activity template cannot be applied in its current state. |
+| 422 | Validation failed. |
+| 500 | Internal server error. |
+
+# Archive Activity Template
+
+Archives an activity template.
+
+Archived templates remain available for historical reference but cannot be modified or used to create new activities.
+
+## Endpoint
+
+`POST /activity-templates/{templateId}/archive`
+
+## Authentication
+
+**Required**
+
+Administrator access only.
+
+## Path Parameters
+
+| Parameter | Type | Description |
+|----------|------|-------------|
+| templateId | UUID | Unique Activity Template identifier. |
+
+## Successful Response
+
+**HTTP 200 OK**
+
+```json
+{
+  "templateId": "f47e8d3a-2b72-4c94-9f3b-8d7a2b74a8d2",
+  "isArchived": true,
+  "message": "Activity template archived successfully."
+}
+```
+
+## Business Rules
+
+- Only administrators may archive activity templates.
+- Archived templates become read-only.
+- Archived templates cannot be updated.
+- Archived templates cannot be applied to create new activities.
+- Activities previously created from the archived template remain unaffected.
+- Archived templates remain searchable and available for historical reference.
+- Template archival is automatically recorded in the Audit Log.
+
+## Possible Errors
+
+| HTTP Status | Description |
+|-------------|-------------|
+| 401 | Authentication required. |
+| 403 | Administrator permission required. |
+| 404 | Activity template not found. |
+| 409 | Activity template is already archived. |
+| 500 | Internal server error. |
+
+# Generate Activity Report
+
+Generates a report for activities based on the specified filters.
+
+Report generation may take time depending on the requested data. Reports are generated asynchronously.
+
+## Endpoint
+
+`POST /activity-reports`
+
+## Authentication
+
+**Required**
+
+Administrator access only.
+
+## Request Body
+
+```json
+{
+  "reportType": "SUMMARY",
+  "activityIds": [
+    "a8b2d0c4-76d9-4db7-a58f-3d2dbf6b96c8"
+  ],
+  "category": "Community Service",
+  "status": "ACTIVE",
+  "startDate": "2026-09-01T00:00:00Z",
+  "endDate": "2026-09-30T23:59:59Z",
+  "format": "EXCEL"
+}
+```
+
+## Request Fields
+
+| Field | Type | Required | Description |
+|--------|------|----------|-------------|
+| reportType | String | Yes | Type of report to generate. |
+| activityIds | Array<UUID> | No | Specific activities to include. |
+| category | String | No | Filter by activity category. |
+| status | String | No | Filter by activity status. |
+| startDate | ISO-8601 Datetime | No | Report start date. |
+| endDate | ISO-8601 Datetime | No | Report end date. |
+| format | String | Yes | Export format (`EXCEL`, `CSV`, `PDF`). |
+
+## Validation Rules
+
+- Report type must be supported.
+- Export format must be supported.
+- Start date must not be later than end date.
+- At least one filter should be provided to limit report size.
+
+## Successful Response
+
+**HTTP 202 Accepted**
+
+```json
+{
+  "reportId": "6b7b3b5d-3a12-4d7b-8b7c-8cb1d03dcb43",
+  "status": "GENERATING",
+  "message": "Report generation started successfully."
+}
+```
+
+## Business Rules
+
+- Only administrators may generate reports.
+- Report generation executes asynchronously.
+- The generated report becomes available after processing completes.
+- Generated reports remain available until removed by the backend retention policy.
+- Report generation is automatically recorded in the Audit Log.
+
+## Possible Errors
+
+| HTTP Status | Description |
+|-------------|-------------|
+| 400 | Invalid request body. |
+| 401 | Authentication required. |
+| 403 | Administrator permission required. |
+| 422 | Validation failed. |
+| 500 | Internal server error. |
+
+# Get Activity Report
+
+Returns the status and download information for a previously generated activity report.
+
+## Endpoint
+
+`GET /activity-reports/{reportId}`
+
+## Authentication
+
+**Required**
+
+Administrator access only.
+
+## Path Parameters
+
+| Parameter | Type | Description |
+|----------|------|-------------|
+| reportId | UUID | Unique Activity Report identifier. |
+
+## Successful Response
+
+**HTTP 200 OK**
+
+```json
+{
+  "reportId": "6b7b3b5d-3a12-4d7b-8b7c-8cb1d03dcb43",
+  "reportType": "SUMMARY",
+  "status": "COMPLETED",
+  "format": "EXCEL",
+  "generatedAt": "2026-09-30T17:42:18Z",
+  "generatedBy": {
+    "userId": "2e4e2b60-88b0-4b07-b8b8-1d8d6d76d2c9",
+    "name": "John Doe"
+  },
+  "expiresAt": "2026-10-07T17:42:18Z",
+  "downloadUrl": "/reports/6b7b3b5d-3a12-4d7b-8b7c-8cb1d03dcb43.xlsx"
+}
+```
+
+## Business Rules
+
+- Only administrators may retrieve activity reports.
+- Reports remain in the **GENERATING** state until processing is complete.
+- A download URL is available only after the report status becomes **COMPLETED**.
+- Reports that fail during generation return the **FAILED** status.
+- Expired reports are removed according to the backend retention policy.
+- Retrieving a report does not regenerate the report.
+- Report access is automatically recorded in the Audit Log.
+
+## Possible Errors
+
+| HTTP Status | Description |
+|-------------|-------------|
+| 401 | Authentication required. |
+| 403 | Administrator permission required. |
+| 404 | Activity report not found. |
+| 500 | Internal server error. |
+
+# Get Activity Report Summary
+
+Returns a summarized overview of activity statistics for the specified filters.
+
+This endpoint provides a high-level dashboard view and is intended for analytics rather than detailed reporting.
+
+## Endpoint
+
+`GET /activity-reports/summary`
+
+## Authentication
+
+**Required**
+
+Administrator access only.
+
+## Query Parameters
+
+| Parameter | Type | Required | Description |
+|----------|------|----------|-------------|
+| startDate | ISO-8601 Datetime | No | Summary start date. |
+| endDate | ISO-8601 Datetime | No | Summary end date. |
+| category | String | No | Filter by activity category. |
+| status | String | No | Filter by activity status. |
+
+## Successful Response
+
+**HTTP 200 OK**
+
+```json
+{
+  "totalActivities": 42,
+  "draftActivities": 4,
+  "activeActivities": 18,
+  "cancelledActivities": 3,
+  "archivedActivities": 17,
+
+  "totalAssignments": 356,
+  "completedAssignments": 298,
+  "pendingAssignments": 34,
+  "underReviewAssignments": 12,
+  "needsChangesAssignments": 8,
+  "cancelledAssignments": 4,
+
+  "completionRate": 83.71,
+
+  "totalEvidence": {
+    "photos": 894,
+    "videos": 96
+  },
+
+  "generatedAt": "2026-09-30T18:20:41Z"
+}
+```
+
+## Business Rules
+
+- Only administrators may retrieve activity summaries.
+- Summary statistics are calculated using the supplied filters.
+- If no filters are provided, the summary includes all accessible activities.
+- Summary data is generated in real time.
+- This endpoint returns aggregated statistics only.
+- Individual activity or member details are not included.
+- Summary retrieval is automatically recorded in the Audit Log.
+
+## Possible Errors
+
+| HTTP Status | Description |
+|-------------|-------------|
+| 401 | Authentication required. |
+| 403 | Administrator permission required. |
+| 422 | Invalid query parameters. |
+| 500 | Internal server error. |
+
+# Get My Activity History
+
+Returns the authenticated member's complete activity history.
+
+The activity history includes completed, verified, cancelled, and archived assignments along with their final outcomes.
+
+## Endpoint
+
+`GET /members/me/activity-history`
+
+## Authentication
+
+**Required**
+
+Member access only.
+
+## Query Parameters
+
+| Parameter | Type | Required | Description |
+|----------|------|----------|-------------|
+| page | Integer | No | Page number. Default: `1`. |
+| pageSize | Integer | No | Number of records per page. Default: `20`. |
+| status | String | No | Filter by assignment status. |
+| category | String | No | Filter by activity category. |
+| startDate | ISO-8601 Datetime | No | Return activities completed on or after this date. |
+| endDate | ISO-8601 Datetime | No | Return activities completed on or before this date. |
+| search | String | No | Search by activity title. |
+| sortBy | String | No | Sort field. Default: `completedAt`. |
+| sortOrder | String | No | `asc` or `desc`. Default: `desc`. |
+
+## Successful Response
+
+**HTTP 200 OK**
+
+```json
+{
+  "page": 1,
+  "pageSize": 20,
+  "totalRecords": 24,
+  "totalPages": 2,
+  "activities": [
+    {
+      "assignmentId": "1f23d4c5-6a78-4e8a-b9c1-2d3456789012",
+      "activityId": "a8b2d0c4-76d9-4db7-a58f-3d2dbf6b96c8",
+      "title": "Campus Clean-Up Drive",
+      "category": "Community Service",
+      "status": "VERIFIED",
+      "completedAt": "2026-09-15T14:25:18Z",
+      "reviewedAt": "2026-09-15T15:02:41Z"
+    }
+  ]
+}
+```
+
+## Business Rules
+
+- Members may retrieve only their own activity history.
+- Activity history is returned using pagination.
+- Multiple filters may be combined.
+- Search performs a partial match on activity title.
+- Historical records are immutable.
+- Activity history remains available even if the original activity has been archived.
+- Retrieving activity history does not modify any application state.
+
+## Possible Errors
+
+| HTTP Status | Description |
+|-------------|-------------|
+| 401 | Authentication required. |
+| 403 | Member permission required. |
+| 422 | Invalid query parameters. |
+| 500 | Internal server error. |
+
+# Get Activity History
+
+Returns the complete history of an activity, including lifecycle events, assignments, progress updates, evidence submissions, review actions, and status changes.
+
+This endpoint provides administrators with a chronological timeline of the activity from creation to its current state.
+
+## Endpoint
+
+`GET /activities/{activityId}/history`
+
+## Authentication
+
+**Required**
+
+Administrator access only.
+
+## Path Parameters
+
+| Parameter | Type | Description |
+|----------|------|-------------|
+| activityId | UUID | Unique Activity identifier. |
+
+## Query Parameters
+
+| Parameter | Type | Required | Description |
+|----------|------|----------|-------------|
+| page | Integer | No | Page number. Default: `1`. |
+| pageSize | Integer | No | Number of records per page. Default: `20`. |
+| eventType | String | No | Filter by history event type. |
+| startDate | ISO-8601 Datetime | No | Return events occurring on or after this date. |
+| endDate | ISO-8601 Datetime | No | Return events occurring on or before this date. |
+| sortOrder | String | No | `asc` or `desc`. Default: `asc`. |
+
+## Successful Response
+
+**HTTP 200 OK**
+
+```json
+{
+  "activityId": "a8b2d0c4-76d9-4db7-a58f-3d2dbf6b96c8",
+  "page": 1,
+  "pageSize": 20,
+  "totalRecords": 9,
+  "totalPages": 1,
+  "history": [
+    {
+      "eventId": "b3c57bc8-84b9-4db2-a8b6-9bc8b0dc9c1f",
+      "eventType": "ACTIVITY_CREATED",
+      "performedBy": {
+        "userId": "2e4e2b60-88b0-4b07-b8b8-1d8d6d76d2c9",
+        "name": "John Doe"
+      },
+      "timestamp": "2026-09-01T09:15:42Z",
+      "details": "Activity created."
+    },
+    {
+      "eventId": "9c6d65f0-7e51-49b2-b77d-4d2dc2bca1d1",
+      "eventType": "ACTIVITY_PUBLISHED",
+      "performedBy": {
+        "userId": "2e4e2b60-88b0-4b07-b8b8-1d8d6d76d2c9",
+        "name": "John Doe"
+      },
+      "timestamp": "2026-09-02T10:30:18Z",
+      "details": "Activity published."
+    }
+  ]
+}
+```
+
+## Business Rules
+
+- Only administrators may retrieve activity history.
+- Activity history is returned in chronological order by default.
+- Pagination is applied to all history records.
+- Multiple filters may be combined.
+- Activity history is immutable.
+- Historical records remain available after an activity has been cancelled or archived.
+- Activity history includes lifecycle events, assignment events, progress updates, evidence events, review actions, and administrative actions related to the activity.
+- Retrieving activity history does not modify any application state.
+
+## Possible Errors
+
+| HTTP Status | Description |
+|-------------|-------------|
+| 401 | Authentication required. |
+| 403 | Administrator permission required. |
+| 404 | Activity not found. |
+| 422 | Invalid query parameters. |
+| 500 | Internal server error. |
+
+Phase 4 
+
+# Get Audit Logs
+
+Returns a paginated list of audit logs generated by the system.
+
+Audit logs provide a read-only history of important system events for operational monitoring, troubleshooting, compliance, and security investigations.
+
+## Endpoint
+
+`GET /audit-logs`
+
+## Authentication
+
+**Required**
+
+Administrator access only.
+
+## Query Parameters
+
+| Parameter | Type | Required | Description |
+|----------|------|----------|-------------|
+| page | Integer | No | Page number. Default: `1`. |
+| pageSize | Integer | No | Number of records per page. Default: `20`. |
+| category | String | No | Filter by audit category. |
+| module | String | No | Filter by application module. |
+| action | String | No | Filter by performed action. |
+| outcome | String | No | Filter by audit outcome (`SUCCESS`, `FAILED`). |
+| userId | UUID | No | Filter by user who performed the action. |
+| resourceType | String | No | Filter by affected resource type. |
+| resourceId | UUID | No | Filter by affected resource identifier. |
+| startDate | ISO-8601 Datetime | No | Return records on or after this date. |
+| endDate | ISO-8601 Datetime | No | Return records on or before this date. |
+| search | String | No | Search supported audit fields. |
+| sortBy | String | No | Sort field. Default: `timestamp`. |
+| sortOrder | String | No | `asc` or `desc`. Default: `desc`. |
+
+## Successful Response
+
+**HTTP 200 OK**
+
+```json
+{
+  "page": 1,
+  "pageSize": 20,
+  "totalRecords": 248,
+  "totalPages": 13,
+  "auditLogs": [
+    {
+      "auditLogId": "2c99f3d9-4cb4-44a7-8d35-bf3f61d7d5f0",
+      "timestamp": "2026-09-30T16:42:18Z",
+      "category": "Synchronization",
+      "module": "Offline Queue",
+      "action": "SYNC_COMPLETED",
+      "outcome": "SUCCESS",
+      "performedBy": {
+        "userId": "2e4e2b60-88b0-4b07-b8b8-1d8d6d76d2c9",
+        "name": "John Doe"
+      },
+      "resource": {
+        "type": "Attendance Session",
+        "id": "a8b2d0c4-76d9-4db7-a58f-3d2dbf6b96c8"
+      }
+    }
+  ]
+}
+```
+
+## Business Rules
+
+- Only administrators may retrieve audit logs.
+- Audit logs are returned using pagination.
+- Multiple filters may be combined.
+- Search performs a partial match on supported audit fields.
+- Audit records are immutable.
+- Audit logs are returned in descending order by timestamp by default.
+- Historical audit records remain available even if the associated resource has been removed.
+- Retrieving audit logs does not modify any application state.
+
+## Possible Errors
+
+| HTTP Status | Description |
+|-------------|-------------|
+| 401 | Authentication required. |
+| 403 | Administrator permission required. |
+| 422 | Invalid query parameters. |
+| 500 | Internal server error. |
+
+# Get Audit Log Details
+
+Returns the complete details of a specific audit log entry.
+
+Audit log details provide complete information about the recorded event, including the actor, affected resource, metadata, and any recorded changes.
+
+## Endpoint
+
+`GET /audit-logs/{auditLogId}`
+
+## Authentication
+
+**Required**
+
+Administrator access only.
+
+## Path Parameters
+
+| Parameter | Type | Description |
+|----------|------|-------------|
+| auditLogId | UUID | Unique Audit Log identifier. |
+
+## Successful Response
+
+**HTTP 200 OK**
+
+```json
+{
+  "auditLogId": "2c99f3d9-4cb4-44a7-8d35-bf3f61d7d5f0",
+  "timestamp": "2026-09-30T16:42:18Z",
+  "category": "Synchronization",
+  "module": "Offline Queue",
+  "action": "SYNC_COMPLETED",
+  "outcome": "SUCCESS",
+  "performedBy": {
+    "userId": "2e4e2b60-88b0-4b07-b8b8-1d8d6d76d2c9",
+    "name": "John Doe",
+    "role": "ADMIN"
+  },
+  "resource": {
+    "type": "Attendance Session",
+    "id": "a8b2d0c4-76d9-4db7-a58f-3d2dbf6b96c8"
+  },
+  "changes": {
+    "before": {},
+    "after": {}
+  },
+  "metadata": {
+    "syncDurationMs": 1842,
+    "processedOperations": 8,
+    "ipAddress": "192.168.1.100",
+    "userAgent": "Chrome 139"
+  }
+}
+```
+
+## Business Rules
+
+- Only administrators may retrieve audit log details.
+- Audit log entries are immutable.
+- Audit log details cannot be modified or deleted.
+- The `changes` object is included only when the audited operation modified application data.
+- The `metadata` object varies depending on the recorded event.
+- Audit records remain available even if the related resource has been deleted.
+- Retrieving audit log details does not modify any application state.
+
+## Possible Errors
+
+| HTTP Status | Description |
+|-------------|-------------|
+| 401 | Authentication required. |
+| 403 | Administrator permission required. |
+| 404 | Audit log not found. |
+| 500 | Internal server error. |
+
+# Get Security Events
+
+Returns a paginated list of security events detected by the system.
+
+Security events include authentication anomalies, authorization failures, suspicious activity, backup failures, synchronization failures, and other security-related incidents.
+
+## Endpoint
+
+`GET /security-events`
+
+## Authentication
+
+**Required**
+
+Administrator access only.
+
+## Query Parameters
+
+| Parameter | Type | Required | Description |
+|----------|------|----------|-------------|
+| page | Integer | No | Page number. Default: `1`. |
+| pageSize | Integer | No | Number of records per page. Default: `20`. |
+| severity | String | No | Filter by severity (`LOW`, `MEDIUM`, `HIGH`, `CRITICAL`). |
+| status | String | No | Filter by event status (`OPEN`, `UNDER_INVESTIGATION`, `RESOLVED`). |
+| category | String | No | Filter by security category. |
+| userId | UUID | No | Filter by affected user. |
+| startDate | ISO-8601 Datetime | No | Return events on or after this date. |
+| endDate | ISO-8601 Datetime | No | Return events on or before this date. |
+| search | String | No | Search supported security event fields. |
+| sortBy | String | No | Sort field. Default: `detectedAt`. |
+| sortOrder | String | No | `asc` or `desc`. Default: `desc`. |
+
+## Successful Response
+
+**HTTP 200 OK**
+
+```json
+{
+  "page": 1,
+  "pageSize": 20,
+  "totalRecords": 18,
+  "totalPages": 1,
+  "securityEvents": [
+    {
+      "securityEventId": "7f61d8f3-7d74-4f2d-9e7f-94d7b8d18f31",
+      "category": "Authentication",
+      "severity": "HIGH",
+      "status": "OPEN",
+      "title": "Multiple Failed Login Attempts",
+      "detectedAt": "2026-09-30T18:12:24Z",
+      "affectedUser": {
+        "userId": "3b9d4e8f-86d8-4b52-9d6d-0b1ef61d5d18",
+        "name": "John Doe"
+      }
+    }
+  ]
+}
+```
+
+## Business Rules
+
+- Only administrators may retrieve security events.
+- Security events are returned using pagination.
+- Multiple filters may be combined.
+- Search performs a partial match on supported fields.
+- Security events are returned in descending order of detection time by default.
+- Historical security events remain available after resolution.
+- Retrieving security events does not modify any application state.
+
+## Possible Errors
+
+| HTTP Status | Description |
+|-------------|-------------|
+| 401 | Authentication required. |
+| 403 | Administrator permission required. |
+| 422 | Invalid query parameters. |
+| 500 | Internal server error. |
+
+# Get Security Event Details
+
+Returns the complete details of a specific security event.
+
+This endpoint provides administrators with detailed information about the detected security event, including its severity, status, affected resources, investigation history, and resolution details.
+
+## Endpoint
+
+`GET /security-events/{securityEventId}`
+
+## Authentication
+
+**Required**
+
+Administrator access only.
+
+## Path Parameters
+
+| Parameter | Type | Description |
+|----------|------|-------------|
+| securityEventId | UUID | Unique Security Event identifier. |
+
+## Successful Response
+
+**HTTP 200 OK**
+
+```json
+{
+  "securityEventId": "7f61d8f3-7d74-4f2d-9e7f-94d7b8d18f31",
+  "category": "Authentication",
+  "severity": "HIGH",
+  "status": "OPEN",
+  "title": "Multiple Failed Login Attempts",
+  "description": "Five consecutive failed login attempts were detected within two minutes.",
+  "detectedAt": "2026-09-30T18:12:24Z",
+  "affectedUser": {
+    "userId": "3b9d4e8f-86d8-4b52-9d6d-0b1ef61d5d18",
+    "name": "John Doe",
+    "email": "john@example.com"
+  },
+  "affectedResource": {
+    "resourceType": "User Account",
+    "resourceId": "3b9d4e8f-86d8-4b52-9d6d-0b1ef61d5d18"
+  },
+  "metadata": {
+    "ipAddress": "192.168.1.120",
+    "userAgent": "Chrome 139",
+    "attemptCount": 5
+  },
+  "investigation": {
+    "assignedTo": null,
+    "startedAt": null
+  },
+  "resolution": null
+}
+```
+
+## Business Rules
+
+- Only administrators may retrieve security event details.
+- Security events are immutable records.
+- Investigation and resolution information are returned when available.
+- Historical security events remain accessible after resolution.
+- Retrieving security event details does not modify any application state.
+
+## Possible Errors
+
+| HTTP Status | Description |
+|-------------|-------------|
+| 401 | Authentication required. |
+| 403 | Administrator permission required. |
+| 404 | Security event not found. |
+| 500 | Internal server error. |
+
+# Resolve Security Event
+
+Marks a security event as resolved after investigation has been completed.
+
+Only security events in the **OPEN** or **UNDER_INVESTIGATION** state may be resolved.
+
+## Endpoint
+
+`POST /security-events/{securityEventId}/resolve`
+
+## Authentication
+
+**Required**
+
+Administrator access only.
+
+## Path Parameters
+
+| Parameter | Type | Description |
+|----------|------|-------------|
+| securityEventId | UUID | Unique Security Event identifier. |
+
+## Request Body
+
+```json
+{
+  "resolution": "User identity verified. Account secured and password reset completed.",
+  "resolutionCategory": "RESOLVED",
+  "preventiveAction": "Enabled multi-factor authentication."
+}
+```
+
+## Request Fields
+
+| Field | Type | Required | Description |
+|--------|------|----------|-------------|
+| resolution | String | Yes | Summary of how the security event was resolved. |
+| resolutionCategory | String | Yes | Resolution outcome. |
+| preventiveAction | String | No | Preventive action taken to avoid recurrence. |
+
+## Validation Rules
+
+- Security event must exist.
+- Only events in the **OPEN** or **UNDER_INVESTIGATION** state may be resolved.
+- Resolution cannot be empty.
+- Resolution category must be supported.
+- A resolved event cannot be resolved again.
+
+## Successful Response
+
+**HTTP 200 OK**
+
+```json
+{
+  "securityEventId": "7f61d8f3-7d74-4f2d-9e7f-94d7b8d18f31",
+  "status": "RESOLVED",
+  "resolvedAt": "2026-09-30T19:18:54Z",
+  "message": "Security event resolved successfully."
+}
+```
+
+## Business Rules
+
+- Only administrators may resolve security events.
+- Resolving an event changes its status to **RESOLVED**.
+- Every resolved event must include a resolution summary.
+- Resolution information becomes part of the permanent security event history.
+- Resolved events remain searchable and available for auditing.
+- Resolving a security event is automatically recorded in the Audit Log.
+
+## Possible Errors
+
+| HTTP Status | Description |
+|-------------|-------------|
+| 400 | Invalid request body. |
+| 401 | Authentication required. |
+| 403 | Administrator permission required. |
+| 404 | Security event not found. |
+| 409 | Security event cannot be resolved in its current state. |
+| 422 | Validation failed. |
+| 500 | Internal server error. |
+
+# Create Backup
+
+Creates a manual backup of the application data.
+
+Manual backups may be initiated by administrators at any time. Scheduled backups are created automatically by the system.
+
+## Endpoint
+
+`POST /backups`
+
+## Authentication
+
+**Required**
+
+Administrator access only.
+
+## Request Body
+
+```json
+{
+  "type": "MANUAL",
+  "description": "Pre-release backup before Phase 4 deployment."
+}
+```
+
+## Request Fields
+
+| Field | Type | Required | Description |
+|--------|------|----------|-------------|
+| type | String | Yes | Backup type. Supported values: `MANUAL`. |
+| description | String | No | Optional description for the backup. |
+
+## Validation Rules
+
+- Only manual backups may be requested through this endpoint.
+- A new backup cannot be started while another backup is currently in progress.
+- Description is optional but cannot exceed the maximum supported length.
+
+## Successful Response
+
+**HTTP 202 Accepted**
+
+```json
+{
+  "backupId": "9d8b67a4-ec18-47df-a6b2-3d5b48dba2c8",
+  "type": "MANUAL",
+  "status": "IN_PROGRESS",
+  "startedAt": "2026-09-30T20:15:42Z",
+  "message": "Backup started successfully."
+}
+```
+
+## Business Rules
+
+- Only administrators may create manual backups.
+- Scheduled backups are created automatically by the backend and do not use this endpoint.
+- Only one backup operation may run at a time.
+- Backup verification starts automatically after backup creation completes.
+- Backup creation is automatically recorded in the Audit Log.
+- Failed backups remain available for troubleshooting.
+
+## Possible Errors
+
+| HTTP Status | Description |
+|-------------|-------------|
+| 400 | Invalid request body. |
+| 401 | Authentication required. |
+| 403 | Administrator permission required. |
+| 409 | Another backup operation is already in progress. |
+| 422 | Validation failed. |
+| 500 | Internal server error. |
+
+# Get Backups
+
+Returns a paginated list of all backups created by the system.
+
+The list includes both manually created backups and automatically scheduled backups.
+
+## Endpoint
+
+`GET /backups`
+
+## Authentication
+
+**Required**
+
+Administrator access only.
+
+## Query Parameters
+
+| Parameter | Type | Required | Description |
+|----------|------|----------|-------------|
+| page | Integer | No | Page number. Default: `1`. |
+| pageSize | Integer | No | Number of records per page. Default: `20`. |
+| type | String | No | Filter by backup type (`MANUAL`, `SCHEDULED`). |
+| status | String | No | Filter by backup status (`IN_PROGRESS`, `COMPLETED`, `FAILED`, `VERIFIED`, `RESTORED`). |
+| verified | Boolean | No | Filter by verification status. |
+| startDate | ISO-8601 Datetime | No | Return backups created on or after this date. |
+| endDate | ISO-8601 Datetime | No | Return backups created on or before this date. |
+| search | String | No | Search by backup description. |
+| sortBy | String | No | Sort field. Default: `createdAt`. |
+| sortOrder | String | No | `asc` or `desc`. Default: `desc`. |
+
+## Successful Response
+
+**HTTP 200 OK**
+
+```json
+{
+  "page": 1,
+  "pageSize": 20,
+  "totalRecords": 48,
+  "totalPages": 3,
+  "backups": [
+    {
+      "backupId": "9d8b67a4-ec18-47df-a6b2-3d5b48dba2c8",
+      "type": "SCHEDULED",
+      "status": "VERIFIED",
+      "verified": true,
+      "size": "185 MB",
+      "createdAt": "2026-09-30T02:00:00Z",
+      "completedAt": "2026-09-30T02:03:18Z",
+      "description": "Nightly scheduled backup"
+    },
+    {
+      "backupId": "63aab541-53cb-42c5-9cb8-c71dc4d7b1e4",
+      "type": "MANUAL",
+      "status": "COMPLETED",
+      "verified": false,
+      "size": "184 MB",
+      "createdAt": "2026-09-30T20:15:42Z",
+      "completedAt": "2026-09-30T20:18:06Z",
+      "description": "Pre-release backup before Phase 4 deployment."
+    }
+  ]
+}
+```
+
+## Business Rules
+
+- Only administrators may retrieve backup information.
+- Both manual and scheduled backups are returned.
+- Results are returned using pagination.
+- Multiple filters may be combined.
+- Search performs a partial match on the backup description.
+- Backups are returned in descending order of creation time by default.
+- Historical backup records remain available even after newer backups are created.
+- Retrieving backup information does not modify any application state.
+
+## Possible Errors
+
+| HTTP Status | Description |
+|-------------|-------------|
+| 401 | Authentication required. |
+| 403 | Administrator permission required. |
+| 422 | Invalid query parameters. |
+| 500 | Internal server error. |
+
+# Get Backup Details
+
+Returns the complete details of a specific backup.
+
+This endpoint provides administrators with detailed information about the backup, including its type, status, verification status, creation details, restore history, and metadata.
+
+## Endpoint
+
+`GET /backups/{backupId}`
+
+## Authentication
+
+**Required**
+
+Administrator access only.
+
+## Path Parameters
+
+| Parameter | Type | Description |
+|----------|------|-------------|
+| backupId | UUID | Unique Backup identifier. |
+
+## Successful Response
+
+**HTTP 200 OK**
+
+```json
+{
+  "backupId": "9d8b67a4-ec18-47df-a6b2-3d5b48dba2c8",
+  "type": "SCHEDULED",
+  "status": "VERIFIED",
+  "verified": true,
+  "description": "Nightly scheduled backup",
+  "size": "185 MB",
+  "createdAt": "2026-09-30T02:00:00Z",
+  "completedAt": "2026-09-30T02:03:18Z",
+  "verifiedAt": "2026-09-30T02:03:46Z",
+  "createdBy": {
+    "userId": null,
+    "name": "System Scheduler"
+  },
+  "storage": {
+    "location": "Local Storage",
+    "checksum": "4cf53f2e7d5d94d8d43fcb52a82b9a7f"
+  },
+  "restoreHistory": {
+    "restoreCount": 0,
+    "lastRestoredAt": null
+  }
+}
+```
+
+## Business Rules
+
+- Only administrators may retrieve backup details.
+- Backup records are immutable.
+- Verification information is available only after verification has completed.
+- Restore history is maintained for every backup.
+- Backup metadata remains available even after a backup has been restored.
+- Retrieving backup details does not modify any application state.
+
+## Possible Errors
+
+| HTTP Status | Description |
+|-------------|-------------|
+| 401 | Authentication required. |
+| 403 | Administrator permission required. |
+| 404 | Backup not found. |
+| 500 | Internal server error. |
+
+# Restore Backup
+
+Restores the application from a previously created backup.
+
+Only successfully completed and verified backups may be restored.
+
+## Endpoint
+
+`POST /backups/{backupId}/restore`
+
+## Authentication
+
+**Required**
+
+Administrator access only.
+
+## Path Parameters
+
+| Parameter | Type | Description |
+|----------|------|-------------|
+| backupId | UUID | Unique Backup identifier. |
+
+## Request Body
+
+```json
+{
+  "reason": "Recovering application after database corruption."
+}
+```
+
+## Request Fields
+
+| Field | Type | Required | Description |
+|--------|------|----------|-------------|
+| reason | String | Yes | Reason for initiating the restore operation. |
+
+## Validation Rules
+
+- Backup must exist.
+- Only backups with **VERIFIED** status may be restored.
+- Restore reason cannot be empty.
+- Another backup or restore operation must not already be in progress.
+- A backup cannot be restored if it failed verification.
+
+## Successful Response
+
+**HTTP 202 Accepted**
+
+```json
+{
+  "backupId": "9d8b67a4-ec18-47df-a6b2-3d5b48dba2c8",
+  "status": "RESTORING",
+  "startedAt": "2026-09-30T21:18:42Z",
+  "message": "Backup restoration started successfully."
+}
+```
+
+## Business Rules
+
+- Only administrators may restore backups.
+- Only verified backups may be restored.
+- Only one restore operation may run at a time.
+- The application may become temporarily unavailable during restoration.
+- Every restore operation is automatically recorded in the Audit Log.
+- Every restore operation creates a corresponding Security Event.
+- Restore history is permanently retained.
+
+## Possible Errors
+
+| HTTP Status | Description |
+|-------------|-------------|
+| 400 | Invalid request body. |
+| 401 | Authentication required. |
+| 403 | Administrator permission required. |
+| 404 | Backup not found. |
+| 409 | Backup cannot be restored in its current state or another restore is already in progress. |
+| 422 | Validation failed. |
+| 500 | Internal server error. |
+
+# Verify Backup
+
+Verifies the integrity and usability of a completed backup.
+
+Verification confirms that the backup is valid and can be restored successfully. Both scheduled and manual backups are verified automatically after creation.
+
+## Endpoint
+
+`POST /backups/{backupId}/verify`
+
+## Authentication
+
+**Required**
+
+Administrator access only.
+
+## Path Parameters
+
+| Parameter | Type | Description |
+|----------|------|-------------|
+| backupId | UUID | Unique Backup identifier. |
+
+## Successful Response
+
+**HTTP 202 Accepted**
+
+```json
+{
+  "backupId": "9d8b67a4-ec18-47df-a6b2-3d5b48dba2c8",
+  "status": "VERIFYING",
+  "startedAt": "2026-09-30T02:03:20Z",
+  "message": "Backup verification started successfully."
+}
+```
+
+## Business Rules
+
+- Only administrators may initiate backup verification manually.
+- Automatic verification is performed after every successful backup, including both scheduled and manual backups.
+- Only backups in the **COMPLETED** state may be verified.
+- A backup cannot be verified while another verification is already in progress.
+- Successfully verified backups transition to the **VERIFIED** state.
+- Failed verification changes the backup status to **FAILED**.
+- Verification confirms backup integrity and restore readiness.
+- Every verification attempt is automatically recorded in the Audit Log.
+- Failed verification automatically generates a Security Event.
+- Verification history is permanently retained.
+
+## Possible Errors
+
+| HTTP Status | Description |
+|-------------|-------------|
+| 401 | Authentication required. |
+| 403 | Administrator permission required. |
+| 404 | Backup not found. |
+| 409 | Backup cannot be verified in its current state or verification is already in progress. |
+| 500 | Internal server error. |
+
+# Synchronize Offline Data
+
+Synchronizes all pending offline operations with the backend.
+
+The backend processes the entire synchronization queue in a single request. Operations are processed in the order they were created to preserve data consistency.
+
+## Endpoint
+
+`POST /sync`
+
+## Authentication
+
+**Required**
+
+Member access only.
+
+## Request Body
+
+```json
+{
+  "deviceId": "8e42f98a-9b18-4f2d-bd95-78b8a63a8d1a",
+  "lastSyncAt": "2026-09-30T18:45:21Z",
+  "operations": [
+    {
+      "operationId": "1f9d4d1d-76e8-4f76-a3d2-3d4ef8b6b8f1",
+      "operationType": "CHECK_IN",
+      "createdAt": "2026-09-30T18:46:12Z",
+      "payload": {}
+    },
+    {
+      "operationId": "e6b62c84-5d5e-45a9-bd56-c2f43a25d8e7",
+      "operationType": "ACTIVITY_PROGRESS",
+      "createdAt": "2026-09-30T18:48:41Z",
+      "payload": {}
+    }
+  ]
+}
+```
+
+## Request Fields
+
+| Field | Type | Required | Description |
+|--------|------|----------|-------------|
+| deviceId | UUID | Yes | Unique device identifier. |
+| lastSyncAt | ISO-8601 Datetime | No | Timestamp of the previous successful synchronization. |
+| operations | Array | Yes | Queue of pending offline operations. |
+
+## Validation Rules
+
+- Device must be registered.
+- User must be authenticated.
+- Operations are processed in chronological order.
+- Duplicate operations are ignored.
+- Invalid operations do not stop processing of valid operations.
+- The synchronization queue cannot be empty.
+
+## Successful Response
+
+**HTTP 200 OK**
+
+```json
+{
+  "processed": 12,
+  "successful": 11,
+  "failed": 1,
+  "lastSyncAt": "2026-09-30T19:02:41Z",
+  "results": [
+    {
+      "operationId": "1f9d4d1d-76e8-4f76-a3d2-3d4ef8b6b8f1",
+      "status": "SUCCESS"
+    },
+    {
+      "operationId": "e6b62c84-5d5e-45a9-bd56-c2f43a25d8e7",
+      "status": "FAILED",
+      "reason": "Assignment already submitted."
+    }
+  ]
+}
+```
+
+## Business Rules
+
+- Members may synchronize only their own offline data.
+- The entire synchronization queue is processed within a single synchronization session.
+- Operations are processed in chronological order.
+- Successfully synchronized operations are removed from the local queue.
+- Failed operations remain in the local queue for automatic retry after the failure condition has been resolved.
+- Duplicate operations are ignored to ensure idempotent synchronization.
+- Synchronization activity is automatically recorded in the Audit Log.
+- Synchronization failures automatically generate Security Events when applicable.
+
+## Possible Errors
+
+| HTTP Status | Description |
+|-------------|-------------|
+| 400 | Invalid request body. |
+| 401 | Authentication required. |
+| 403 | Permission denied. |
+| 409 | Another synchronization is already in progress. |
+| 422 | Validation failed. |
+| 500 | Internal server error. |
+
+# Get Synchronization Status
+
+Returns the current synchronization status for the authenticated member.
+
+This endpoint allows the client to determine whether synchronization is in progress, view the current queue status, identify failed operations, and display the latest successful synchronization time.
+
+## Endpoint
+
+`GET /sync/status`
+
+## Authentication
+
+**Required**
+
+Member access only.
+
+## Successful Response
+
+**HTTP 200 OK**
+
+```json
+{
+  "status": "ONLINE",
+  "syncState": "IDLE",
+  "lastSuccessfulSyncAt": "2026-09-30T19:02:41Z",
+  "pendingOperations": 3,
+  "failedOperations": 1,
+  "isSynchronizationInProgress": false,
+  "lastSynchronization": {
+    "startedAt": "2026-09-30T19:01:58Z",
+    "completedAt": "2026-09-30T19:02:41Z",
+    "processedOperations": 12,
+    "successfulOperations": 11,
+    "failedOperations": 1
+  }
+}
+```
+
+## Business Rules
+
+- Members may retrieve only their own synchronization status.
+- Synchronization status reflects the current state of the local synchronization queue.
+- Pending operations represent items waiting to be synchronized.
+- Failed operations remain queued until a future synchronization attempt succeeds or the failure condition is resolved.
+- The backend returns the result of the most recent synchronization attempt.
+- Retrieving synchronization status does not trigger a synchronization.
+- Retrieving synchronization status does not modify the synchronization queue.
+- Synchronization status retrieval is automatically recorded in the Audit Log.
+
+## Possible Errors
+
+| HTTP Status | Description |
+|-------------|-------------|
+| 401 | Authentication required. |
+| 403 | Permission denied. |
+| 500 | Internal server error. |
+
