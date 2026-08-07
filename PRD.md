@@ -190,14 +190,14 @@ These remain scheduled for later phases as described in
 
 > Scope: This section extends the functionality introduced in Phases 1 and 2 by adding an Activity Management Layer. All previous phase requirements remain valid unless explicitly superseded. Phase 3 introduces activity planning, execution, evidence collection, review, advanced filtering, and activity reporting while preserving the attendance and monitoring workflows established during earlier phases.
 
-Phase 3 transforms the Attendance & Activity Tracking Application into an operational event management platform. Administrators can create and assign activities, members execute assigned work while providing live evidence, and administrators verify completed work through a structured review workflow.
+Phase 3 transforms the Attendance & Activity Tracking Application into an operational event management platform. Administrators can create and assign activities, members execute assigned work, upload evidence of completion, and submit assignments for administrator review. Phase 3 focuses on activity assignment and evidence-based verification while preserving the attendance workflows established during earlier phases.
 
 ### 10.1 Goals (Phase 3)
 
 1. Enable administrators to create, organize, and assign operational activities.
-2. Allow members to record activity progress using structured updates and live evidence.
+2. Allow members to complete assigned activities by submitting evidence of completed work.
 3. Provide administrators with a complete review workflow before accepting completed work.
-4. Maintain a complete audit trail for every assigned activity.
+4. Provide a structured assignment submission and review workflow.
 5. Extend reporting with activity execution, review outcomes, and evidence summaries.
 
 ### 10.2 Functional Requirements (Phase 3)
@@ -209,7 +209,7 @@ Phase 3 transforms the Attendance & Activity Tracking Application into an operat
 - **FR-26:** Activities shall include a title, description, category, priority, schedule, and an optional attendance session association.
 - **FR-27:** Categories shall support both predefined system categories and administrator-created custom categories.
 - **FR-28:** Activities may be created manually or from event-type templates.
-- **FR-29:** Activities may be duplicated to simplify planning, but duplicated activities shall not copy assignments, progress updates, evidence, reviews, notifications, or historical data.
+- **FR-29:** Activities may be duplicated to simplify planning, but duplicated activities shall not copy assignments, evidence, reviews, notifications, or historical data.
 - **FR-30:** Activities shall support soft dependencies that warn members when prerequisite activities remain incomplete without preventing execution.
 - **FR-31:** Activities shall not be editable after creation. If corrections are required, administrators shall cancel the original activity and create a new activity.
 - **FR-32:** Activities that have not yet been assigned may be permanently deleted by an administrator.
@@ -225,23 +225,22 @@ Phase 3 transforms the Attendance & Activity Tracking Application into an operat
 
 #### Activity Execution
 
-- **FR-39:** Members shall explicitly start an activity before recording progress.
-- **FR-40:** Once started, an activity cannot be reverted to the **Assigned** state.
-- **FR-41:** Members shall record work through chronological progress updates.
-- **FR-42:** Progress updates shall support live-captured photos and videos as evidence.
-- **FR-43:** Gallery uploads and file uploads shall not be permitted.
-- **FR-44:** Members may capture multiple evidence items before submitting a progress update.
-- **FR-45:** Evidence may be deleted or recaptured until the activity is submitted for review.
-- **FR-46:** After submission for review, activities become immutable and cannot be modified by members.
-- **FR-47:** Activity completion shall require at least one progress update and at least one evidence item before submission.
-
+- **FR-39:** Members shall explicitly start an activity before submitting evidence.
+- **FR-40:** Once started, an activity cannot return to the Assigned state.
+- **FR-41:** Members shall upload live-captured evidence while completing an assigned activity.
+- **FR-42:** Gallery uploads and file uploads shall not be permitted.
+- **FR-43:** Members may upload multiple evidence items before submitting an assignment.
+- **FR-44:** Evidence may be deleted or recaptured until the assignment is submitted for review.
+- **FR-45:** After submission for review, assignments become immutable and cannot be modified by members.
+- **FR-46:** Assignment submission shall require at least one evidence item.
 #### Evidence Management
 
-- **FR-48:** Evidence shall be associated with individual progress updates rather than directly with the activity.
-- **FR-49:** Evidence shall be captured using the device camera only.
-- **FR-50:** The system shall automatically attach metadata including timestamp, assignment reference, progress update reference, GPS information (where applicable), and device information.
-- **FR-51:** Images and videos shall be automatically optimized while preserving evidentiary quality before storage.
-- **FR-52:** Each activity submission shall support a maximum of ten photographs and two videos, with each video limited to one minute.
+- **FR-47:** Evidence shall be associated directly with an Assignment.
+- **FR-48:** Evidence shall be captured using the device camera only.
+- **FR-49:** The system shall automatically attach metadata including timestamp, assignment reference, GPS information (where applicable), and device information.
+- **FR-50:** Images and videos shall be automatically optimized while preserving evidentiary quality before storage.
+- **FR-51:** Members may upload a maximum of ten photographs and two videos for each assignment.
+- **FR-52:** Each uploaded video shall be limited to a maximum duration of one minute.
 
 #### Review Workflow
 
@@ -251,7 +250,7 @@ Phase 3 transforms the Attendance & Activity Tracking Application into an operat
 - **FR-56:** Selecting **Needs Changes** shall require mandatory reviewer remarks explaining the requested corrections.
 - **FR-57:** Selecting **Verified** may include optional reviewer remarks.
 - **FR-58:** Members shall receive notifications when activities are verified or require changes.
-- **FR-59:** Members responding to **Needs Changes** shall submit additional progress updates and evidence without modifying previously submitted records.
+- **FR-59:** Members responding to **Needs Changes** shall submit additional evidence without modifying previously submitted records.
 
 #### Search and Filtering
 
@@ -267,7 +266,7 @@ Phase 3 transforms the Attendance & Activity Tracking Application into an operat
 
 #### Reporting
 
-- **FR-66:** Activity reports shall include activity details, assignments, progress timeline, evidence summary, review outcome, completion information, priority, category, session association, and activity statistics.
+- **FR-66:** Activity reports shall include activity details, assignments, Evidence Summary, evidence summary, review outcome, completion information, priority, category, session association, and activity statistics.
 - **FR-67:** Reports shall include all activity outcomes, including **Verified**, **Needs Changes**, **Cancelled**, **Archived**, and **Completed** activities.
 - **FR-68:** Activity reports shall continue to be generated on demand from the PostgreSQL database.
 
@@ -313,10 +312,10 @@ These remain scheduled for future phases as described in `development_roadmap.md
 | F16 | Administrator creates an activity | Activity is created with all required information and becomes available after publication |
 | F17 | Administrator assigns an activity | Assigned members immediately receive the activity notification |
 | F18 | Member starts an activity | Activity enters **In Progress** and the start time is recorded |
-| F19 | Member submits progress with live evidence | Progress timeline and evidence are recorded successfully |
+| F19 | Member uploads live evidence | Evidence is recorded successfully. |
 | F20 | Member attempts gallery or file upload | Submission is rejected; only live capture is permitted |
-| F21 | Member submits without progress updates or evidence | Submission is blocked with a validation message |
-| F22 | Administrator requests changes | Member receives mandatory reviewer remarks and may submit additional progress updates and evidence |
+| F21 | Member submits without evidence | Submission is blocked with a validation message. |
+| F22 | Administrator requests changes | Member receives mandatory reviewer remarks and may submit additional evidence |
 | F23 | Administrator verifies an activity | Activity becomes **Verified** and the member receives a confirmation notification |
 | F24 | Administrator generates an activity report | Report contains activity, assignment, evidence, review, and statistical information |
 | F25 | Administrator generates a report for archived activities | Archived activities remain available for reporting and auditing |

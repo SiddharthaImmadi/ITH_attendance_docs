@@ -726,7 +726,7 @@ All new components should follow these principles:
 
 # 12. Phase 3 Activity Layer Component Architecture
 
-Phase 3 extends the component architecture by introducing reusable components that support activity planning, volunteer assignments, progress tracking, evidence submission, administrative review, templates, and activity reporting.
+Phase 3 extends the component architecture by introducing reusable components that support activity Phase 3 extends the component architecture by introducing reusable components that support activity planning, volunteer assignments, evidence submission, administrative review, templates, and activity reporting., administrative review, templates, and activity reporting.
 
 The same architectural principles continue to apply:
 
@@ -743,13 +743,9 @@ The same architectural principles continue to apply:
 
 ```
 src/
-
 ├── components/
-
 │   └── features/
-
 │       └── activity/
-
 │           ├── ActivityCard.tsx
 │           ├── ActivityList.tsx
 │           ├── ActivityHeader.tsx
@@ -759,8 +755,6 @@ src/
 │           ├── TimelineEntry.tsx
 │           ├── AssignmentPanel.tsx
 │           ├── VolunteerSelector.tsx
-│           ├── ProgressEditor.tsx
-│           ├── ProgressHistory.tsx
 │           ├── EvidenceGallery.tsx
 │           ├── EvidenceUploader.tsx
 │           ├── ImagePreview.tsx
@@ -771,6 +765,7 @@ src/
 │           ├── TemplateList.tsx
 │           ├── ActivityReportCard.tsx
 │           └── ActivityStatusBadge.tsx
+
 ```
 
 The Activity feature should remain isolated from attendance components while reusing common components whenever practical.
@@ -785,20 +780,12 @@ The Activity Detail page should be composed of small reusable components.
 ActivityDetail
 
 ├── ActivityHeader
-
 ├── ActivitySummary
-
 ├── AssignmentPanel
-
-├── ActivityTimeline
-
-├── ProgressHistory
-
 ├── EvidenceGallery
-
 ├── ReviewSummary
-
 └── ActivityActions
+
 ```
 
 Avoid implementing the entire screen as one large component.
@@ -815,7 +802,7 @@ Typical information includes:
 - priority;
 - status;
 - assigned volunteers;
-- progress summary.
+- assignment summary.
 
 The component should remain presentation-focused.
 
@@ -831,9 +818,7 @@ Example:
 AssignmentPanel
 
 ├── VolunteerSelector
-
 ├── AssignmentList
-
 └── AssignmentStatus
 ```
 
@@ -849,7 +834,7 @@ Example:
 
 ```typescript
 interface ActivityTimelineProps {
-    entries: TimelineEntry[];
+    events: ActivityEvent[];
 }
 ```
 
@@ -950,7 +935,7 @@ Reusable empty states should support situations including:
 - no activities;
 - no assignments;
 - no templates;
-- no progress history;
+- no evidence uploaded;
 - no reports.
 
 Empty states should encourage the user's next logical action.
@@ -1020,7 +1005,6 @@ Examples include:
 - useActivities()
 - useActivity()
 - useAssignments()
-- useProgress()
 - useEvidence()
 - useReview()
 - useTemplates()

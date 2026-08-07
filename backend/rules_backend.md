@@ -1926,7 +1926,7 @@
 
       ## Purpose
 
-      Activity Management allows administrators to create, assign, review, and manage volunteer activities performed during an event.
+      Activity Management allows administrators to create, assign, review, and manage volunteer activities. Members execute assigned activities by uploading evidence and submitting their assignments for administrator review.
 
       Activities are independent of attendance records and follow their own lifecycle.
 
@@ -1941,8 +1941,8 @@
       - validating activity operations;
       - enforcing activity lifecycle rules;
       - assigning volunteers;
-      - validating submissions;
-      - reviewing completed activities;
+      - validating assignment submissions;
+      - reviewing submitted assignments;
       - maintaining activity history.
 
       Clients must never determine activity outcomes.
@@ -2042,22 +2042,9 @@
 
       ---
 
-      ## 14.6 Progress Updates
-
-      Progress updates:
-
-      - belong to one assignment;
-      - are append-only;
-      - remain chronologically ordered;
-      - cannot be modified after submission.
-
-      Historical progress updates must remain preserved.
-
-      ---
-
       ## 14.7 Evidence Rules
 
-      Evidence belongs to progress updates.
+      Evidence belongs directly to activity assignments.
 
       The backend must enforce:
 
@@ -2067,13 +2054,14 @@
       - maximum sixty-second video duration;
       - evidence optimization before storage.
 
+      Evidence may be uploaded, replaced, or deleted while the assignment remains in progress.
       Evidence becomes immutable after activity submission.
 
       ---
 
       ## 14.8 Review Rules
 
-      Only administrators may review submitted activities.
+      Only administrators may review submitted assignments.
 
       Review decisions:
 
@@ -2107,9 +2095,10 @@
       Members may:
 
       - view assigned activities;
-      - submit progress updates;
+      -- start assigned activities;
       - upload evidence;
-      - submit activities for review;
+      - manage evidence before submission;
+      - submit assignments for review;
       - view their own activity history.
 
       Administrators may:
@@ -2142,7 +2131,7 @@
 
       - activity does not exist;
       - assignment does not exist;
-      - assignment already completed;
+      - assignment already submitted;
       - duplicate assignment detected;
       - evidence limits exceeded;
       - activity state is invalid;
@@ -2171,12 +2160,11 @@
       ## 14.14 Data Integrity
 
       The backend must ensure:
-
       - activities remain associated with their events;
       - assignments remain associated with activities;
-      - progress history remains immutable;
+      - evidence remains associated with its assignment;
       - review history remains immutable;
-      - evidence remains permanently associated with submitted activities;
+      - submitted assignments remain immutable unless returned with a `NEEDS_CHANGES` decision;
       - templates never modify existing activities;
       - duplicate assignments cannot occur;
       - all activity operations execute atomically where required.

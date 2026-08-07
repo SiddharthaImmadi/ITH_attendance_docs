@@ -1004,7 +1004,7 @@ As the application evolves, these rules should be refined through the project's 
 
 # 13. Phase 3 Activity Layer Rules
 
-Phase 3 extends the frontend rules to support activity management, volunteer assignments, progress updates, evidence submission, administrator review, activity templates, and activity reporting.
+Phase 3 extends the frontend rules to support activity management, volunteer assignments, evidence submission, administrator review, activity templates, and activity reporting.
 
 All existing frontend engineering rules remain applicable.
 
@@ -1131,21 +1131,6 @@ Any reassignment decision must follow backend and administrator rules.
 
 ---
 
-## 13.9 Progress Updates
-
-Members may submit progress updates only for activities assigned to them.
-
-Progress updates should:
-
-- be displayed chronologically;
-- preserve previously submitted updates;
-- clearly communicate synchronization state;
-- become part of the activity history after successful synchronization.
-
-The frontend must not rewrite historical progress records.
-
----
-
 ## 13.10 Evidence Requirements
 
 Activity evidence may include photographs and videos.
@@ -1159,6 +1144,9 @@ Current limits are:
 The frontend should communicate these limits before submission.
 
 Client-side validation may prevent obviously invalid selections, but backend validation remains authoritative.
+Members may upload, replace, or remove evidence while the assignment remains in progress.
+
+Once an assignment has been submitted successfully, uploaded evidence becomes read-only until the backend returns a `NEEDS_CHANGES` review decision.
 
 ---
 
@@ -1183,7 +1171,7 @@ When connectivity is unavailable, supported activity updates should be stored lo
 
 The frontend should:
 
-1. preserve supported pending updates locally;
+1. preserve supported pending evidence and assignment submissions locally;
 2. clearly indicate that synchronization is pending;
 3. detect restored connectivity;
 4. attempt synchronization;
@@ -1205,7 +1193,7 @@ Do not create placeholder evidence records for files that no longer exist.
 
 ## 13.14 Activity Submission
 
-When the member completes an activity, the submission is sent to the backend for review.
+When the member completes an assigned activity and submits it for review the submission is sent to the backend for review.
 
 The frontend must:
 
@@ -1252,7 +1240,7 @@ When the backend returns `NEEDS_CHANGES`:
 - administrator remarks are mandatory;
 - remarks must be clearly displayed to the member;
 - the required corrections should remain visible;
-- the member must be allowed to continue the activity;
+- the member must be allowed to upload additional evidence and resubmit the assignment;
 - the member must be allowed to resubmit after corrections.
 
 The frontend must preserve previous submission and review history for viewing.

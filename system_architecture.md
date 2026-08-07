@@ -242,7 +242,7 @@ The primary architectural objectives of Phase 3 are:
 
 - Introduce structured activity management.
 - Support administrator-managed activity assignments.
-- Track activity progress throughout its lifecycle.
+- Track activity Assignments throughout its lifecycle.
 - Support activity evidence submission.
 - Introduce activity review and verification workflows.
 - Provide reusable activity templates.
@@ -325,10 +325,11 @@ Assignment Service
 - assignment validation
 - assignment conflict detection
 
-Progress Service
+Activity Assignment Service
 
-- progress updates
-- progress history
+- assignment execution
+- evidence management
+- assignment submission
 
 Evidence Service
 
@@ -362,33 +363,21 @@ The Activity lifecycle follows the documented business workflow.
 Typical progression:
 
 ```
-Activity Created
-
-↓
-
-Published
-
-↓
-
-Assigned
-
-↓
-
-In Progress
-
-↓
-
-Submitted
-
-↓
-
-Needs Changes (optional)
-
-↓
-
-Resubmitted (optional)
-
-↓
+Activity
+    ↓
+Assignment
+    ↓
+Evidence Upload
+    ↓
+Submit Assignment
+    ↓
+Review
+        ├── VERIFIED
+        └── NEEDS_CHANGES
+                 ↓
+      Upload Additional Evidence
+                 ↓
+           Resubmit
 
 Verified
 ```
@@ -399,7 +388,7 @@ State transitions are validated by backend services before changes are committed
 
 ### 10.6 Evidence Architecture
 
-Activity evidence is treated as an extension of Activity progress rather than as an independent subsystem.
+Activity evidence is treated as an extension of Activity Assignments rather than as an independent subsystem.
 
 The architecture supports:
 
@@ -422,7 +411,7 @@ The architecture supports:
 - chronological history
 - submission history
 - review history
-- progress history
+- Assignments history
 - evidence history
 
 Historical records remain read-only after creation.

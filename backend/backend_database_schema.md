@@ -1738,7 +1738,9 @@ Examples of actions recorded in the audit log include:
 
 Stores activities created by administrators for an event.
 
-Activities represent operational work assigned to volunteers during an event. Each activity belongs to a single event and serves as the parent record for assignments, progress updates, evidence, and review.
+Activities represent operational work assigned to volunteers during an event.
+
+Each activity belongs to a single event and serves as the parent record for activity assignments.
 
 ---
 
@@ -1769,7 +1771,7 @@ Activities represent operational work assigned to volunteers during an event. Ea
 
 Stores the assignment of activities to individual volunteers.
 
-Each assignment represents one volunteer's responsibility for completing a specific activity. Assignments maintain the execution status, progress, review lifecycle, and completion history independently for each volunteer.
+Each assignment represents one volunteer's responsibility for completing a specific activity. Assignments maintain the execution status, evidence, review lifecycle, and completion history independently for each volunteer.
 
 ---
 
@@ -1807,8 +1809,8 @@ Each assignment:
 - belongs to one activity;
 - belongs to one volunteer;
 - is created by one administrator;
-- may have multiple progress updates;
-- may have one review.
+- may have multiple evidence records;
+- may have multiple review records.
 
 One activity may have multiple assignments.
 
@@ -1914,232 +1916,6 @@ UNDER_REVIEW
 - Each assignment maintains its own execution, evidence, and review lifecycle.
 - Assignment status changes do not affect other volunteers assigned to the same activity.
 
-# activity_progress_updates
-
-## Purpose
-
-Stores chronological progress updates submitted by volunteers while completing an assigned activity.
-
-Each progress update records a milestone in the activity timeline and may contain one or more evidence items.
-
----
-
-## Table Definition
-
-| Column | Type | Nullable | Default | Description |
-|----------|------|----------|----------|-------------|
-| id | UUID | No | uuid_generate_v4() | Primary key |
-| assignment_id | UUID | No | — | Associated activity assignment |
-| title | VARCHAR(255) | No | — | Progress update title |
-| description | TEXT | No | — | Progress update description |
-| created_at | TIMESTAMPTZ | No | NOW() | Creation timestamp |
-
----
-
-## Constraints
-
-- Primary Key (`id`)
-- Foreign Key (`assignment_id`) → `activity_assignments(id)`
-
----
-
-## Relationships
-
-Each progress update:
-
-- belongs to one activity assignment;
-- may contain multiple evidence items.
-
-One activity assignment may contain multiple progress updates.
-
----
-
-## Indexes
-
-| Index | Purpose |
-|---------|----------|
-| idx_progress_assignment | Assignment lookup |
-| idx_progress_created_at | Chronological ordering |
-
----
-
-## SQL Definition
-
-```sql
-CREATE TABLE activity_progress_updates (
-
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-
-    assignment_id UUID NOT NULL
-        REFERENCES activity_assignments(id)
-        ON DELETE CASCADE,
-
-    title VARCHAR(255) NOT NULL,
-
-    description TEXT NOT NULL,
-
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
-CREATE INDEX idx_progress_assignment
-ON activity_progress_updates(assignment_id);
-
-CREATE INDEX idx_progress_created_at
-ON activity_progress_updates(created_at);
-```
-
----
-
-## Progress Timeline
-
-```
-Progress Update 1
-
-↓
-
-Progress Update 2
-
-↓
-
-Progress Update 3
-
-↓
-
-...
-
-↓
-
-Final Submission
-```
-
----
-
-## Notes
-
-- Progress updates are append-only.
-- Progress updates are always displayed chronologically.
-- Progress updates cannot be modified after the activity is submitted for review.
-- Each progress update may contain multiple evidence items stored in the `activity_evidence` table.
-
-# activity_evidence
-
-## Purpose
-
-Stores all evidence submitted for activity progress updates.
-
-Evidence consists of live-captured photographs and videos used by administrators during the review process.
-
-Evidence belongs to a progress update and remains permanently associated with the corresponding activity assignment.
-
----
-
-## Table Definition
-
-| Column | Type | Nullable | Default | Description |
-|----------|------|----------|----------|-------------|
-| id | UUID | No | uuid_generate_v4() | Primary key |
-| progress_update_id | UUID | No | — | Associated progress update |
-| evidence_type | evidence_type | No | — | Type of evidence |
-| file_path | VARCHAR(500) | No | — | Stored file location |
-| file_size_bytes | BIGINT | No | — | File size after optimization |
-| duration_seconds | INTEGER | Yes | NULL | Video duration |
-| captured_latitude | DOUBLE PRECISION | Yes | NULL | Capture latitude |
-| captured_longitude | DOUBLE PRECISION | Yes | NULL | Capture longitude |
-| device_information | TEXT | Yes | NULL | Device information |
-| created_at | TIMESTAMPTZ | No | NOW() | Capture timestamp |
-
----
-
-## Constraints
-
-- Primary Key (`id`)
-- Foreign Key (`progress_update_id`) → `activity_progress_updates(id)`
-- `duration_seconds` must be greater than zero when present.
-
----
-
-## Relationships
-
-Each evidence record:
-
-- belongs to one progress update.
-
-One progress update may contain multiple evidence records.
-
----
-
-## Indexes
-
-| Index | Purpose |
-|---------|----------|
-| idx_activity_evidence_progress | Progress update lookup |
-| idx_activity_evidence_type | Filter by evidence type |
-| idx_activity_evidence_created_at | Chronological ordering |
-
----
-
-## SQL Definition
-
-```sql
-CREATE TABLE activity_evidence (
-
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-
-    progress_update_id UUID NOT NULL
-        REFERENCES activity_progress_updates(id)
-        ON DELETE CASCADE,
-
-    evidence_type evidence_type NOT NULL,
-
-    file_path VARCHAR(500) NOT NULL,
-
-    file_size_bytes BIGINT NOT NULL,
-
-    duration_seconds INTEGER,
-
-    captured_latitude DOUBLE PRECISION,
-
-    captured_longitude DOUBLE PRECISION,
-
-    device_information TEXT,
-
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-
-    CHECK (
-        duration_seconds IS NULL
-        OR duration_seconds > 0
-    )
-);
-
-CREATE INDEX idx_activity_evidence_progress
-ON activity_evidence(progress_update_id);
-
-CREATE INDEX idx_activity_evidence_type
-ON activity_evidence(evidence_type);
-
-CREATE INDEX idx_activity_evidence_created_at
-ON activity_evidence(created_at);
-```
-
----
-
-## Evidence Rules
-
-- Evidence belongs to a progress update.
-- Gallery uploads are not permitted.
-- Manual file uploads are not permitted.
-- Images and videos are automatically optimized before storage.
-- A maximum of ten photographs and two videos are allowed per activity assignment.
-- Evidence cannot be modified after the activity is submitted for review.
-
----
-
-## Notes
-
-- Evidence files remain associated with the activity permanently.
-- GPS coordinates are stored when available from the device.
-- Device information is stored for auditing purposes.
-- File optimization reduces storage requirements while preserving sufficient quality for administrative review.
 
 # activity_reviews
 
@@ -2753,7 +2529,7 @@ One activity assignment may contain multiple progress updates.
 
 ---
 
-### activity_evidence
+### activity_assignments
 
 Each evidence record:
 
@@ -2819,7 +2595,7 @@ One template may contain multiple template items.
 | activities | activity_assignments | One-to-Many |
 | users | activity_assignments | One-to-Many |
 | activity_assignments | activity_progress_updates | One-to-Many |
-| activity_progress_updates | activity_evidence | One-to-Many |
+| activity_progress_updates | activity_assignments | One-to-Many |
 | activity_assignments | activity_reviews | One-to-Many |
 | users | activity_reviews | One-to-Many |
 | users | activity_templates | One-to-Many |

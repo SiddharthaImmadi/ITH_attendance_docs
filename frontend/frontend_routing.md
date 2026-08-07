@@ -1309,7 +1309,7 @@ Together with the Frontend UI Specification and Frontend State Management docume
 
 # 18. Phase 3 Activity Layer Routing
 
-Phase 3 extends the routing architecture by introducing Activity Management, Activity Assignments, Progress Tracking, Evidence Submission, Activity Review, Activity Templates, and Activity Reports.
+Phase 3 extends the routing architecture by introducing Activity Management, Activity Assignments, Evidence Submission, Activity Review, Activity Templates, and Activity Reports.
 
 The routing structure continues to separate navigation from backend authorization while supporting administrator and member workflows.
 
@@ -1349,7 +1349,6 @@ Member routing introduces:
 
 - My Activities
 - Activity Details
-- Progress Timeline
 - Evidence Upload
 - Submission Status
 - Review Feedback
@@ -1364,23 +1363,13 @@ Members may access only their assigned activities.
 Dashboard
 
 ├── Events
-
 │   ├── Event Details
-
 │   ├── Activities
-
 │   │   ├── Activity Details
-
 │   │   ├── Assignments
-
-│   │   ├── Progress
-
 │   │   ├── Evidence
-
 │   │   └── Reviews
-
 │   └── Reports
-
 └── Templates
 ```
 
@@ -1435,15 +1424,11 @@ Activity Details
 
 ↓
 
-Progress Updates
-
-↓
-
 Evidence Upload
 
 ↓
 
-Submit
+Submit Assignment
 
 ↓
 
@@ -1461,8 +1446,8 @@ Activity routes continue using protected navigation.
 Members:
 
 - may access only their own assignments;
-- may submit progress;
 - may upload evidence;
+- may submit assignments for review;
 - may view their own review results.
 
 Administrators:

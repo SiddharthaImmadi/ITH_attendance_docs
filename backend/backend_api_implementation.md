@@ -3487,7 +3487,7 @@ Following these implementation principles ensures that future development remain
 
 Phase 3 extends the backend by introducing the Activity Layer.
 
-The Activity Layer allows administrators to create activities, assign volunteers, collect progress updates and evidence, review completed work, and reuse activity templates.
+The Activity Layer allows administrators to create activities, assign volunteers, collect evidence for assigned work, review completed assignments, and reuse activity templates.
 
 The implementation follows the same layered architecture used throughout the attendance system.
 
@@ -3669,39 +3669,9 @@ Assignment validation prevents duplicate assignments for the same volunteer.
 
 ---
 
-## 21.5 Progress Updates
-
-Volunteers submit progress updates throughout activity execution.
-
-Implementation flow:
-
-```text
-Progress Update
-
-↓
-
-Validate Assignment
-
-↓
-
-Validate Activity State
-
-↓
-
-Store Progress Update
-
-↓
-
-Response
-```
-
-Progress updates are append-only.
-
----
-
 ## 21.6 Evidence Processing
 
-Evidence is attached to progress updates.
+Evidence is attached directly to activity assignments.
 
 Implementation flow:
 
@@ -3755,15 +3725,11 @@ Validate Assignment
 
 ↓
 
-Validate Progress
-
-↓
-
 Validate Evidence
 
 ↓
 
-Update Status
+Update Assignment Status
 
 ↓
 
@@ -3776,14 +3742,14 @@ Response
 
 Once submitted:
 
-- progress updates become read-only;
-- evidence becomes immutable.
+- the assignment becomes read-only until review completion or a "Needs Changes" decision;
+- uploaded evidence becomes immutable.
 
 ---
 
 ## 21.8 Review Processing
 
-Administrators review submitted activities.
+Administrators review submitted assignments.
 
 Implementation flow:
 
@@ -3888,7 +3854,7 @@ The Activity Layer follows these principles:
 
 - backend-controlled business decisions;
 - centralized business logic;
-- append-only progress history;
+- evidence belongs to activity assignments;
 - immutable review history;
 - reusable templates;
 - transactional consistency;

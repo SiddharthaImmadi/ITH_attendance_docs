@@ -398,7 +398,7 @@ Major capabilities include:
 
 - activity creation and management;
 - volunteer activity assignment;
-- progress tracking;
+- assignment execution;
 - evidence submission;
 - activity review;
 - Needs Changes and resubmission workflow;
@@ -464,7 +464,7 @@ The following decisions are considered finalized for implementation:
 - Activity Review does not use a separate `REJECTED` state.
 - `NEEDS_CHANGES` requires administrator remarks.
 - Members may correct and resubmit after `NEEDS_CHANGES`.
-- Completed submissions cannot be edited directly.
+- Submitted assignments remain read-only unless returned with a NEEDS_CHANGES decision.
 - Completed submissions remain viewable.
 - Verified submissions remain read-only.
 - Activity evidence supports a maximum of 10 photographs.

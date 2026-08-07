@@ -433,31 +433,17 @@ Phase 2 extends the service layer to support the complete attendance lifecycle, 
 
 ```
 app/services/
-
 ├── auth_service.py
-
 ├── sessions_service.py
-
 ├── attendance_service.py
-
 ├── presence_service.py
-
 ├── monitoring_service.py
-
 ├── activity_service.py
-
 ├── activity_assignment_service.py
-
-├── activity_progress_service.py
-
 ├── activity_review_service.py
-
 ├── activity_template_service.py
-
 ├── reports_service.py
-
 ├── geo_service.py
-
 └── notification_service.py (optional)
 
 Each service should own a single business domain.
@@ -743,7 +729,7 @@ All Phase 2 services should follow these principles:
 
 # 12.13 Phase 3 Service Layer Extensions
 
-Phase 3 extends the service layer by introducing activity management, volunteer assignments, progress tracking, evidence management, activity review, and reusable activity templates.
+Phase 3 extends the service layer by introducing activity management, volunteer assignments, evidence management, assignment submission, administrator review, and reusable activity templates.
 
 Each service owns a single business domain and communicates with other services through well-defined interfaces.
 
@@ -789,6 +775,9 @@ Responsibilities:
 - validate assignment conflicts
 - retrieve assignments
 - maintain assignment status
+- start assigned activities
+- submit assignments for review
+- validate assignment completion requirements
 
 Example methods:
 
@@ -802,34 +791,9 @@ get_assignments()
 validate_assignment()
 ```
 
-AssignmentService should not manage progress updates or reviews.
+ActivityAssignmentService should not perform administrator reviews.
 
 ---
-
-## 12.16 ActivityProgressService
-
-ActivityProgressService manages activity execution.
-
-Responsibilities:
-
-- create progress updates
-- upload evidence
-- validate activity completion
-- submit activities for review
-
-Example methods:
-
-```python
-add_progress()
-
-upload_photo()
-
-upload_video()
-
-submit_for_review()
-```
-
-ProgressService should not perform administrative reviews.
 
 ---
 
@@ -856,7 +820,7 @@ request_changes()
 get_review_history()
 ```
 
-ReviewService should never modify activity progress.
+ActivityReviewService should only evaluate submitted assignments and preserve review history.
 
 ---
 
@@ -902,17 +866,13 @@ ActivityAssignmentService
 
 ↓
 
-ActivityProgressService
-
-↓
-
 ActivityReviewService
 ```
 
 Supporting services:
 
 ```
-ActivityProgressService
+ActivityAssignmentService
 
 ↓
 
@@ -940,31 +900,24 @@ Each business rule belongs to one service only.
 Examples:
 
 Activity lifecycle
-
 → ActivityService
 
 Assignment validation
-
 → ActivityAssignmentService
 
-Progress updates
-
-→ ActivityProgressService
+Assignment lifecycle
+→ ActivityAssignmentService
 
 Evidence validation
-
-→ ActivityProgressService
+→ ActivityAssignmentService
 
 Review decisions
-
 → ActivityReviewService
 
 Template generation
-
 → ActivityTemplateService
 
 Report generation
-
 → ReportsService
 
 Avoid implementing the same business rule in multiple services.
@@ -1035,35 +988,33 @@ Rollback the transaction if any operation fails.
 
 Each Activity service should be tested independently.
 
-ActivityService:
+### ActivityService
 
 - lifecycle
 - publication
 - cancellation
 
-ActivityAssignmentService:
+### ActivityAssignmentService
 
 - assignment validation
 - duplicate prevention
 - conflict detection
-
-ActivityProgressService:
-
-- progress updates
+- assignment start
 - evidence upload
-- submission validation
+- evidence validation
+- assignment submission
+
 
 ActivityReviewService:
-
 - verification
 - needs changes
 - review history
 
-ActivityTemplateService:
+### ActivityReviewService
 
-- template creation
-- template application
-- generated activities
+- verification
+- needs changes
+- review history
 
 Mock database interactions where appropriate.
 
@@ -1080,7 +1031,8 @@ All Phase 3 services should follow these principles:
 - Services communicate through clear interfaces.
 - Database operations are transactional.
 - Review history is preserved.
-- Progress updates are append-only.
+- Evidence belongs to activity assignments.
+- Assignment submission requires evidence.
 - Templates generate independent activities.
 - Services remain independently testable.
 
@@ -1102,17 +1054,13 @@ app/services/
 ├── attendance_service.py
 ├── presence_service.py
 ├── monitoring_service.py
-
 ├── activity_service.py
 ├── activity_assignment_service.py
-├── activity_progress_service.py
 ├── activity_review_service.py
 ├── activity_template_service.py
-
 ├── reports_service.py
 ├── geo_service.py
 ├── notification_service.py
-
 ├── synchronization_service.py
 ├── spoofing_detection_service.py
 ├── audit_log_service.py

@@ -1852,7 +1852,7 @@ Together with the Frontend UI Specification, Routing Architecture, Component Gui
 
 # 22. Phase 3 Activity State Management
 
-The Phase 3 Activity Layer introduces additional frontend state required to support activity management, volunteer assignments, progress tracking, evidence submission, administrative review, reusable templates, and activity reporting.
+The Phase 3 Activity Layer introduces additional frontend state required to support activity management, volunteer assignments, evidence submission, administrative review, reusable templates, and activity reporting.
 
 As with all existing application state, the backend remains the authoritative source for business information.
 
@@ -1864,8 +1864,8 @@ The Activity Layer state architecture is designed to:
 
 - maintain consistent activity information;
 - synchronize assignment updates;
-- support progress tracking;
 - manage evidence uploads;
+- synchronize assignment submissions;
 - synchronize review decisions;
 - minimize duplicate state.
 
@@ -1899,27 +1899,11 @@ Examples include:
 - assignment history.
 
 Assignment State changes whenever administrators modify assignments.
-
----
-
-## 22.4 Progress State
-
-Progress State represents timeline updates submitted by volunteers.
-
-Examples include:
-
-- progress entries;
-- timestamps;
-- descriptions;
-- submission status.
-
-Timeline entries should remain ordered chronologically.
-
 ---
 
 ## 22.5 Evidence State
 
-Evidence State manages uploaded photographs and videos associated with progress updates.
+Evidence State manages uploaded photographs and videos associated with activity assignments.
 
 Examples include:
 
@@ -1984,7 +1968,7 @@ Activity State should synchronize whenever:
 - activities are created;
 - activities are updated;
 - assignments change;
-- progress is submitted;
+- assignments are submitted;
 - evidence uploads complete;
 - reviews are completed.
 
@@ -1998,9 +1982,9 @@ Certain activity operations may continue while temporary connectivity is unavail
 
 Examples include:
 
-- progress updates;
 - evidence selection;
-- draft submissions.
+- draft evidence;
+- draft assignment submissions.
 
 Locally stored information should synchronize automatically when connectivity returns.
 
@@ -2029,7 +2013,7 @@ Background synchronization should refresh:
 - assignment changes;
 - review decisions;
 - activity status;
-- progress updates.
+- assignment submissions.
 
 Updates should avoid unnecessary network requests while maintaining current information.
 
@@ -2041,7 +2025,7 @@ If synchronization fails:
 
 - preserve previously synchronized information;
 - retry synchronization where appropriate;
-- preserve locally entered progress whenever possible;
+- preserve locally selected evidence and draft submissions whenever possible;
 - clearly communicate synchronization status.
 
 Backend state always replaces outdated local information after successful synchronization.

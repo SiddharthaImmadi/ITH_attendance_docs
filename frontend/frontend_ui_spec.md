@@ -3117,7 +3117,7 @@ Together with the backend architecture, API contracts, business rules, and desig
 
 # 15. Phase 3 Activity Layer Experience
 
-The Phase 3 Activity Layer extends the existing attendance experience by introducing activity management, volunteer assignments, progress tracking, evidence submission, activity review, reusable templates, and enhanced reporting.
+The Phase 3 Activity Layer extends the existing attendance experience by introducing activity management, volunteer assignments, evidence submission, activity review, reusable templates, and enhanced reporting.
 
 Unlike attendance, which focuses on participation, the Activity Layer focuses on the work performed by volunteers during an event.
 
@@ -3173,7 +3173,7 @@ Each activity should display:
 - priority;
 - current status;
 - assigned volunteers;
-- submission progress.
+- submission status.
 
 ---
 
@@ -3209,7 +3209,7 @@ The screen should display:
 
 - activity information;
 - assigned volunteers;
-- activity timeline;
+- assignment details;
 - submission status;
 - evidence summary;
 - review summary.
@@ -3276,8 +3276,10 @@ The interface should prioritize pending reviews.
 Display:
 
 - volunteer information;
-- submitted progress;
+- assignment information;
 - uploaded evidence;
+- submission time;
+- review status;
 - submission time;
 - review status.
 
@@ -3349,9 +3351,8 @@ Major screens include:
 
 - My Activities
 - Activity Detail
-- Progress Timeline
 - Evidence Submission
-- Submission Status
+- Review Feedback
 
 The experience should minimize unnecessary interactions.
 
@@ -3375,7 +3376,7 @@ Each assignment should display:
 - event;
 - priority;
 - assignment status;
-- latest progress update.
+- submission status.
 
 ---
 
@@ -3384,7 +3385,7 @@ Each assignment should display:
 Members may:
 
 - open assigned activity;
-- continue progress;
+- continue assignment;
 - submit completed work.
 
 Completed submissions remain read-only.
@@ -3400,7 +3401,7 @@ The Activity Detail screen provides complete information about the assigned work
 Members should clearly understand:
 
 - what work must be completed;
-- current progress;
+- assignment status;
 - submission requirements.
 
 ---
@@ -3409,33 +3410,10 @@ Members should clearly understand:
 
 Members may:
 
-- add progress updates;
 - upload evidence;
-- submit activity.
+- submit assignment.
 
 Only valid actions should be visible.
-
----
-
-## 15.12 Progress Timeline
-
-### Purpose
-
-The Progress Timeline displays the chronological history of work completed during an activity.
-
-Timeline entries remain immutable.
-
----
-
-### Primary Information
-
-Each update displays:
-
-- timestamp;
-- description;
-- attached evidence.
-
-Timeline entries appear in chronological order.
 
 ---
 
@@ -3496,7 +3474,6 @@ The Activity Layer introduces reusable interface patterns including:
 
 - activity cards;
 - assignment cards;
-- progress timeline;
 - evidence gallery;
 - activity status badges;
 - review status badges;
@@ -3512,7 +3489,7 @@ Activity interfaces should provide loading feedback for:
 
 - activity retrieval;
 - assignment loading;
-- progress synchronization;
+- submission processing;
 - evidence upload;
 - report generation.
 

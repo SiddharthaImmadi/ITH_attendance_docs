@@ -194,8 +194,8 @@ Responsible for:
 
 - activity creation;
 - activity assignment;
-- progress updates;
 - evidence management;
+- assignment submission;
 - review workflow;
 - activity template management.
 
@@ -816,7 +816,6 @@ app/services/
 ├── volunteer_block_service.py
 ├── activity_service.py
 ├── activity_assignment_service.py
-├── activity_progress_service.py
 ├── activity_review_service.py
 ├── activity_template_service.py
 ├── notification_service.py
@@ -947,18 +946,9 @@ Responsible for:
 - validating assignment conflicts;
 - maintaining assignment status;
 - tracking assignment lifecycle.
-
----
-
-### Activity Progress Service
-
-Responsible for:
-
-- creating progress updates;
-- managing evidence uploads;
-- validating activity completion;
-- submitting activities for review.
-
+- starting assigned activities;
+- submitting assignments for review;
+- validating assignment completion requirements;
 ---
 
 ### Activity Review Service
@@ -1041,10 +1031,6 @@ Activity Service
 ↓
 
 Activity Assignment Service
-
-↓
-
-Activity Progress Service
 
 ↓
 
@@ -1190,7 +1176,6 @@ app/repositories/
 ├── volunteer_block_repository.py
 ├── activity_repository.py
 ├── activity_assignment_repository.py
-├── activity_progress_repository.py
 ├── activity_evidence_repository.py
 ├── activity_review_repository.py
 ├── activity_template_repository.py
@@ -1289,16 +1274,6 @@ Responsible for:
 - retrieving volunteer assignments;
 - updating assignment status;
 - validating duplicate assignments.
-
----
-
-### Activity Progress Repository
-
-Responsible for:
-
-- storing progress updates;
-- retrieving activity timelines;
-- maintaining chronological ordering.
 
 ---
 
@@ -1896,7 +1871,6 @@ The Activity Management module consists of the following components:
 
 - Activity Management
 - Activity Assignment
-- Activity Progress Tracking
 - Evidence Management
 - Activity Review
 - Activity Templates
@@ -2024,48 +1998,14 @@ Each assignment progresses independently through execution and review.
 
 ---
 
-## Progress Tracking
-
-Progress updates provide a chronological record of work completed by a volunteer.
-
-```
-Assignment
-
-      │
-
-      ▼
-
-Progress Update 1
-
-      │
-
-      ▼
-
-Progress Update 2
-
-      │
-
-      ▼
-
-Progress Update 3
-```
-
-Progress updates are append-only and preserve the activity timeline.
-
----
-
 ## Evidence Management
 
-Evidence is attached to individual progress updates rather than directly to activities.
+Evidence is attached directly to activity assignments.
+
+Members may upload multiple evidence items while completing an assigned activity before submitting it for administrator review.
 
 ```
 Assignment
-
-      │
-
-      ▼
-
-Progress Update
 
       │
 
@@ -2145,8 +2085,8 @@ The Activity Management module follows these principles:
 - Activities are independent of attendance records.
 - One activity may be assigned to multiple volunteers.
 - Every volunteer maintains an independent execution lifecycle.
-- Progress updates are append-only.
-- Evidence belongs to progress updates.
+- Evidence belongs to activity assignments.
+- Assignment submissions require evidence before review.
 - Review history is permanently preserved.
 - Templates generate new activities without modifying existing ones.
 
@@ -4316,7 +4256,7 @@ File storage is responsible for:
 
 Activity evidence is stored separately from attendance evidence.
 
-Each uploaded file is associated with a progress update and referenced by its metadata in the database.
+Each uploaded file is associated with an activity assignment and referenced by its metadata in the database.
 
 Example directory structure:
 

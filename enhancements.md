@@ -29,3 +29,24 @@ sentences — put longer reasoning in the Rationale column.
 | Accepted | Approved — move into `development_roadmap.md` under the right phase |
 | Rejected | Reviewed and declined — keep the row so it isn't re-suggested without context |
 | Deferred — Phase N | Good idea, correct idea even, just not now |
+
+
+Future Enhancement
+
+Volunteer Progress Tracking
+
+Description:
+Allow members to create multiple progress updates while completing an assigned activity.
+
+Potential Features:
+- Progress timeline
+- Progress journal
+- Intermediate status updates
+- Progress comments
+- Progress-specific evidence
+- Administrator progress monitoring
+- Real-time activity tracking
+
+Reason Deferred:
+Not required for the current volunteer management workflow.
+Can be introduced in a future version if operational requirements evolve.

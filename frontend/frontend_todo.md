@@ -493,7 +493,7 @@ The frontend must never infer lifecycle transitions independently.
 - [ ] Display associated event
 - [ ] Display priority
 - [ ] Display assignment status
-- [ ] Display latest progress
+- [ ] Display latest submission status
 - [ ] Group or filter assignments by status
 - [ ] Support pagination where required
 - [ ] Display empty state when no activities are assigned
@@ -509,7 +509,6 @@ The frontend must never infer lifecycle transitions independently.
 - [ ] Display priority
 - [ ] Display assignment status
 - [ ] Display submission requirements
-- [ ] Display progress timeline
 - [ ] Display evidence
 - [ ] Display review feedback
 - [ ] Display only currently permitted actions
@@ -528,34 +527,6 @@ Once work has started, the frontend must not provide unsupported abandon or self
 
 ---
 
-## Progress Tracking
-
-### Progress Updates
-
-- [ ] Create progress update interface
-- [ ] Allow member to enter progress information
-- [ ] Validate required fields
-- [ ] Submit progress through approved API
-- [ ] Prevent duplicate submissions
-- [ ] Display synchronization status
-- [ ] Refresh progress history after successful synchronization
-
----
-
-### Progress Timeline
-
-- [ ] Create reusable Activity Progress Timeline
-- [ ] Display progress updates chronologically
-- [ ] Display timestamps
-- [ ] Display descriptions
-- [ ] Display associated evidence
-- [ ] Preserve historical entries
-- [ ] Display loading state
-- [ ] Display empty state
-
-Historical progress entries must remain read-only.
-
----
 
 ## Evidence Management
 
@@ -612,7 +583,7 @@ Backend validation remains authoritative.
 ### Local Pending State
 
 - [ ] Detect connectivity loss
-- [ ] Preserve supported pending progress updates locally
+- [ ] Preserve supported pending assignment submissions locally
 - [ ] Preserve supported pending evidence locally
 - [ ] Clearly display pending synchronization state
 - [ ] Avoid representing local data as server-confirmed data
@@ -645,7 +616,7 @@ Backend validation remains authoritative.
 ### Submission Preparation
 
 - [ ] Display submission summary
-- [ ] Display progress history
+- [ ] Display assignment summary
 - [ ] Display evidence summary
 - [ ] Display required submission information
 - [ ] Validate basic submission requirements
@@ -671,7 +642,6 @@ Backend validation remains authoritative.
 - [ ] Remove editing controls
 - [ ] Remove evidence deletion controls
 - [ ] Preserve evidence viewing
-- [ ] Preserve progress viewing
 - [ ] Display review status
 
 ---
@@ -696,7 +666,7 @@ Backend validation remains authoritative.
 ### Review Details
 
 - [ ] Create Activity Review page
-- [ ] Display submitted progress
+- [ ] Display assignment information
 - [ ] Display submitted evidence
 - [ ] Display previous review history
 - [ ] Display member information
@@ -736,7 +706,7 @@ Do not implement a separate `REJECTED` review workflow.
 - [ ] Display previous administrator remarks
 - [ ] Preserve previous submission history
 - [ ] Allow member to make required corrections
-- [ ] Allow new progress where applicable
+- [ ] Allow additional evidence where permitted
 - [ ] Allow required evidence updates where permitted
 - [ ] Submit corrected activity
 - [ ] Preserve previous review history
@@ -901,7 +871,6 @@ Do not implement a separate `REJECTED` review workflow.
 
 - [ ] Test Activity components
 - [ ] Test Assignment components
-- [ ] Test Progress components
 - [ ] Test Evidence components
 - [ ] Test Review components
 - [ ] Test Template components
@@ -918,7 +887,7 @@ Do not implement a separate `REJECTED` review workflow.
 - [ ] Test bulk assignment
 - [ ] Test assignment conflict handling
 - [ ] Test activity start
-- [ ] Test progress submission
+- [ ] Test assignment submission
 - [ ] Test evidence upload
 - [ ] Test activity submission
 - [ ] Test Needs Changes workflow
@@ -1307,7 +1276,6 @@ Implementation should follow the milestones below in order. Each milestone shoul
 - [ ] Add Activity API integration
 - [ ] Define Activity TypeScript types
 - [ ] Define Assignment TypeScript types
-- [ ] Define Progress TypeScript types
 - [ ] Define Evidence TypeScript types
 - [ ] Define Review TypeScript types
 - [ ] Define Template TypeScript types
@@ -1487,7 +1455,7 @@ The frontend must never determine Activity lifecycle transitions independently.
 
 ---
 
-# Milestone 14 — Member Activities & Progress Tracking
+# Milestone 14 — Member Activities 
 
 ## My Activities
 
@@ -1497,7 +1465,7 @@ The frontend must never determine Activity lifecycle transitions independently.
 - [ ] Display associated event
 - [ ] Display priority
 - [ ] Display assignment status
-- [ ] Display latest progress
+- [ ] Display latest submission status
 - [ ] Group or filter assignments by status
 - [ ] Support pagination where required
 - [ ] Display empty state when no activities are assigned
@@ -1514,7 +1482,6 @@ The frontend must never determine Activity lifecycle transitions independently.
 - [ ] Display priority
 - [ ] Display assignment status
 - [ ] Display submission requirements
-- [ ] Display progress timeline
 - [ ] Display evidence
 - [ ] Display review feedback
 - [ ] Display only currently permitted actions
@@ -1541,7 +1508,7 @@ Once a member starts an assigned activity, the frontend must not provide unsuppo
 - [ ] Submit progress through approved API
 - [ ] Prevent duplicate submissions
 - [ ] Display synchronization status
-- [ ] Refresh progress history after successful synchronization
+- [ ] Refresh Display assignment summary after successful synchronization
 
 ---
 
@@ -1581,8 +1548,8 @@ Historical progress entries remain read-only.
 - [ ] Test My Activities
 - [ ] Test Activity Details
 - [ ] Test Activity start
-- [ ] Test progress submission
-- [ ] Test Progress Timeline
+- [ ] Test assignment submission
+- [ ] Test Evidence Gallery
 - [ ] Test Activity History
 - [ ] Verify member can access only authorized assignments
 - [ ] Run relevant tests
@@ -1643,7 +1610,7 @@ Backend validation remains authoritative.
 ## Offline Pending State
 
 - [ ] Detect connectivity loss
-- [ ] Preserve supported pending progress updates locally
+- [ ] Preserve supported pending assignment submissions locally
 - [ ] Preserve supported pending evidence locally
 - [ ] Clearly display pending synchronization state
 - [ ] Avoid representing local data as server-confirmed data
@@ -1691,7 +1658,7 @@ Backend validation remains authoritative.
 ## Submission Preparation
 
 - [ ] Display submission summary
-- [ ] Display progress history
+- [ ] Display assignment summary
 - [ ] Display evidence summary
 - [ ] Display required submission information
 - [ ] Validate basic submission requirements
@@ -1717,7 +1684,6 @@ Backend validation remains authoritative.
 - [ ] Remove editing controls
 - [ ] Remove evidence deletion controls
 - [ ] Preserve evidence viewing
-- [ ] Preserve progress viewing
 - [ ] Display review status
 
 ---
@@ -1740,7 +1706,7 @@ Backend validation remains authoritative.
 ## Review Details
 
 - [ ] Create Activity Review page
-- [ ] Display submitted progress
+- [ ] Display assignment information
 - [ ] Display submitted evidence
 - [ ] Display previous review history
 - [ ] Display member information
@@ -1769,7 +1735,7 @@ There is no separate Activity Review `REJECTED` workflow.
 - [ ] Display previous administrator remarks
 - [ ] Preserve previous submission history
 - [ ] Allow member to make required corrections
-- [ ] Allow new progress where applicable
+- [ ] Allow additional evidence where permitted
 - [ ] Allow required evidence updates where permitted
 - [ ] Submit corrected activity
 - [ ] Preserve previous review history
@@ -1908,7 +1874,6 @@ There is no separate Activity Review `REJECTED` workflow.
 
 - [ ] Test Activity components
 - [ ] Test Assignment components
-- [ ] Test Progress components
 - [ ] Test Evidence components
 - [ ] Test Review components
 - [ ] Test Template components
@@ -1925,7 +1890,7 @@ There is no separate Activity Review `REJECTED` workflow.
 - [ ] Test bulk assignment
 - [ ] Test assignment conflict handling
 - [ ] Test activity start
-- [ ] Test progress submission
+- [ ] Test assignment submission
 - [ ] Test evidence upload
 - [ ] Test activity submission
 - [ ] Test Needs Changes workflow

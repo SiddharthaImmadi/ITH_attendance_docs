@@ -692,7 +692,7 @@ Business logic inside `app/services/` should receive the highest level of test c
 
 # 13. Phase 3 Testing Strategy
 
-Phase 3 introduces activity management, volunteer assignments, progress tracking, evidence management, administrator review, and reusable activity templates.
+Phase 3 introduces activity management, volunteer assignments, evidence management, assignment submission, administrator review, and reusable activity templates.
 
 These features require additional unit tests, integration tests, workflow tests, and performance testing.
 
@@ -706,29 +706,15 @@ Extend the existing structure.
 tests/
 
 ├── test_activities.py
-
 ├── test_activity_assignments.py
-
-├── test_activity_progress.py
-
 ├── test_activity_reviews.py
-
 ├── test_activity_templates.py
-
 ├── unit/
-
 │   ├── test_activity_service.py
-
 │   ├── test_activity_assignment_service.py
-
-│   ├── test_activity_progress_service.py
-
 │   ├── test_activity_review_service.py
-
 │   └── test_activity_template_service.py
-
 └── integration/
-
     └── test_phase3_workflow.py
 ```
 
@@ -753,12 +739,16 @@ Service layer tests should verify business logic independently of the API.
 - assignment validation
 - assignment status changes
 
-### Activity Progress Service
+### Activity Assignment Service
 
-- progress update creation
-- progress ordering
-- submission validation
-- evidence validation
+- assignment creation
+- duplicate assignment prevention
+- assignment validation
+- assignment status changes
+- assignment start
+- evidence upload validation
+- evidence limit validation
+- assignment submission validation
 
 ### Activity Review Service
 
@@ -796,10 +786,12 @@ Create endpoint tests for:
 - GET /activities/{id}/assignments
 - GET /members/me/assignments
 
-### Progress
+### Evidence
 
-- POST /assignments/{id}/progress
-- GET /assignments/{id}/progress
+- POST /assignments/{id}/photos
+- POST /assignments/{id}/videos
+- GET /assignments/{id}/evidence
+- DELETE /assignments/{id}/evidence/{evidenceId}
 - POST /assignments/{id}/submit
 
 ### Reviews
@@ -882,6 +874,8 @@ Verify:
 - invalid file types;
 - evidence retrieval;
 - evidence becomes read-only after submission.
+- evidence deletion before submission;
+- evidence modification blocked after submission.
 
 ---
 
@@ -967,7 +961,7 @@ Each Phase 3 feature should include tests covering:
 |----------|----------------|
 | Activity Management | Creation, publication, cancellation, archival |
 | Assignment | Assignment, duplicate prevention, lifecycle |
-| Progress Updates | Creation, ordering, submission |
+| Evidence Submission | Upload, validation, submission |
 | Evidence | Upload, limits, retrieval |
 | Review Workflow | Verification, needs changes, review history |
 | Activity Templates | Creation, application, independence |

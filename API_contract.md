@@ -1204,128 +1204,6 @@ Validation Rules:
 
 ---
 
-# Activity Execution
-
-## Activity Assignment Lifecycle
-
-```
-Assigned
-    ↓
-In Progress
-    ↓
-Under Review
-    ↓
-Verified
-```
-
-If the reviewer requests changes:
-
-```
-Under Review
-      ↓
-Needs Changes
-      ↓
-In Progress
-      ↓
-Under Review
-```
-
----
-
-## POST /assignments/{assignmentId}/start
-
-**Purpose:** Start an assigned activity.
-
-**Auth required:** Yes (member)
-
-### Validation Rules
-
-- The assignment must belong to the authenticated member.
-- The assignment must be in the **Assigned** state.
-- An activity can only be started once.
-- Once started, the activity cannot return to the **Assigned** state.
-
-### Response 200
-
-```json
-{
-  "success": true,
-  "message": "Activity started successfully.",
-  "data": {
-    "assignment_id": "uuid",
-    "status": "IN_PROGRESS",
-    "started_at": "2026-09-01T09:05:00Z"
-  }
-}
-```
-
----
-
-## POST /assignments/{assignmentId}/progress
-
-**Purpose:** Add a progress update to an activity.
-
-**Auth required:** Yes (member)
-
-### Request
-
-```json
-{
-  "title": "Stage Preparation",
-  "description": "Completed arranging chairs and tables."
-}
-```
-
-### Validation Rules
-
-- Only the assigned member may add progress updates.
-- Progress updates are recorded chronologically.
-- Progress updates cannot be edited after submission for review.
-- Multiple progress updates are allowed.
-
----
-
-### Response 201
-
-```json
-{
-  "success": true,
-  "message": "Progress update recorded successfully.",
-  "data": {
-    "progress_id": "uuid"
-  }
-}
-```
-
----
-
-## GET /assignments/{assignmentId}/progress
-
-**Purpose:** Retrieve the complete progress timeline.
-
-**Auth required:** Yes
-
-### Response 200
-
-```json
-{
-  "success": true,
-  "message": "Progress timeline retrieved successfully.",
-  "data": {
-    "items": [
-      {
-        "progress_id": "uuid",
-        "title": "Stage Preparation",
-        "description": "Completed arranging chairs.",
-        "created_at": "2026-09-01T09:20:00Z"
-      }
-    ]
-  }
-}
-```
-
----
-
 ## POST /assignments/{assignmentId}/submit
 
 **Purpose:** Submit the completed activity for review.
@@ -1334,11 +1212,10 @@ Under Review
 
 ### Validation Rules
 
-- Activity must be **In Progress**.
-- At least one progress update is required.
+- Assignment must be **IN_PROGRESS**.
 - At least one evidence item is required.
-- Only the assigned member may submit the activity.
-- After submission, the activity becomes read-only for the member.
+- Only the assigned member may submit the assignment.
+- After submission, the assignment becomes read-only until the review is completed or changes are requested.
 
 ---
 
@@ -1388,7 +1265,9 @@ Under Review
 
 # Evidence Management
 
-Evidence is always associated with a progress update rather than directly with an activity.
+Evidence is always associated with an Assignment.
+
+Members upload evidence directly to their assigned activity before submitting it for review.
 
 Only live camera capture is supported. Gallery uploads and manual file uploads are not permitted.
 
@@ -1396,7 +1275,7 @@ Evidence remains editable until the activity is submitted for review.
 
 ---
 
-## POST /progress/{progressId}/photos
+## POST /assignments/{assignmentId}/photos
 
 **Purpose:** Capture and upload one or more live photos for a progress update.
 
@@ -1415,7 +1294,7 @@ Multipart Form Data
 - Only the assigned member may upload evidence.
 - Photos must be captured using the device camera.
 - Gallery uploads are not permitted.
-- Maximum of 10 photos per activity.
+- Maximum of 10 photos per assignment..
 - Photos are automatically optimized before storage.
 - Evidence cannot be uploaded after the activity is submitted for review.
 
@@ -1435,7 +1314,7 @@ Multipart Form Data
 
 ---
 
-## POST /progress/{progressId}/videos
+## POST /assignments/{assignmentId}/videos
 
 **Purpose:** Capture and upload live videos for a progress update.
 
@@ -1474,7 +1353,7 @@ Multipart Form Data
 
 ---
 
-## GET /progress/{progressId}/evidence
+## GET /assignments/{assignmentId}/evidence
 
 **Purpose:** Retrieve all evidence associated with a progress update.
 
@@ -1543,7 +1422,6 @@ Members cannot modify this information.
 
 - Evidence ID
 - Assignment ID
-- Progress Update ID
 - Captured Timestamp
 - Device Information
 - GPS Coordinates (when available)
@@ -1555,8 +1433,8 @@ Members cannot modify this information.
 
 ## Business Rules
 
-- Evidence belongs to a progress update.
-- Evidence cannot exist without a progress update.
+- Evidence belongs to an assignment.
+- Evidence cannot exist without an assignment.
 - Gallery uploads are never permitted.
 - Manual file uploads are never permitted.
 - Members may capture multiple photos and videos before submission.
@@ -1639,7 +1517,6 @@ Activities remain in this cycle until they are successfully verified.
       "title": "Stage Setup",
       "category": "Logistics"
     },
-    "progress_updates": [],
     "evidence": [],
     "submitted_at": "2026-09-01T10:30:00Z"
   }
@@ -1764,8 +1641,8 @@ Activities remain in this cycle until they are successfully verified.
 - Members cannot review their own submissions.
 - Verified activities become read-only.
 - Selecting **Needs Changes** requires review remarks.
-- Members respond to **Needs Changes** by submitting additional progress updates and evidence.
-- Previously submitted progress updates and evidence are preserved for audit purposes.
+- Members respond to **Needs Changes** by uploading additional evidence and resubmitting the assignment.
+- Previously submitted evidence is preserved for audit purposes.
 - Every review action is recorded in the audit log.
 
 ---
@@ -1774,8 +1651,7 @@ Activities remain in this cycle until they are successfully verified.
 
 Activity Templates help administrators quickly create commonly used activities for recurring event types.
 
-Templates define the basic structure of an activity but do not include assignments, progress updates, evidence, reviews, notifications, or historical data.
-
+Templates define the basic structure of an activity but do not include assignments, evidence, reviews, notifications, or historical data.
 ---
 
 ## GET /activity-templates
@@ -1973,7 +1849,6 @@ Templates define the basic structure of an activity but do not include assignmen
 - Administrators may update the template over time as organizational needs evolve.
 - Templates define the initial structure of activities.
 - Assignments are never stored in templates.
-- Progress updates are never stored in templates.
 - Evidence is never stored in templates.
 - Reviews are never stored in templates.
 - Templates are intended to reduce repetitive activity creation for recurring event types.
@@ -2015,7 +1890,6 @@ Returns an Excel workbook.
 
 - Activity Summary
 - Assignment Summary
-- Progress Timeline
 - Evidence Summary
 - Review Summary
 - Activity Statistics
@@ -2034,7 +1908,6 @@ Returns an Excel workbook containing:
 
 - Activity Details
 - Assignment Details
-- Progress Timeline
 - Evidence
 - Review Information
 - Activity Audit Summary
@@ -2086,7 +1959,6 @@ Returns an Excel workbook containing:
 | ASSIGNMENT_CONFLICT | 409 | Assignment | Member has a conflicting assignment |
 | ASSIGNMENT_NOT_FOUND | 404 | Assignments | Assignment not found |
 | ACTIVITY_NOT_ASSIGNED | 403 | Execution | Activity is not assigned to this member |
-| PROGRESS_REQUIRED | 422 | Submit Activity | At least one progress update is required |
 | EVIDENCE_REQUIRED | 422 | Submit Activity | At least one evidence item is required |
 | PHOTO_LIMIT_EXCEEDED | 422 | Evidence | Maximum photo limit exceeded |
 | VIDEO_LIMIT_EXCEEDED | 422 | Evidence | Maximum video limit exceeded |
